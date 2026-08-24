@@ -141,10 +141,14 @@ class SftpController(
 
     private suspend fun runTransfer(transfer: Transfer) {
         val result = runCatching {
+            // Resolve the client here rather than reaching for a field that is only
+            // populated once a listing has succeeded: a transfer queued before the first
+            // successful navigate would otherwise dereference null.
+            val sftp = client()
             withContext(Dispatchers.IO) {
                 when (transfer.direction) {
-                    TransferDirection.DOWNLOAD -> download(transfer)
-                    TransferDirection.UPLOAD -> upload(transfer)
+                    TransferDirection.DOWNLOAD -> download(sftp, transfer)
+                    TransferDirection.UPLOAD -> upload(sftp, transfer)
                 }
             }
         }
@@ -155,7 +159,7 @@ class SftpController(
         }
     }
 
-    private fun download(transfer: Transfer) {
+    private fun download(sftp: SftpClient, transfer: Transfer) {
         val uri = Uri.parse(transfer.localUri)
         // "wt" truncates: a resumed download re-fetches from zero rather than appending
         // to a partial file, because SAF gives no reliable way to learn how many bytes
@@ -163,19 +167,19 @@ class SftpController(
         val sink = contentResolver.openOutputStream(uri, "wt")
             ?: throw IllegalStateException("cannot open destination")
         sink.use {
-            client!!.download(transfer.remotePath, it, resumeFrom = 0L) { total ->
+            sftp.download(transfer.remotePath, it, resumeFrom = 0L) { total ->
                 if (transfer.id in cancelled) throw InterruptedTransfer()
                 queue.markProgress(transfer.id, total)
             }
         }
     }
 
-    private fun upload(transfer: Transfer) {
+    private fun upload(sftp: SftpClient, transfer: Transfer) {
         val uri = Uri.parse(transfer.localUri)
         val source = contentResolver.openInputStream(uri)
             ?: throw IllegalStateException("cannot open source")
         source.use {
-            client!!.upload(it, transfer.remotePath, resumeFrom = 0L) { total ->
+            sftp.upload(it, transfer.remotePath, resumeFrom = 0L) { total ->
                 if (transfer.id in cancelled) throw InterruptedTransfer()
                 queue.markProgress(transfer.id, total)
             }
