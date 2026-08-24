@@ -47,11 +47,14 @@ import app.terminalssh.secure.vm.AppViewModel
 enum class Tab { HOSTS, TERMINAL, KEYS, SETTINGS }
 
 @Composable
-fun RootScreen(viewModel: AppViewModel) {
+fun RootScreen(viewModel: AppViewModel, launchHostId: String? = null) {
     var tab by rememberSaveable { mutableStateOf(Tab.HOSTS) }
     val sessions by viewModel.sessions.sessions.collectAsStateWithLifecycle()
     val toast by viewModel.toast.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    val hosts by viewModel.hosts.collectAsStateWithLifecycle()
+    // Survives recomposition so a shortcut cannot re-open the session on every recompose.
+    var consumedLaunchId by rememberSaveable { mutableStateOf<String?>(null) }
 
     BackHandler(enabled = tab != Tab.HOSTS) {
         tab = Tab.HOSTS
@@ -67,6 +70,17 @@ fun RootScreen(viewModel: AppViewModel) {
     val openTerminal: (HostProfile, CharArray?) -> Unit = { profile, password ->
         viewModel.openSession(profile, password)
         tab = Tab.TERMINAL
+    }
+
+    // A launcher shortcut names a host by id. Only hosts with a stored credential can
+    // connect unattended; anything else just lands the user on the host list, where the
+    // normal password prompt happens.
+    LaunchedEffect(launchHostId, hosts) {
+        val id = launchHostId ?: return@LaunchedEffect
+        if (consumedLaunchId == id) return@LaunchedEffect
+        val profile = hosts.firstOrNull { it.id == id } ?: return@LaunchedEffect
+        consumedLaunchId = id
+        if (viewModel.hasStoredSecret(profile)) openTerminal(profile, null)
     }
 
     Scaffold(

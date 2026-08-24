@@ -14,7 +14,9 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.fragment.app.FragmentActivity
 import app.terminalssh.secure.R
+import android.content.Intent
 import app.terminalssh.secure.TerminalApp
+import app.terminalssh.secure.service.HostShortcuts
 import app.terminalssh.secure.ui.theme.TerminalTheme
 import app.terminalssh.secure.vm.AppViewModel
 import java.util.Locale
@@ -38,6 +40,9 @@ class MainActivity : FragmentActivity() {
     /** Guards against re-prompting while a prompt is already on screen. */
     private var prompting = false
 
+    /** Host id from a launcher shortcut, if the app was opened through one. */
+    private var launchHostId by mutableStateOf<String?>(null)
+
     private val lockEnabled: Boolean
         get() = (application as TerminalApp).settings.biometricLock &&
             AppLock.availability(this) == LockAvailability.AVAILABLE
@@ -50,6 +55,7 @@ class MainActivity : FragmentActivity() {
 
         // A rotation re-runs onCreate; only lock on a genuinely fresh start.
         if (savedInstanceState == null) locked = lockEnabled
+        launchHostId = intent?.getStringExtra(HostShortcuts.EXTRA_HOST_ID)
 
         val rtl = Locale.getDefault().language == "fa"
         setContent {
@@ -63,7 +69,7 @@ class MainActivity : FragmentActivity() {
                         // after a cancel.
                         LaunchedEffect(Unit) { authenticate() }
                     } else {
-                        RootScreen(viewModel)
+                        RootScreen(viewModel, launchHostId = launchHostId)
                     }
                 }
             }
@@ -78,6 +84,13 @@ class MainActivity : FragmentActivity() {
     override fun onStop() {
         super.onStop()
         if (lockEnabled && !isChangingConfigurations) locked = true
+    }
+
+    /** singleTask means a second shortcut tap arrives here, not through onCreate. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        launchHostId = intent.getStringExtra(HostShortcuts.EXTRA_HOST_ID)
     }
 
     private fun authenticate() {

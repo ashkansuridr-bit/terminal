@@ -28,6 +28,7 @@ import app.terminalssh.secure.security.SecretIo
 import app.terminalssh.secure.security.PrivateKeyFormat
 import app.terminalssh.secure.security.VaultAad
 import app.terminalssh.secure.security.VaultLimits
+import app.terminalssh.secure.service.HostShortcuts
 import app.terminalssh.secure.service.SshForegroundService
 import app.terminalssh.secure.storage.SshConfigImport
 import app.terminalssh.secure.ssh.KnownHostsVerifier
@@ -118,6 +119,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
         container.hosts.delete(profile.id)
         _hosts.value = container.hosts.hosts()
+        // Replaces the whole shortcut set, so the deleted host cannot linger in the
+        // launcher pointing at an id that no longer resolves.
+        HostShortcuts.refresh(getApplication(), _hosts.value)
     }
 
     /**
@@ -180,6 +184,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             sessions.add(session)
             container.hosts.touch(profile.id)
             _hosts.value = container.hosts.hosts()
+            HostShortcuts.refresh(context, _hosts.value)
 
             val bytes = password?.let { SecretEncoding.utf8(it) }
             session.connect(bytes)
