@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Splash mark: the prompt chevron draws itself, then the cursor underscore appears and
+  blinks once. The whole sequence is under a second because a splash that outlasts the
+  work it covers is a delay wearing a costume.
+-->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="108dp" android:height="108dp"
+            android:viewportWidth="108" android:viewportHeight="108">
+
+            <path
+                android:name="chevron"
+                android:strokeColor="#FF2BE8B5"
+                android:strokeWidth="7"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="#00000000"
+                android:trimPathStart="0"
+                android:trimPathEnd="0"
+                android:pathData="M34,32 L56,54 L34,76"/>
+
+            <group android:name="cursor_group">
+                <path
+                    android:name="cursor"
+                    android:fillColor="#FF2BE8B5"
+                    android:fillAlpha="0"
+                    android:pathData="M62,70 L82,70 A3.5,3.5 0 0 1 82,77 L62,77 A3.5,3.5 0 0 1 62,70 Z"/>
+            </group>
+        </vector>
+    </aapt:attr>
+
+    <target android:name="chevron">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:valueFrom="0" android:valueTo="1"
+                android:duration="420"
+                android:interpolator="@android:interpolator/fast_out_slow_in"/>
+        </aapt:attr>
+    </target>
+
+    <target android:name="cursor">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:propertyName="fillAlpha"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:startOffset="380"
+                    android:duration="120"/>
+                <objectAnimator
+                    android:propertyName="fillAlpha"
+                    android:valueFrom="1" android:valueTo="0.25"
+                    android:startOffset="640"
+                    android:duration="180"/>
+                <objectAnimator
+                    android:propertyName="fillAlpha"
+                    android:valueFrom="0.25" android:valueTo="1"
+                    android:startOffset="820"
+                    android:duration="180"/>
+            </set>
+        </aapt:attr>
+    </target>
+</animated-vector>

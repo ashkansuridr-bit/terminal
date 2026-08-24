@@ -16,6 +16,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -244,7 +249,38 @@ private fun StatusDot(state: SshSessionState) {
         else -> TextSecondary
     }
     val color by animateColorAsState(target, label = "status")
-    Box(Modifier.size(8.dp).clip(CircleShape).background(color))
+
+    // While a connection is being established the dot pulses, so "working" is readable
+    // at a glance without occupying any more space than the idle indicator. Everything
+    // else is a steady dot: motion here would mean nothing and cost battery.
+    val busy = state.isBusy
+    val transition = rememberInfiniteTransition(label = "status-pulse")
+    val pulse by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (busy) 1.55f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(760, easing = Motion.Standard),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "status-pulse-scale",
+    )
+
+    Box(Modifier.size(14.dp), contentAlignment = Alignment.Center) {
+        if (busy) {
+            Box(
+                Modifier
+                    .size(8.dp)
+                    .graphicsLayer {
+                        scaleX = pulse
+                        scaleY = pulse
+                        alpha = (1.6f - pulse).coerceIn(0f, 1f)
+                    }
+                    .clip(CircleShape)
+                    .background(color),
+            )
+        }
+        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
+    }
 }
 
 @Composable

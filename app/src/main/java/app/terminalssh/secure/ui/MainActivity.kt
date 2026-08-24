@@ -3,6 +3,7 @@ package app.terminalssh.secure.ui
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.CompositionLocalProvider
@@ -48,6 +49,9 @@ class MainActivity : FragmentActivity() {
             AppLock.availability(this) == LockAvailability.AVAILABLE
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Must run before super.onCreate: it swaps SplashTheme for AppTheme, and after
+        // super it would be too late for the system to apply the post-splash theme.
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         // Keep the terminal out of screenshots, recents previews and screen recordings.
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
