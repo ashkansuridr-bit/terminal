@@ -4,6 +4,12 @@
 
 ### Added
 
+- **SFTP file browser with a resumable transfer queue.** Rides the terminal
+  session's existing connection, so browsing files never means authenticating a
+  second time. Downloads and uploads go through the system file picker, so the
+  app needs no storage permission. A dropped connection re-queues transfers
+  instead of abandoning them; a permission error stops immediately rather than
+  retrying pointlessly.
 - **Generate SSH keys inside the app** (Ed25519 on Android 13+, ECDSA P-256, or
   RSA-3072). The private half goes straight to the vault and is wiped from memory;
   the public half is shown once to copy into `authorized_keys`, and is never
@@ -27,6 +33,15 @@
 
 ### Changed
 
+- **The key toolbar gives haptic and visual feedback on every press**, and lays
+  out in two rows instead of one scrolling row on windows 600dp and wider — large
+  phone landscape, tablets, unfolded foldables. Keys are ordered by how often they
+  are actually reached for.
+- **Layouts adapt to the window, not the device.** Page margins grow with width
+  and text columns get a reading-width cap, so a host row is not stretched across
+  a tablet with its name and actions at opposite ends of the screen.
+- **An animated splash mark**, and a status dot that pulses only while a
+  connection is being established.
 - Reconnect delay is now exponential with full jitter instead of linear, so
   several tabs recovering from one Wi-Fi drop stop retrying in lockstep.
 - Connection failures are classified and shown as a sentence explaining what to
