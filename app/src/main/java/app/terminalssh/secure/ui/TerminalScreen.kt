@@ -16,6 +16,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -297,49 +304,74 @@ private fun KeyToolbar(
         }
     }
 
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        ToolKey(
-            label = "⌨",
-            contentDescription = stringResource(R.string.show_keyboard),
-            onClick = onShowKeyboard,
-        )
+    // Keys are ordered by how often they are actually reached for, because on a narrow
+    // phone everything past the first handful costs a scroll. Arrows stay adjacent so the
+    // cluster is findable by shape rather than by reading each label.
+    BoxWithConstraints(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
+        // A 600dp-wide window (large phone landscape, tablet, unfolded foldable) has room
+        // for two rows, which removes the scroll entirely on those devices.
+        val twoRows = maxWidth >= 600.dp
+
         Row(
-            Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            ToolKey(stringResource(R.string.snippets_short)) { onSnippets() }
-            ToolKey("Esc") { session.send(byteArrayOf(0x1B)) }
-            ToolKey("Tab") { session.send(byteArrayOf(0x09)) }
-            ToolKey("Ctrl", active = ctrl, toggle = true) { ctrl = !ctrl; alt = false }
-            ToolKey("Alt", active = alt, toggle = true) { alt = !alt; ctrl = false }
-            ToolKey("^C", contentDescription = stringResource(R.string.terminal_key_interrupt)) {
-                session.send(byteArrayOf(0x03)); ctrl = false
+            ToolKey(
+                label = "⌨",
+                contentDescription = stringResource(R.string.show_keyboard),
+                onClick = onShowKeyboard,
+            )
+
+            val primary: @Composable () -> Unit = {
+                ToolKey(stringResource(R.string.snippets_short)) { onSnippets() }
+                ToolKey("Esc") { session.send(byteArrayOf(0x1B)) }
+                ToolKey("Tab") { session.send(byteArrayOf(0x09)) }
+                ToolKey("Ctrl", active = ctrl, toggle = true) { ctrl = !ctrl; alt = false }
+                ToolKey("Alt", active = alt, toggle = true) { alt = !alt; ctrl = false }
+                ToolKey("^C", contentDescription = stringResource(R.string.terminal_key_interrupt)) {
+                    session.send(byteArrayOf(0x03)); ctrl = false
+                }
+                ToolKey("^D", contentDescription = stringResource(R.string.terminal_key_eof)) {
+                    session.send(byteArrayOf(0x04)); ctrl = false
+                }
+                ToolKey("^L", contentDescription = stringResource(R.string.terminal_key_clear)) {
+                    session.send(byteArrayOf(0x0C)); ctrl = false
+                }
+                ToolKey("↑", contentDescription = stringResource(R.string.terminal_key_up)) { session.send("\u001B[A") }
+                ToolKey("↓", contentDescription = stringResource(R.string.terminal_key_down)) { session.send("\u001B[B") }
+                ToolKey("←", contentDescription = stringResource(R.string.terminal_key_left)) { session.send("\u001B[D") }
+                ToolKey("→", contentDescription = stringResource(R.string.terminal_key_right)) { session.send("\u001B[C") }
             }
-            ToolKey("^D", contentDescription = stringResource(R.string.terminal_key_eof)) {
-                session.send(byteArrayOf(0x04)); ctrl = false
+
+            val secondary: @Composable () -> Unit = {
+                ToolKey("|") { sendText("|") }
+                ToolKey("/") { sendText("/") }
+                ToolKey("-") { sendText("-") }
+                ToolKey("~") { sendText("~") }
+                ToolKey("Home") { session.send("\u001B[H") }
+                ToolKey("End") { session.send("\u001B[F") }
+                ToolKey("PgUp") { session.send("\u001B[5~") }
+                ToolKey("PgDn") { session.send("\u001B[6~") }
             }
-            ToolKey("^L", contentDescription = stringResource(R.string.terminal_key_clear)) {
-                session.send(byteArrayOf(0x0C)); ctrl = false
+
+            if (twoRows) {
+                Column(
+                    Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { primary() }
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { secondary() }
+                }
+            } else {
+                Row(
+                    Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    primary()
+                    secondary()
+                }
             }
-            ToolKey("↑", contentDescription = stringResource(R.string.terminal_key_up)) { session.send("\u001B[A") }
-            ToolKey("↓", contentDescription = stringResource(R.string.terminal_key_down)) { session.send("\u001B[B") }
-            ToolKey("←", contentDescription = stringResource(R.string.terminal_key_left)) { session.send("\u001B[D") }
-            ToolKey("→", contentDescription = stringResource(R.string.terminal_key_right)) { session.send("\u001B[C") }
-            ToolKey("|") { sendText("|") }
-            ToolKey("/") { sendText("/") }
-            ToolKey("-") { sendText("-") }
-            ToolKey("~") { sendText("~") }
-            ToolKey("Home") { session.send("\u001B[H") }
-            ToolKey("End") { session.send("\u001B[F") }
-            ToolKey("PgUp") { session.send("\u001B[5~") }
-            ToolKey("PgDn") { session.send("\u001B[6~") }
         }
     }
 }
@@ -352,11 +384,23 @@ private fun ToolKey(
     contentDescription: String? = null,
     onClick: () -> Unit,
 ) {
+    val haptics = LocalHapticFeedback.current
+    val interactions = remember { MutableInteractionSource() }
+    val isPressed by interactions.collectIsPressedAsState()
+    // A physical key gives travel; a glass one has to give something back instead.
+    val scale by animateFloatAsState(if (isPressed) 0.92f else 1f, Motion.press(), label = "key-press")
+
+    val press: () -> Unit = {
+        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        onClick()
+    }
+
     Text(
         label,
         style = MaterialTheme.typography.labelLarge,
         color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
         modifier = Modifier
+            .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(RoundedCornerShape(9.dp))
             .background(if (active) Turquoise else MaterialTheme.colorScheme.surfaceVariant)
             .then(
@@ -367,9 +411,15 @@ private fun ToolKey(
             .then(
                 if (toggle) Modifier.toggleable(
                     value = active,
+                    interactionSource = interactions,
+                    indication = null,
                     role = Role.Button,
-                    onValueChange = { onClick() },
-                ) else Modifier.clickable(onClick = onClick),
+                    onValueChange = { press() },
+                ) else Modifier.clickable(
+                    interactionSource = interactions,
+                    indication = null,
+                    onClick = press,
+                ),
             )
             .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
             .padding(horizontal = 13.dp, vertical = 9.dp),

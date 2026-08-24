@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -58,6 +59,7 @@ import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.terminalssh.secure.BuildConfig
@@ -85,11 +87,15 @@ fun SettingsScreen(viewModel: AppViewModel) {
     val lockAvailability = remember { AppLock.availability(context) }
     val known = remember { viewModel.knownHosts() }
 
+    val window = rememberWindowSize()
+    val maxContentWidth = window.width.contentMaxWidth()
+
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 18.dp),
+            .then(if (maxContentWidth != Dp.Unspecified) Modifier.widthIn(max = maxContentWidth) else Modifier)
+            .padding(horizontal = window.width.pageMargin(), vertical = 18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Text(

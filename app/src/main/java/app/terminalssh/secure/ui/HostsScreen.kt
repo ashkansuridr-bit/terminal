@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -58,6 +59,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.terminalssh.secure.R
@@ -98,9 +100,19 @@ fun HostsScreen(
             .map { (profile, _) -> profile }
     }
 
+    val window = rememberWindowSize()
+    val margin = window.width.pageMargin()
+    val maxContentWidth = window.width.contentMaxWidth()
+
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 104.dp),
+            // Centred and width-capped on tablets: a host row stretched across 1280dp
+            // puts the name and the actions at opposite ends of the screen.
+            modifier = Modifier
+                .fillMaxSize()
+                .then(if (maxContentWidth != Dp.Unspecified) Modifier.widthIn(max = maxContentWidth) else Modifier)
+                .align(Alignment.TopCenter),
+            contentPadding = PaddingValues(start = margin, end = margin, top = 20.dp, bottom = 104.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
