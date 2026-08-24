@@ -30,6 +30,7 @@ import app.terminalssh.secure.security.VaultAad
 import app.terminalssh.secure.security.VaultLimits
 import app.terminalssh.secure.service.HostShortcuts
 import app.terminalssh.secure.service.SshForegroundService
+import app.terminalssh.secure.storage.SshConfigExport
 import app.terminalssh.secure.storage.SshConfigImport
 import app.terminalssh.secure.ssh.KnownHostsVerifier
 import app.terminalssh.secure.ssh.SshSession
@@ -155,6 +156,26 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             }.onFailure {
                 _toast.value = string(R.string.hosts_import_failed)
             }
+        }
+    }
+
+    /**
+     * Writes the host list out as an OpenSSH config the user picks the destination for.
+     * Contains no secrets, so it is safe to put in ordinary storage or send to yourself.
+     */
+    fun exportHostsToSshConfig(uri: Uri) {
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val text = SshConfigExport.render(container.hosts.hosts())
+                    getApplication<Application>().contentResolver.openOutputStream(uri)
+                        ?.use { it.write(text.toByteArray(Charsets.UTF_8)) }
+                        ?: error("cannot write config file")
+                }
+            }
+            _toast.value = string(
+                if (result.isSuccess) R.string.hosts_exported else R.string.hosts_export_failed,
+            )
         }
     }
 

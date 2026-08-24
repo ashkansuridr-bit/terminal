@@ -83,6 +83,9 @@ fun HostsScreen(
     val configPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let(viewModel::importHostsFromSshConfig)
     }
+    val exportPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/plain"),
+    ) { uri -> uri?.let(viewModel::exportHostsToSshConfig) }
 
     // With no query the store's own order (favourites, then most recent) is what the user
     // expects; once they type, best match wins and that ordering is what helps.
@@ -131,8 +134,15 @@ fun HostsScreen(
                 Spacer(Modifier.height(6.dp))
                 // Anyone who already uses SSH from a desktop has this file; retyping a
                 // dozen servers on a phone keyboard is where people give up.
-                TextButton(onClick = { configPicker.launch(arrayOf("*/*")) }) {
-                    Text(stringResource(R.string.hosts_import_config))
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = { configPicker.launch(arrayOf("*/*")) }) {
+                        Text(stringResource(R.string.hosts_import_config))
+                    }
+                    if (hosts.isNotEmpty()) {
+                        TextButton(onClick = { exportPicker.launch("ssh_config") }) {
+                            Text(stringResource(R.string.hosts_export_config))
+                        }
+                    }
                 }
                 Spacer(Modifier.height(4.dp))
             }

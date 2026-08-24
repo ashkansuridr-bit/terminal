@@ -165,4 +165,7 @@
         <item quantity="one">%d host imported</item>
         <item quantity="other">%d hosts imported</item>
     </plurals>
+    <string name="hosts_export_config">Export to SSH config</string>
+    <string name="hosts_exported">Server list saved</string>
+    <string name="hosts_export_failed">Could not export the list</string>
 </resources>

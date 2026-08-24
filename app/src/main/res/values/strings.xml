@@ -165,4 +165,7 @@
         <item quantity="one">%d سرور وارد شد</item>
         <item quantity="other">%d سرور وارد شد</item>
     </plurals>
+    <string name="hosts_export_config">خروجی گرفتن به فایل SSH config</string>
+    <string name="hosts_exported">فهرست سرورها ذخیره شد</string>
+    <string name="hosts_export_failed">خروجی گرفتن انجام نشد</string>
 </resources>
