@@ -28,8 +28,19 @@ class MainActivity : FragmentActivity() {
 
     private val viewModel: AppViewModel by viewModels()
 
-    /** Survives configuration changes, so a rotation does not re-prompt. */
-    private var unlocked = false
+    /**
+     * Held on the Activity rather than created inside the composable: state created
+     * during composition is rebuilt on every recomposition, which would snap the app
+     * straight back to locked the moment anything above it recomposed.
+     */
+    private var locked by mutableStateOf(false)
+
+    /** Guards against re-prompting while a prompt is already on screen. */
+    private var prompting = false
+
+    private val lockEnabled: Boolean
+        get() = (application as TerminalApp).settings.biometricLock &&
+            AppLock.availability(this) == LockAvailability.AVAILABLE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,24 +48,20 @@ class MainActivity : FragmentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         enableEdgeToEdge()
 
-        val settings = (application as TerminalApp).settings
+        // A rotation re-runs onCreate; only lock on a genuinely fresh start.
+        if (savedInstanceState == null) locked = lockEnabled
+
         val rtl = Locale.getDefault().language == "fa"
-
         setContent {
-            // Treat the lock as already satisfied when the setting is off, or when the
-            // device has no enrolled credential — otherwise enabling the toggle and then
-            // removing the screen lock would leave the app permanently unopenable.
-            val lockRequired = settings.biometricLock &&
-                AppLock.availability(this) == LockAvailability.AVAILABLE
-            var locked by mutableStateOf(lockRequired && !unlocked)
-
             TerminalTheme {
                 CompositionLocalProvider(
                     LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
                 ) {
                     if (locked) {
-                        LockScreen(onUnlock = { authenticate { locked = false } })
-                        LaunchedEffect(Unit) { authenticate { locked = false } }
+                        LockScreen(onUnlock = ::authenticate)
+                        // Offer the prompt immediately; the button is the way back
+                        // after a cancel.
+                        LaunchedEffect(Unit) { authenticate() }
                     } else {
                         RootScreen(viewModel)
                     }
@@ -63,16 +70,26 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private fun authenticate(onSuccess: () -> Unit) {
+    /**
+     * Re-arm the lock whenever the app leaves the foreground. Locking only at cold start
+     * would leave the content readable to anyone who picks the phone up mid-session,
+     * which is the case the lock exists for.
+     */
+    override fun onStop() {
+        super.onStop()
+        if (lockEnabled && !isChangingConfigurations) locked = true
+    }
+
+    private fun authenticate() {
+        if (prompting) return
+        prompting = true
         AppLock.prompt(
             activity = this,
             title = getString(R.string.lock_title),
             subtitle = getString(R.string.lock_subtitle),
         ) { ok ->
-            if (ok) {
-                unlocked = true
-                onSuccess()
-            }
+            prompting = false
+            if (ok) locked = false
         }
     }
 

@@ -301,6 +301,18 @@ private fun HostCard(
             .clickable(onClick = onOpen)
             .padding(horizontal = 16.dp, vertical = 15.dp),
     ) {
+        // The environment band sits on the leading edge so "production" is visible
+        // while the thumb is still travelling toward the row.
+        profile.environment.color?.let { bandColor ->
+            Box(
+                Modifier
+                    .width(4.dp)
+                    .height(38.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(bandColor),
+            )
+            Spacer(Modifier.width(10.dp))
+        }
         Box(
             Modifier.size(42.dp).clip(CircleShape).background(Turquoise.copy(alpha = 0.11f)),
             contentAlignment = Alignment.Center,
@@ -316,6 +328,13 @@ private fun HostCard(
         Column(Modifier.weight(1f)) {
             Text(ltr(profile.displayName), style = MaterialTheme.typography.titleMedium)
             Text(ltr(profile.subtitle), style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+            profile.environment.color?.let { bandColor ->
+                Text(
+                    stringResource(profile.environment.labelRes),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = bandColor,
+                )
+            }
             if (profile.tags.isNotEmpty()) {
                 Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {

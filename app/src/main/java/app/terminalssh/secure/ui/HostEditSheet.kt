@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import app.terminalssh.secure.R
 import app.terminalssh.secure.model.AuthMethod
+import app.terminalssh.secure.model.Environment
 import app.terminalssh.secure.model.HostKeyPolicy
 import app.terminalssh.secure.model.HostProfile
 import app.terminalssh.secure.ui.theme.Danger
@@ -54,10 +56,16 @@ fun HostEditSheet(
     var password by remember { mutableStateOf("") }
     var group by remember { mutableStateOf(initial?.group ?: "") }
     var tags by remember { mutableStateOf(initial?.tags?.joinToString(", ") ?: "") }
+    var notes by remember { mutableStateOf(initial?.notes ?: "") }
+    var environment by remember { mutableStateOf(initial?.environment ?: Environment.NONE) }
+    var reconnectAttempts by remember {
+        mutableStateOf((initial?.maxReconnectAttempts ?: HostProfile.DEFAULT_RECONNECT_ATTEMPTS).toString())
+    }
     var error by remember { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
     val requiredFieldsError = stringResource(R.string.err_host_required)
     val portRangeError = stringResource(R.string.err_port_range)
+    val reconnectRangeError = stringResource(R.string.err_reconnect_range)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -96,6 +104,14 @@ fun HostEditSheet(
             )
             Field(group, { group = it }, stringResource(R.string.field_group))
             Field(tags, { tags = it }, stringResource(R.string.field_tags))
+            Field(notes, { notes = it }, stringResource(R.string.field_notes), singleLine = false)
+            Field(
+                reconnectAttempts,
+                { reconnectAttempts = it.filter(Char::isDigit).take(2) },
+                stringResource(R.string.field_reconnect_attempts),
+                keyboard = KeyboardType.Number,
+            )
+            EnvironmentPicker(environment) { environment = it }
 
             error?.let { Text(it, color = Danger, style = MaterialTheme.typography.labelSmall) }
 
@@ -106,6 +122,8 @@ fun HostEditSheet(
                     when {
                         host.isBlank() || username.isBlank() -> error = requiredFieldsError
                         portNumber !in 1..65535 -> error = portRangeError
+                        (reconnectAttempts.toIntOrNull() ?: 0) > HostProfile.MAX_RECONNECT_ATTEMPTS ->
+                            error = reconnectRangeError
                         else -> {
                             val profile = HostProfile(
                                 id = initial?.id ?: UUID.randomUUID().toString(),
@@ -119,6 +137,11 @@ fun HostEditSheet(
                                 tags = tags.split(',').map(String::trim).filter(String::isNotEmpty),
                                 favorite = initial?.favorite ?: false,
                                 lastConnectedAt = initial?.lastConnectedAt ?: 0L,
+                                notes = notes.trim(),
+                                environment = environment,
+                                maxReconnectAttempts = reconnectAttempts.toIntOrNull()
+                                    ?.coerceIn(0, HostProfile.MAX_RECONNECT_ATTEMPTS)
+                                    ?: HostProfile.DEFAULT_RECONNECT_ATTEMPTS,
                             )
                             onSave(profile, password.takeIf { it.isNotEmpty() }?.toCharArray())
                         }
@@ -161,17 +184,43 @@ private fun Field(
     modifier: Modifier = Modifier,
     keyboard: KeyboardType = KeyboardType.Text,
     isPassword: Boolean = false,
+    singleLine: Boolean = true,
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
-        singleLine = true,
+        singleLine = singleLine,
         keyboardOptions = KeyboardOptions(keyboardType = keyboard),
         visualTransformation = if (isPassword) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
         shape = MaterialTheme.shapes.small,
         modifier = modifier.fillMaxWidth(),
     )
+}
+
+/**
+ * Environment banding. Rendered as filter chips rather than a dropdown so the current
+ * value is visible without a tap — the whole point is noticing "production" before you
+ * connect, not after.
+ */
+@Composable
+private fun EnvironmentPicker(selected: Environment, onSelect: (Environment) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            stringResource(R.string.field_environment),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Environment.entries.forEach { env ->
+                FilterChip(
+                    selected = env == selected,
+                    onClick = { onSelect(env) },
+                    label = { Text(stringResource(env.labelRes), style = MaterialTheme.typography.labelSmall) },
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

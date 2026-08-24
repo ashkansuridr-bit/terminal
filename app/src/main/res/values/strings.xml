@@ -142,4 +142,12 @@
     <string name="settings_clipboard_clear_value">پس از %1$d ثانیه</string>
     <string name="settings_lock_not_enrolled">برای این قابلیت باید قفل صفحه یا اثر انگشت دستگاه را فعال کنید.</string>
     <string name="settings_lock_unavailable">این دستگاه از قفل بیومتریک پشتیبانی نمی‌کند.</string>
+    <string name="field_notes">یادداشت</string>
+    <string name="field_environment">محیط</string>
+    <string name="field_reconnect_attempts">تعداد تلاش برای اتصال مجدد</string>
+    <string name="err_reconnect_range">تعداد تلاش اتصال مجدد نمی‌تواند بیشتر از ۱۰ باشد</string>
+    <string name="env_none">بدون دسته</string>
+    <string name="env_development">توسعه</string>
+    <string name="env_staging">آزمایش</string>
+    <string name="env_production">عملیاتی</string>
 </resources>

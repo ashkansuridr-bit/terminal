@@ -79,6 +79,10 @@ fun SettingsScreen(viewModel: AppViewModel) {
     var fontSize by remember { mutableIntStateOf(settings.fontSizeSp) }
     var pasteConfirm by remember { mutableStateOf(settings.confirmMultilinePaste) }
     var keepAlive by remember { mutableStateOf(settings.keepAlive) }
+    var biometricLock by remember { mutableStateOf(settings.biometricLock) }
+    var clipboardClear by remember { mutableIntStateOf(settings.clipboardClearSeconds) }
+    val context = LocalContext.current
+    val lockAvailability = remember { AppLock.availability(context) }
     val known = remember { viewModel.knownHosts() }
 
     Column(
@@ -208,6 +212,55 @@ fun SettingsScreen(viewModel: AppViewModel) {
                 keepAlive = it
                 settings.keepAlive = it
             }
+
+            // The toggle is only offered when the device can actually satisfy it;
+            // otherwise it explains what to set up instead of silently doing nothing.
+            if (lockAvailability == LockAvailability.AVAILABLE) {
+                ToggleRow(stringResource(R.string.settings_biometric), biometricLock) {
+                    biometricLock = it
+                    settings.biometricLock = it
+                }
+            } else {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    stringResource(
+                        if (lockAvailability == LockAvailability.NOT_ENROLLED) {
+                            R.string.settings_lock_not_enrolled
+                        } else {
+                            R.string.settings_lock_unavailable
+                        },
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextSecondary,
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
+            Text(
+                stringResource(R.string.settings_clipboard_clear),
+                style = MaterialTheme.typography.labelLarge,
+            )
+            Text(
+                if (clipboardClear == 0) {
+                    stringResource(R.string.settings_clipboard_clear_off)
+                } else {
+                    stringResource(R.string.settings_clipboard_clear_value, clipboardClear)
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = TextSecondary,
+            )
+            Slider(
+                value = clipboardClear.toFloat(),
+                onValueChange = {
+                    // Snap to 15s steps; 0 is the explicit "keep it" position.
+                    val snapped = (it / 15f).roundToInt() * 15
+                    clipboardClear = snapped
+                    settings.clipboardClearSeconds = snapped
+                },
+                valueRange = 0f..180f,
+                steps = 11,
+            )
+
             Spacer(Modifier.height(12.dp))
             Text(
                 stringResource(R.string.settings_known_hosts, known.size),

@@ -142,4 +142,12 @@
     <string name="settings_clipboard_clear_value">After %1$d seconds</string>
     <string name="settings_lock_not_enrolled">Set up a screen lock or fingerprint on this device to use this.</string>
     <string name="settings_lock_unavailable">This device does not support a biometric lock.</string>
+    <string name="field_notes">Notes</string>
+    <string name="field_environment">Environment</string>
+    <string name="field_reconnect_attempts">Reconnect attempts</string>
+    <string name="err_reconnect_range">Reconnect attempts cannot be more than 10</string>
+    <string name="env_none">Unset</string>
+    <string name="env_development">Dev</string>
+    <string name="env_staging">Staging</string>
+    <string name="env_production">Production</string>
 </resources>
