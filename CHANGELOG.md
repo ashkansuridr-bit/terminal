@@ -1,6 +1,38 @@
 # Changelog
 
-## Unreleased — code review fixes
+## Unreleased — code review fixes and follow-up features
+
+### Added
+
+- **Generate SSH keys inside the app** (Ed25519 on Android 13+, ECDSA P-256, or
+  RSA-3072). The private half goes straight to the vault and is wiped from memory;
+  the public half is shown once to copy into `authorized_keys`, and is never
+  written to the vault or shown again.
+- **Import servers from an OpenSSH `~/.ssh/config`**, and **export the list back
+  out** as one. The export contains no passwords, passphrases, private keys, or
+  vault references, so it is safe to keep as a backup.
+- **Biometric / device-credential app lock**, re-armed whenever the app leaves the
+  foreground. Offered only when the device has an enrolled credential, so enabling
+  it can never make the app unopenable.
+- **Automatic clipboard clearing** for terminal copies, on a configurable delay,
+  and only when the clipboard still holds what the terminal put there.
+- **Launcher shortcuts** for the four most recently used servers. They carry only
+  a host id; the app lock still applies.
+- **Fuzzy host search** with relevance ranking — "pdb" finds "prod-db-01" — now
+  also searching the new per-host notes field.
+- **Per-host notes and an environment band** (dev / staging / production), shown
+  on the leading edge of the host row so "production" registers before the tap.
+- **Per-host reconnect budget**, because a flaky VPS and a LAN box should not
+  share one retry policy.
+
+### Changed
+
+- Reconnect delay is now exponential with full jitter instead of linear, so
+  several tabs recovering from one Wi-Fi drop stop retrying in lockstep.
+- Connection failures are classified and shown as a sentence explaining what to
+  change, in Persian or English, instead of raw JSch text.
+
+### Fixed
 
 - Fixed: a clean remote shell exit (typing `exit`) no longer triggers an automatic
   reconnect loop; only a channel close without an exit-status (an actual dropped
