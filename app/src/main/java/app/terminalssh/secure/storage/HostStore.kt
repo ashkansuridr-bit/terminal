@@ -2,6 +2,7 @@ package app.terminalssh.secure.storage
 
 import android.content.Context
 import app.terminalssh.secure.model.AuthMethod
+import app.terminalssh.secure.model.Environment
 import app.terminalssh.secure.model.HostKeyPolicy
 import app.terminalssh.secure.model.HostProfile
 import app.terminalssh.secure.model.KeyEntry
@@ -75,6 +76,8 @@ class HostStore(context: Context) {
         put("id", id); put("label", label); put("host", host); put("port", port)
         put("username", username); put("group", group); put("favorite", favorite)
         put("lastConnectedAt", lastConnectedAt); put("policy", hostKeyPolicy.name)
+        put("notes", notes); put("environment", environment.name)
+        put("maxReconnectAttempts", maxReconnectAttempts)
         put("tags", JSONArray().apply { tags.forEach { put(it) } })
         when (val a = auth) {
             is AuthMethod.Password -> { put("authType", "password"); put("vaultRef", a.vaultRef) }
@@ -107,6 +110,14 @@ class HostStore(context: Context) {
             tags = (0 until tagArray.length()).map { tagArray.getString(it) },
             favorite = optBoolean("favorite", false),
             lastConnectedAt = optLong("lastConnectedAt", 0L),
+            notes = optString("notes", ""),
+            // Records written before these fields existed fall back to the defaults.
+            environment = runCatching { Environment.valueOf(optString("environment")) }
+                .getOrDefault(Environment.NONE),
+            maxReconnectAttempts = optInt(
+                "maxReconnectAttempts",
+                HostProfile.DEFAULT_RECONNECT_ATTEMPTS,
+            ).coerceIn(0, HostProfile.MAX_RECONNECT_ATTEMPTS),
         )
     }
 

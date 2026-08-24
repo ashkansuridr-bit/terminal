@@ -249,7 +249,7 @@ private fun StatusBar(session: SshSession) {
         is SshSessionState.AwaitingHostKeyApproval -> stringResource(R.string.state_verifying)
         SshSessionState.Connected -> stringResource(R.string.state_connected)
         is SshSessionState.Reconnecting -> stringResource(R.string.state_reconnecting) + " ${s.attempt}/${s.max}"
-        is SshSessionState.Failed -> stringResource(R.string.state_failed) + " — ${s.message}"
+        is SshSessionState.Failed -> stringResource(s.kind.stringRes)
         SshSessionState.Closed -> stringResource(R.string.state_disconnected)
     }
     Row(

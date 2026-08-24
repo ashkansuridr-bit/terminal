@@ -29,8 +29,11 @@ import app.terminalssh.secure.security.VaultLimits
 import app.terminalssh.secure.service.SshForegroundService
 import app.terminalssh.secure.ssh.KnownHostsVerifier
 import app.terminalssh.secure.ssh.SshSession
+import app.terminalssh.secure.ui.stringRes
 import app.terminalssh.secure.ssh.SshSessionState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -149,7 +152,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun observe(session: SshSession) {
         viewModelScope.launch {
             session.state.collect { state ->
-                if (state is SshSessionState.Failed && !state.hostKeyChanged) _toast.value = state.message
+                if (state is SshSessionState.Failed && !state.hostKeyChanged) {
+                    _toast.value = string(state.kind.stringRes)
+                }
                 SshForegroundService.sync(getApplication(), sessions.liveCount())
             }
         }
@@ -177,6 +182,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     val pasteRequested = MutableStateFlow(false)
 
+    private var clipboardClearJob: Job? = null
+
     fun clipboardText(): String? {
         val manager = getApplication<Application>()
             .getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -192,6 +199,35 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         manager.setPrimaryClip(clip)
+        scheduleClipboardClear(manager, text)
+    }
+
+    /**
+     * Wipes a terminal copy from the clipboard after the configured delay, but only if
+     * the clipboard still holds exactly what we put there — clearing something the user
+     * copied afterwards from another app would be data loss, not a security win.
+     */
+    private fun scheduleClipboardClear(manager: ClipboardManager, copied: String) {
+        val delaySeconds = settings.clipboardClearSeconds
+        if (delaySeconds <= 0) return
+        clipboardClearJob?.cancel()
+        clipboardClearJob = viewModelScope.launch {
+            delay(delaySeconds * 1_000L)
+            val current = runCatching {
+                manager.primaryClip?.getItemAt(0)?.coerceToText(getApplication())?.toString()
+            }.getOrNull()
+            if (current == copied) {
+                runCatching {
+                    // clearPrimaryClip only exists from API 28; an empty clip is the
+                    // equivalent on older releases.
+                    if (Build.VERSION.SDK_INT >= 28) {
+                        manager.clearPrimaryClip()
+                    } else {
+                        manager.setPrimaryClip(ClipData.newPlainText("", ""))
+                    }
+                }
+            }
+        }
     }
 
 

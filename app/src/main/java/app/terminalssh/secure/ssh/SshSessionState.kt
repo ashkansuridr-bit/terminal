@@ -12,7 +12,11 @@ sealed interface SshSessionState {
     ) : SshSessionState
     data object Connected : SshSessionState
     data class Reconnecting(val attempt: Int, val max: Int) : SshSessionState
-    data class Failed(val message: String, val hostKeyChanged: Boolean = false) : SshSessionState
+    data class Failed(
+        val message: String,
+        val hostKeyChanged: Boolean = false,
+        val kind: ConnectionErrorKind = ConnectionErrorKind.UNKNOWN,
+    ) : SshSessionState
     data object Closed : SshSessionState
 
     val isBusy: Boolean get() = this is Connecting || this is Reconnecting

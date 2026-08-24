@@ -102,16 +102,24 @@ class SshSession(
         } catch (changed: HostKeyRejected) {
             if (gen != generation.get()) return
             clearPendingPassword()
-            _state.value = SshSessionState.Failed(changed.message ?: "host key rejected", hostKeyChanged = true)
+            _state.value = SshSessionState.Failed(
+                message = changed.message ?: "host key rejected",
+                hostKeyChanged = true,
+                kind = ConnectionErrorKind.HOST_KEY_CHANGED,
+            )
         } catch (t: Throwable) {
             if (gen != generation.get()) return
-            if (autoReconnect && attempt < MAX_RECONNECT && ReconnectPolicy.isTransient(t)) {
-                _state.value = SshSessionState.Reconnecting(attempt + 1, MAX_RECONNECT)
-                Thread.sleep(RECONNECT_DELAY_MS * (attempt + 1))
+            val maxAttempts = profile.maxReconnectAttempts
+            if (autoReconnect && attempt < maxAttempts && ReconnectPolicy.isTransient(t)) {
+                _state.value = SshSessionState.Reconnecting(attempt + 1, maxAttempts)
+                Thread.sleep(ReconnectPolicy.delayMillis(attempt))
                 doConnect(gen, attempt + 1)
             } else {
                 clearPendingPassword()
-                _state.value = SshSessionState.Failed(t.message ?: t.javaClass.simpleName)
+                _state.value = SshSessionState.Failed(
+                    message = t.message ?: t.javaClass.simpleName,
+                    kind = ConnectionError.classify(t),
+                )
             }
         }
     }
@@ -163,8 +171,8 @@ class SshSession(
                     // without the remote side saying why, which is what reconnect exists
                     // for.
                     val remoteExitedCleanly = runCatching { open.channel.exitStatus }.getOrDefault(-1) >= 0
-                    if (autoReconnect && !remoteExitedCleanly) {
-                        _state.value = SshSessionState.Reconnecting(1, MAX_RECONNECT)
+                    if (autoReconnect && !remoteExitedCleanly && profile.maxReconnectAttempts > 0) {
+                        _state.value = SshSessionState.Reconnecting(1, profile.maxReconnectAttempts)
                         io.execute { doConnect(gen, attempt = 0) }
                     } else {
                         _state.value = SshSessionState.Closed
@@ -233,7 +241,5 @@ class SshSession(
         private const val INITIAL_ROWS = 24
         private const val INITIAL_COLS = 80
         private const val READ_BUFFER = 16 * 1024
-        private const val MAX_RECONNECT = 3
-        private const val RECONNECT_DELAY_MS = 1500L
     }
 }

@@ -123,4 +123,23 @@
     <string name="snippets_insert">درج</string>
     <string name="snippets_insert_hint">فقط درج می‌شود؛ Enter خودکار ارسال نمی‌شود.</string>
     <string name="snippets_short">دستور</string>
+
+    <!-- Connection errors: what went wrong and what to change, never raw JSch text. -->
+    <string name="err_unknown_host">نام سرور پیدا نشد. آدرس را بررسی کنید یا مطمئن شوید به اینترنت وصل هستید.</string>
+    <string name="err_connection_refused">سرور اتصال را رد کرد. معمولاً یعنی سرویس SSH روی این پورت اجرا نمی‌شود.</string>
+    <string name="err_timeout">سرور پاسخ نداد. آدرس و پورت را بررسی کنید یا ببینید فایروال اجازه می‌دهد یا نه.</string>
+    <string name="err_no_network">شبکه در دسترس نیست. اتصال اینترنت دستگاه را بررسی کنید.</string>
+    <string name="err_connection_lost">اتصال قطع شد.</string>
+    <string name="err_auth_failed">ورود ناموفق بود. نام کاربری، رمز یا کلید خصوصی را بررسی کنید.</string>
+    <string name="err_algorithm_mismatch">توافق روی الگوریتم رمزنگاری با سرور ممکن نشد. سرور احتمالاً بسیار قدیمی است.</string>
+    <string name="err_host_key_changed">کلید سرور تغییر کرده است. تا وقتی دلیلش را مطمئن نشده‌اید وصل نشوید.</string>
+    <string name="err_unknown">اتصال برقرار نشد.</string>
+    <string name="lock_title">قفل برنامه</string>
+    <string name="lock_subtitle">برای دیدن سرورها و کلیدها هویت خود را تأیید کنید.</string>
+    <string name="lock_unlock">باز کردن قفل</string>
+    <string name="settings_clipboard_clear">پاک‌کردن خودکار کلیپ‌بورد</string>
+    <string name="settings_clipboard_clear_off">خاموش</string>
+    <string name="settings_clipboard_clear_value">پس از %1$d ثانیه</string>
+    <string name="settings_lock_not_enrolled">برای این قابلیت باید قفل صفحه یا اثر انگشت دستگاه را فعال کنید.</string>
+    <string name="settings_lock_unavailable">این دستگاه از قفل بیومتریک پشتیبانی نمی‌کند.</string>
 </resources>

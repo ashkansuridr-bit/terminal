@@ -25,5 +25,20 @@ class Settings(context: Context) {
         get() = prefs.getBoolean("keepalive", true)
         set(value) = prefs.edit().putBoolean("keepalive", value).apply()
 
-    companion object { private const val PREFS = "settings_v1" }
+    /**
+     * Seconds before a clipboard copy made from the terminal is wiped, or 0 to keep it.
+     * Terminal output is where passwords and tokens get copied from, and on Android the
+     * clipboard is readable by the foreground app.
+     */
+    var clipboardClearSeconds: Int
+        get() = prefs.getInt("clipboard_clear_seconds", DEFAULT_CLIPBOARD_CLEAR_SECONDS)
+        set(value) = prefs.edit()
+            .putInt("clipboard_clear_seconds", value.coerceIn(0, MAX_CLIPBOARD_CLEAR_SECONDS))
+            .apply()
+
+    companion object {
+        private const val PREFS = "settings_v1"
+        const val DEFAULT_CLIPBOARD_CLEAR_SECONDS = 45
+        const val MAX_CLIPBOARD_CLEAR_SECONDS = 600
+    }
 }

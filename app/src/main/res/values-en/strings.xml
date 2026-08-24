@@ -123,4 +123,23 @@
     <string name="snippets_insert">Insert</string>
     <string name="snippets_insert_hint">Inserts only; Enter is never sent automatically.</string>
     <string name="snippets_short">Snip</string>
+
+    <!-- Connection errors: what went wrong and what to change, never raw JSch text. -->
+    <string name="err_unknown_host">Host not found. Check the address, or whether this device has a network connection.</string>
+    <string name="err_connection_refused">The server refused the connection. Usually this means no SSH service is listening on that port.</string>
+    <string name="err_timeout">The server did not respond. Check the address and port, and whether a firewall is blocking it.</string>
+    <string name="err_no_network">No network available. Check this device\'s internet connection.</string>
+    <string name="err_connection_lost">The connection dropped.</string>
+    <string name="err_auth_failed">Sign-in failed. Check the username, password, or private key.</string>
+    <string name="err_algorithm_mismatch">Could not agree on an encryption algorithm with the server. It is probably very old.</string>
+    <string name="err_host_key_changed">The server\'s key has changed. Do not connect until you know why.</string>
+    <string name="err_unknown">Could not connect.</string>
+    <string name="lock_title">App locked</string>
+    <string name="lock_subtitle">Verify your identity to see your servers and keys.</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="settings_clipboard_clear">Clear clipboard automatically</string>
+    <string name="settings_clipboard_clear_off">Off</string>
+    <string name="settings_clipboard_clear_value">After %1$d seconds</string>
+    <string name="settings_lock_not_enrolled">Set up a screen lock or fingerprint on this device to use this.</string>
+    <string name="settings_lock_unavailable">This device does not support a biometric lock.</string>
 </resources>

@@ -58,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.terminalssh.secure.R
+import app.terminalssh.secure.model.FuzzyMatch
 import app.terminalssh.secure.model.HostProfile
 import app.terminalssh.secure.ui.theme.Cyan
 import app.terminalssh.secure.ui.theme.Stroke
@@ -77,7 +78,16 @@ fun HostsScreen(
     var creating by remember { mutableStateOf(false) }
     var askPasswordFor by remember { mutableStateOf<HostProfile?>(null) }
 
-    val filtered = hosts.filter { it.matches(query) }
+    // With no query the store's own order (favourites, then most recent) is what the user
+    // expects; once they type, best match wins and that ordering is what helps.
+    val filtered = if (query.isBlank()) {
+        hosts
+    } else {
+        hosts.map { it to it.searchScore(query) }
+            .filter { (_, score) -> score > FuzzyMatch.NO_MATCH }
+            .sortedByDescending { (_, score) -> score }
+            .map { (profile, _) -> profile }
+    }
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(

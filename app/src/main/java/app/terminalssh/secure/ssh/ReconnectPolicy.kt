@@ -41,4 +41,25 @@ object ReconnectPolicy {
     }
 
     private val NON_TRANSIENT_MARKERS = listOf("auth", "denied", "credential", "userauth", "publickey")
+
+    const val BASE_DELAY_MS = 1_500L
+    const val MAX_DELAY_MS = 30_000L
+
+    /**
+     * Exponential backoff with full jitter, replacing the previous linear
+     * `base * (attempt + 1)`.
+     *
+     * Exponential growth stops a flapping link from being hammered once per 1.5s, and
+     * the jitter matters specifically here: reconnecting several tabs to the same server
+     * after one Wi-Fi drop would otherwise retry them in lockstep forever. [random] is a
+     * parameter so the spread is testable without a fake clock.
+     *
+     * @param attempt zero-based retry counter.
+     */
+    fun delayMillis(attempt: Int, random: (Long) -> Long = { if (it <= 0) 0 else (0 until it).random() }): Long {
+        val exponential = BASE_DELAY_MS shl attempt.coerceIn(0, 30)
+        val ceiling = exponential.coerceIn(BASE_DELAY_MS, MAX_DELAY_MS)
+        // Full jitter keeps a floor of BASE_DELAY_MS so the first retry is never instant.
+        return BASE_DELAY_MS + random(ceiling - BASE_DELAY_MS + 1)
+    }
 }
