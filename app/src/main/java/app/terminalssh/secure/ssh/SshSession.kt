@@ -204,6 +204,16 @@ class SshSession(
 
     fun requestPaste() = onPasteRequest()
 
+    /**
+     * An SFTP client riding this session's existing connection, or null when the session
+     * is not connected. Reusing the connection avoids a second authentication and a
+     * second host-key check for a server the user is already inside.
+     *
+     * The caller owns the returned client and must close it.
+     */
+    fun openSftp(): app.terminalssh.secure.sftp.SftpClient? =
+        shell?.takeIf { it.alive }?.let { app.terminalssh.secure.sftp.SftpClient(it.session) }
+
     fun clearScreen() = main.post { runCatching { emulator.clearScreen() } }
 
     fun disconnect() {

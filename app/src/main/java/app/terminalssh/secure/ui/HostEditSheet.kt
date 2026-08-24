@@ -16,6 +16,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -72,14 +73,21 @@ fun HostEditSheet(
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
+        // The fields scroll; the save/delete actions stay pinned to the bottom of the
+        // sheet. With everything in one scrolling column, adding fields pushed Save below
+        // the fold on a short screen — reachable only by scrolling past a keyboard.
         Column(
             Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
                 .imePadding()
-                .navigationBarsPadding()
-                .padding(horizontal = 22.dp)
-                .padding(bottom = 24.dp),
+                .navigationBarsPadding(),
+        ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 22.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
@@ -113,9 +121,18 @@ fun HostEditSheet(
             )
             EnvironmentPicker(environment) { environment = it }
 
-            error?.let { Text(it, color = Danger, style = MaterialTheme.typography.labelSmall) }
-
             Spacer(Modifier.height(4.dp))
+        }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 22.dp)
+                .padding(top = 12.dp, bottom = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            error?.let { Text(it, color = Danger, style = MaterialTheme.typography.labelSmall) }
             Button(
                 onClick = {
                     val portNumber = port.toIntOrNull() ?: 22
@@ -155,6 +172,7 @@ fun HostEditSheet(
                     Text(stringResource(R.string.delete), color = Danger)
                 }
             }
+        }
         }
     }
 

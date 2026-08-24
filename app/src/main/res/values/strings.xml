@@ -168,4 +168,21 @@
     <string name="hosts_export_config">خروجی گرفتن به فایل SSH config</string>
     <string name="hosts_exported">فهرست سرورها ذخیره شد</string>
     <string name="hosts_export_failed">خروجی گرفتن انجام نشد</string>
+    <string name="tab_files">فایل‌ها</string>
+    <string name="sftp_upload">آپلود فایل</string>
+    <string name="sftp_refresh">تازه‌سازی</string>
+    <string name="sftp_empty">این پوشه خالی است</string>
+    <string name="sftp_no_session">برای مرور فایل‌ها ابتدا به یک سرور وصل شوید.</string>
+    <string name="sftp_transfers">انتقال‌ها</string>
+    <string name="sftp_pause">توقف موقت</string>
+    <string name="sftp_resume">ادامه</string>
+    <string name="sftp_cancel">لغو</string>
+    <string name="sftp_clear_finished">پاک‌کردن تمام‌شده‌ها</string>
+    <string name="sftp_downloaded">دانلود شد</string>
+    <string name="xfer_connection_lost">اتصال قطع شد؛ دوباره تلاش می‌شود.</string>
+    <string name="xfer_permission_denied">سرور اجازه دسترسی به این مسیر را نداد.</string>
+    <string name="xfer_not_found">فایل یا پوشه پیدا نشد.</string>
+    <string name="xfer_out_of_space">فضای کافی وجود ندارد.</string>
+    <string name="xfer_local_unavailable">دسترسی به فایل روی دستگاه ممکن نشد.</string>
+    <string name="xfer_unknown">انتقال ناموفق بود.</string>
 </resources>

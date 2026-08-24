@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.VpnKey
@@ -44,7 +45,7 @@ import app.terminalssh.secure.ui.theme.Ink
 import app.terminalssh.secure.ui.theme.Turquoise
 import app.terminalssh.secure.vm.AppViewModel
 
-enum class Tab { HOSTS, TERMINAL, KEYS, SETTINGS }
+enum class Tab { HOSTS, TERMINAL, FILES, KEYS, SETTINGS }
 
 @Composable
 fun RootScreen(viewModel: AppViewModel, launchHostId: String? = null) {
@@ -106,6 +107,7 @@ fun RootScreen(viewModel: AppViewModel, launchHostId: String? = null) {
                             stringResource(R.string.tab_terminal),
                             sessions.size,
                         ) { tab = it }
+                        TabItem(tab, Tab.FILES, Icons.Outlined.Folder, stringResource(R.string.tab_files)) { tab = it }
                         TabItem(tab, Tab.KEYS, Icons.Outlined.VpnKey, stringResource(R.string.tab_keys)) { tab = it }
                         TabItem(tab, Tab.SETTINGS, Icons.Outlined.Settings, stringResource(R.string.tab_settings)) { tab = it }
                     }
@@ -132,6 +134,7 @@ fun RootScreen(viewModel: AppViewModel, launchHostId: String? = null) {
                 when (target) {
                     Tab.HOSTS -> HostsScreen(viewModel, onConnect = openTerminal)
                     Tab.TERMINAL -> TerminalScreen(viewModel, onGoToHosts = { tab = Tab.HOSTS })
+                    Tab.FILES -> FilesScreen(viewModel, onGoToHosts = { tab = Tab.HOSTS })
                     Tab.KEYS -> KeysScreen(viewModel)
                     Tab.SETTINGS -> SettingsScreen(viewModel)
                 }

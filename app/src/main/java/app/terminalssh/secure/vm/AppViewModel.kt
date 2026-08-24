@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.PersistableBundle
 import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.terminalssh.secure.R
@@ -439,6 +440,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         // terminal copies get — the user needs it long enough to paste into a server.
         manager.setPrimaryClip(ClipData.newPlainText("ssh public key", publicKey))
         _toast.value = string(R.string.keys_public_copied)
+    }
+
+    /**
+     * The user-facing name behind a SAF uri, falling back to the last path segment.
+     * SAF uris are opaque, so the display name has to be queried from the provider.
+     */
+    fun displayNameFor(uri: Uri): String {
+        val resolver = getApplication<Application>().contentResolver
+        val queried = runCatching {
+            resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            }
+        }.getOrNull()
+        return queried?.takeIf { it.isNotBlank() }
+            ?: uri.lastPathSegment?.substringAfterLast('/')?.takeIf { it.isNotBlank() }
+            ?: "upload"
     }
 
     fun deleteKey(entry: KeyEntry) {
