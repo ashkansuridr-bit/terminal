@@ -150,4 +150,13 @@
     <string name="env_development">توسعه</string>
     <string name="env_staging">آزمایش</string>
     <string name="env_production">عملیاتی</string>
+    <string name="keys_generate">ساخت کلید جدید</string>
+    <string name="keys_generated">کلید ساخته شد</string>
+    <string name="keys_generate_failed">ساخت کلید انجام نشد</string>
+    <string name="keys_public_title">کلید عمومی</string>
+    <string name="keys_public_body">این متن را در فایل authorized_keys سرور قرار دهید. کلید خصوصی در Vault دستگاه می‌ماند و هرگز نمایش داده نمی‌شود.</string>
+    <string name="keys_public_copy">کپی کلید عمومی</string>
+    <string name="keys_public_copied">کلید عمومی کپی شد</string>
+    <string name="keys_algorithm">الگوریتم</string>
+    <string name="keys_generating">در حال ساخت…</string>
 </resources>

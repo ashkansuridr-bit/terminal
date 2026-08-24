@@ -21,6 +21,8 @@ import app.terminalssh.secure.model.AuthMethod
 import app.terminalssh.secure.model.HostProfile
 import app.terminalssh.secure.model.KeyEntry
 import app.terminalssh.secure.model.SnippetEntry
+import app.terminalssh.secure.security.KeyAlgorithm
+import app.terminalssh.secure.security.KeyGeneration
 import app.terminalssh.secure.security.SecretEncoding
 import app.terminalssh.secure.security.SecretIo
 import app.terminalssh.secure.security.PrivateKeyFormat
@@ -68,6 +70,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _accountIdentity = MutableStateFlow<AccountIdentity?>(null)
     val accountIdentity: StateFlow<AccountIdentity?> = _accountIdentity.asStateFlow()
+
+    /** Set once after a successful key generation, so the UI can show the public half. */
+    private val _generatedPublicKey = MutableStateFlow<String?>(null)
+    val generatedPublicKey: StateFlow<String?> = _generatedPublicKey.asStateFlow()
 
     fun setQuery(value: String) { _query.value = value }
     fun consumeToast() { _toast.value = null }
@@ -312,6 +318,66 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 _toast.value = getApplication<Application>().getString(R.string.keys_import_failed)
             }
         }
+    }
+
+    /**
+     * Generates a key pair on this device and stores the private half in the vault.
+     * The public half is returned through [generatedPublicKey] so the user can copy it
+     * to the server; it is not a secret and is deliberately kept outside the vault.
+     */
+    fun generateKey(algorithm: KeyAlgorithm, name: String) {
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.Default) {
+                runCatching {
+                    val comment = name.trim().ifBlank { "terminalssh" }
+                    val generated = KeyGeneration.generate(algorithm, comment)
+                    var ref: String? = null
+                    try {
+                        ref = UUID.randomUUID().toString()
+                        container.vault.put(ref, generated.privateKey, VaultAad.PRIVATE_KEY)
+                        val entry = KeyEntry(
+                            id = ref,
+                            name = comment,
+                            fingerprint = KnownHostsVerifier.sha256Fingerprint(generated.privateKey),
+                            algorithm = generated.algorithm.label,
+                            createdAt = System.currentTimeMillis(),
+                            hasPassphrase = false,
+                        )
+                        try {
+                            container.hosts.upsertKey(entry)
+                        } catch (t: Throwable) {
+                            // Never leave private-key ciphertext behind without metadata.
+                            container.vault.delete(ref, VaultAad.PRIVATE_KEY)
+                            throw t
+                        }
+                        generated.publicKey
+                    } catch (t: Throwable) {
+                        ref?.let { runCatching { container.vault.delete(it, VaultAad.PRIVATE_KEY) } }
+                        throw t
+                    } finally {
+                        generated.wipe()
+                    }
+                }
+            }
+            result.onSuccess { publicKey ->
+                _keys.value = container.hosts.keys()
+                _generatedPublicKey.value = publicKey
+                _toast.value = string(R.string.keys_generated)
+            }.onFailure {
+                _toast.value = string(R.string.keys_generate_failed)
+            }
+        }
+    }
+
+    fun consumeGeneratedPublicKey() { _generatedPublicKey.value = null }
+
+    fun copyPublicKey(publicKey: String) {
+        val manager = getApplication<Application>()
+            .getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        // A public key is not a secret, so this deliberately skips the auto-clear that
+        // terminal copies get — the user needs it long enough to paste into a server.
+        manager.setPrimaryClip(ClipData.newPlainText("ssh public key", publicKey))
+        _toast.value = string(R.string.keys_public_copied)
     }
 
     fun deleteKey(entry: KeyEntry) {

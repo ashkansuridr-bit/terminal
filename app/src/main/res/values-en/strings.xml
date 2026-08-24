@@ -150,4 +150,13 @@
     <string name="env_development">Dev</string>
     <string name="env_staging">Staging</string>
     <string name="env_production">Production</string>
+    <string name="keys_generate">Generate new key</string>
+    <string name="keys_generated">Key generated</string>
+    <string name="keys_generate_failed">Could not generate the key</string>
+    <string name="keys_public_title">Public key</string>
+    <string name="keys_public_body">Add this line to the server\'s authorized_keys file. The private key stays in this device\'s vault and is never shown.</string>
+    <string name="keys_public_copy">Copy public key</string>
+    <string name="keys_public_copied">Public key copied</string>
+    <string name="keys_algorithm">Algorithm</string>
+    <string name="keys_generating">Generating…</string>
 </resources>
