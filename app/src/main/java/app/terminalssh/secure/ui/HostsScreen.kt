@@ -1,5 +1,7 @@
 package app.terminalssh.secure.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -77,6 +80,9 @@ fun HostsScreen(
     var editing by remember { mutableStateOf<HostProfile?>(null) }
     var creating by remember { mutableStateOf(false) }
     var askPasswordFor by remember { mutableStateOf<HostProfile?>(null) }
+    val configPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let(viewModel::importHostsFromSshConfig)
+    }
 
     // With no query the store's own order (favourites, then most recent) is what the user
     // expects; once they type, best match wins and that ordering is what helps.
@@ -123,6 +129,12 @@ fun HostsScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(6.dp))
+                // Anyone who already uses SSH from a desktop has this file; retyping a
+                // dozen servers on a phone keyboard is where people give up.
+                TextButton(onClick = { configPicker.launch(arrayOf("*/*")) }) {
+                    Text(stringResource(R.string.hosts_import_config))
+                }
+                Spacer(Modifier.height(4.dp))
             }
 
             if (filtered.isEmpty()) {

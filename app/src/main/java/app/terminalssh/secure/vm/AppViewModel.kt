@@ -29,6 +29,7 @@ import app.terminalssh.secure.security.PrivateKeyFormat
 import app.terminalssh.secure.security.VaultAad
 import app.terminalssh.secure.security.VaultLimits
 import app.terminalssh.secure.service.SshForegroundService
+import app.terminalssh.secure.storage.SshConfigImport
 import app.terminalssh.secure.ssh.KnownHostsVerifier
 import app.terminalssh.secure.ssh.SshSession
 import app.terminalssh.secure.ui.stringRes
@@ -117,6 +118,40 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
         container.hosts.delete(profile.id)
         _hosts.value = container.hosts.hosts()
+    }
+
+    /**
+     * Imports servers from an OpenSSH config file. Existing hosts are never overwritten:
+     * a profile whose host/port/user already exists is skipped, so importing the same
+     * file twice does not duplicate the list.
+     */
+    fun importHostsFromSshConfig(uri: Uri) {
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val text = getApplication<Application>().contentResolver.openInputStream(uri)
+                        ?.use { it.readBytes().toString(Charsets.UTF_8) }
+                        ?: error("cannot read config file")
+
+                    val existing = container.hosts.hosts()
+                        .map { Triple(it.host.lowercase(), it.port, it.username.lowercase()) }
+                        .toSet()
+
+                    val imported = SshConfigImport.parse(text).filter {
+                        Triple(it.host.lowercase(), it.port, it.username.lowercase()) !in existing
+                    }
+                    imported.forEach { container.hosts.upsert(it) }
+                    imported.size
+                }
+            }
+            result.onSuccess { count ->
+                _hosts.value = container.hosts.hosts()
+                _toast.value = getApplication<Application>()
+                    .resources.getQuantityString(R.plurals.hosts_imported, count, count)
+            }.onFailure {
+                _toast.value = string(R.string.hosts_import_failed)
+            }
+        }
     }
 
     fun toggleFavorite(profile: HostProfile) {

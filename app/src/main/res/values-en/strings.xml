@@ -159,4 +159,10 @@
     <string name="keys_public_copied">Public key copied</string>
     <string name="keys_algorithm">Algorithm</string>
     <string name="keys_generating">Generating…</string>
+    <string name="hosts_import_config">Import from SSH config</string>
+    <string name="hosts_import_failed">Could not import the config file</string>
+    <plurals name="hosts_imported">
+        <item quantity="one">%d host imported</item>
+        <item quantity="other">%d hosts imported</item>
+    </plurals>
 </resources>
