@@ -1,0 +1,6 @@
+Give this whole folder to OpenCode on your server and tell it:
+
+"Read OPENCODE_TASK.md and execute it completely. Use the GitHub credentials already configured on this server. Do not expose secrets. Keep fixing until GitHub Actions is green and give me the APK artifact/repository link."
+
+Optional first command:
+  ./server-preflight.sh

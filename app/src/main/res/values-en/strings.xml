@@ -1,0 +1,126 @@
+<resources>
+    <string name="app_name">Terminal SSH</string>
+
+    <string name="tab_hosts">Hosts</string>
+    <string name="tab_terminal">Terminal</string>
+    <string name="tab_keys">Keys</string>
+    <string name="tab_settings">Settings</string>
+
+    <string name="hosts_empty_title">No hosts yet</string>
+    <string name="hosts_empty_body">Add a server to get started, or use quick connect.</string>
+    <string name="hosts_search">Search host, user or tag</string>
+    <string name="hosts_add">Add host</string>
+    <string name="quick_connect">Quick connect</string>
+    <string name="recent">Recent</string>
+    <string name="favorites">Pinned</string>
+    <string name="host_favorite">Favorite %1$s</string>
+    <string name="host_unfavorite">Remove %1$s from favorites</string>
+    <string name="host_edit">Edit %1$s</string>
+
+    <string name="field_label">Display name</string>
+    <string name="field_host">Host</string>
+    <string name="field_port">Port</string>
+    <string name="field_username">Username</string>
+    <string name="field_password">Password</string>
+    <string name="field_group">Group</string>
+    <string name="field_tags">Tags (comma separated)</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_key">Private key</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+
+    <string name="state_idle">Ready</string>
+    <string name="state_connecting">Connecting…</string>
+    <string name="state_verifying">Awaiting host key approval</string>
+    <string name="state_authenticating">Authenticating…</string>
+    <string name="state_connected">Connected</string>
+    <string name="state_reconnecting">Reconnecting…</string>
+    <string name="state_disconnected">Disconnected</string>
+    <string name="state_failed">Failed</string>
+
+    <string name="hostkey_title">Verify host key</string>
+    <string name="hostkey_body">This is your first connection to this server. Continue only if this fingerprint is exactly what you expect.</string>
+    <string name="hostkey_trust">Trust and connect</string>
+    <string name="hostkey_changed_title">Host key changed</string>
+    <string name="hostkey_changed_body">The connection was stopped. This can indicate an interception attack. Do not continue unless you know the server key changed.</string>
+    <string name="hostkey_forget">Forget stored key</string>
+
+    <string name="keys_empty">No private keys imported.</string>
+    <string name="keys_import">Import key</string>
+    <string name="keys_imported">Key imported</string>
+    <string name="key_delete">Delete key %1$s</string>
+    <string name="snippet_delete">Delete snippet %1$s</string>
+
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Terminal theme</string>
+    <string name="settings_palette_persian_neon">Persian neon</string>
+    <string name="settings_palette_oled">OLED black</string>
+    <string name="settings_palette_midnight">Midnight</string>
+    <string name="settings_palette_solarized">Solarized</string>
+    <string name="settings_palette_classic">Classic green</string>
+    <string name="settings_palette_amber">Amber</string>
+    <string name="settings_fontsize">Font size</string>
+    <string name="settings_fontsize_value">Font size %1$d</string>
+    <string name="settings_security">Security</string>
+    <string name="settings_biometric">Biometric lock</string>
+    <string name="settings_paste_confirm">Confirm multi-line paste</string>
+    <string name="settings_keepalive">Send keepalive packets</string>
+    <string name="settings_about">About</string>
+
+    <string name="paste_confirm_title">Paste %1$d lines?</string>
+    <string name="paste_confirm_body">This text runs directly in the terminal.</string>
+    <string name="paste">Paste</string>
+    <string name="show_keyboard">Show keyboard</string>
+    <string name="terminal_key_interrupt">Interrupt, Control+C</string>
+    <string name="terminal_key_eof">End of input, Control+D</string>
+    <string name="terminal_key_clear">Clear screen, Control+L</string>
+    <string name="terminal_key_up">Up arrow</string>
+    <string name="terminal_key_down">Down arrow</string>
+    <string name="terminal_key_left">Left arrow</string>
+    <string name="terminal_key_right">Right arrow</string>
+    <string name="close_session">Close session %1$s</string>
+
+    <string name="notif_channel">Active sessions</string>
+    <string name="notif_title">Terminal SSH</string>
+    <string name="notif_sessions">%1$d active session(s)</string>
+    <string name="notif_disconnect_all">Disconnect all</string>
+
+    <string name="err_host_required">Host and username are required</string>
+    <string name="err_port_range">Port must be between 1 and 65535</string>
+    <string name="err_no_credential">No stored credential for this host</string>
+    <string name="settings_subtitle">Manage appearance, security, and your optional account.</string>
+    <string name="settings_security_summary">Keys and passwords stay local and encrypted.</string>
+    <string name="settings_known_hosts">Known hosts (%1$d)</string>
+    <string name="settings_about_body">Free · Persian-first · secure SSH · built for serious mobile work</string>
+    <string name="google_account_title">Optional account</string>
+    <string name="google_account_optional">Not required for SSH; reserved for future sync and multi-device recovery.</string>
+    <string name="google_sign_in">Sign in with Google</string>
+    <string name="google_sign_out">Sign out of Google</string>
+    <string name="google_sign_in_success">Signed in with Google</string>
+    <string name="google_sign_in_failed">Google sign-in failed</string>
+    <string name="google_sign_out_success">Signed out of Google</string>
+    <string name="google_not_configured">Google OAuth client ID is not configured for this build</string>
+    <string name="google_no_credential">No Google account was found on this device</string>
+    <string name="home_secure_title">Secure, fast SSH with a Persian soul</string>
+    <string name="home_secure_body">Hosts, live sessions, and keys in one calm professional workspace.</string>
+    <string name="home_hosts_count">%1$d hosts</string>
+    <string name="home_sessions_count">%1$d live</string>
+    <string name="home_vault_badge">Secure vault</string>
+    <string name="home_new_connection">New connection</string>
+    <string name="keys_import_failed">Key import failed</string>
+    <string name="host_save_failed">Could not save the server; check the device security settings</string>
+<string name="keys_material_hash">Private-key material integrity hash</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="snippets_title">Command snippets</string>
+    <string name="snippets_private">Commands are stored only inside the encrypted Vault.</string>
+    <string name="snippets_add">Add snippet</string>
+    <string name="snippets_empty">No snippets yet.</string>
+    <string name="snippets_name">Name</string>
+    <string name="snippets_command">Command</string>
+    <string name="snippets_insert">Insert</string>
+    <string name="snippets_insert_hint">Inserts only; Enter is never sent automatically.</string>
+    <string name="snippets_short">Snip</string>
+</resources>

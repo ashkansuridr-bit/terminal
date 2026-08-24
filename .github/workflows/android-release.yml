@@ -1,0 +1,147 @@
+name: Android release gate
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK
+        run: yes | sdkmanager 'platforms;android-36' 'build-tools;35.0.0' 'platform-tools'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Install Kotlin compiler
+        run: |
+          curl -sSL -o /tmp/kotlinc.zip https://github.com/JetBrains/kotlin/releases/download/v2.3.21/kotlin-compiler-2.3.21.zip
+          unzip -q /tmp/kotlinc.zip -d /opt
+          echo "/opt/kotlinc/bin" >> "$GITHUB_PATH"
+      - name: Source and market gates
+        run: |
+          python3 scripts/source_audit.py
+          python3 scripts/market_release_gate.py
+          python3 scripts/loop2_gate.py
+      - name: Unit tests, lint and installable verification builds
+        run: ./gradlew --no-daemon testMarketDebugUnitTest testGplayDebugUnitTest lintMarketDebug lintGplayDebug assembleMarketDebug assembleGplayDebug
+      - name: Upload verification outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminal-verify-${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            app/build/outputs/apk/market/debug/*.apk
+            app/build/outputs/apk/gplay/debug/*.apk
+            app/build/reports/lint-results-marketDebug.html
+            app/build/reports/lint-results-gplayDebug.html
+
+  signed-market-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: verify
+    runs-on: ubuntu-latest
+    env:
+      TERMINAL_KEYSTORE_PATH: ${{ github.workspace }}/release-key.jks
+      TERMINAL_KEYSTORE_PASSWORD: ${{ secrets.TERMINAL_KEYSTORE_PASSWORD }}
+      TERMINAL_KEY_ALIAS: ${{ secrets.TERMINAL_KEY_ALIAS }}
+      TERMINAL_KEY_PASSWORD: ${{ secrets.TERMINAL_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK
+        run: yes | sdkmanager 'platforms;android-36' 'build-tools;35.0.0' 'platform-tools'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Check signing secrets
+        id: signing
+        env:
+          TERMINAL_KEYSTORE_BASE64: ${{ secrets.TERMINAL_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$TERMINAL_KEYSTORE_BASE64" ] && [ -n "$TERMINAL_KEYSTORE_PASSWORD" ] && [ -n "$TERMINAL_KEY_ALIAS" ] && [ -n "$TERMINAL_KEY_PASSWORD" ]; then
+            echo "configured=true"
+            echo "Signing secrets present."
+          else
+            echo "configured=false"
+            echo "Signing secrets not configured; skipping signed release."
+          fi
+      - name: Materialize signing key
+        if: steps.signing.outputs.configured == 'true'
+        env:
+          TERMINAL_KEYSTORE_BASE64: ${{ secrets.TERMINAL_KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$TERMINAL_KEYSTORE_BASE64" | base64 --decode > "$TERMINAL_KEYSTORE_PATH"
+          chmod 600 "$TERMINAL_KEYSTORE_PATH"
+      - name: Build signed APK and AAB
+        if: steps.signing.outputs.configured == 'true'
+        run: ./gradlew --no-daemon clean testMarketReleaseUnitTest lintMarketRelease assembleMarketRelease bundleMarketRelease
+      - name: Verify signatures
+        if: steps.signing.outputs.configured == 'true'
+        run: |
+          for apk in app/build/outputs/apk/market/release/*.apk; do apksigner verify --verbose --print-certs "$apk"; done
+          for aab in app/build/outputs/bundle/marketRelease/*.aab; do jarsigner -verify -strict "$aab"; done
+      - name: Hash market artifacts
+        if: steps.signing.outputs.configured == 'true'
+        run: sha256sum app/build/outputs/apk/market/release/*.apk app/build/outputs/bundle/marketRelease/*.aab > SHA256SUMS.txt
+      - name: Upload signed market artifacts
+        if: steps.signing.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminal-market-${{ github.ref_name }}
+          if-no-files-found: error
+          path: |
+            app/build/outputs/apk/market/release/*.apk
+            app/build/outputs/bundle/marketRelease/*.aab
+            app/build/reports/lint-results-marketRelease.html
+            SHA256SUMS.txt
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download signed market artifacts (if any)
+        uses: actions/download-artifact@v4
+        id: market
+        with:
+          pattern: terminal-market-*
+          path: assets
+          merge-multiple: true
+        continue-on-error: true
+      - name: Download verification artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: terminal-verify-${{ github.sha }}
+          path: verify
+      - name: Assemble release assets
+        run: |
+          mkdir -p assets
+          find verify assets -type f \( -name '*.apk' -o -name '*.aab' \) \
+            -exec sh -c 'f="$1"; n="$(basename "$f")"; [ -f "assets/$n" ] || cp -n "$f" "assets/$n"' _ {} \;
+          cp -n assets/app-market-universal-debug.apk "assets/TerminalSSH-${{ github.ref_name }}-market-universal-debug.apk" 2>/dev/null || true
+          find assets -maxdepth 1 -type f -print | sort
+          find assets -maxdepth 1 -type f -exec sha256sum {} \;
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: assets/**

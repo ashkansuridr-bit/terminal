@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0",
+  "templateId": "value-first-reveal",
+  "deck": {
+    "slides": [
+      {
+        "kind": "cover",
+        "title": "ترمینال؛ SSH حرفه‌ای، ساده و رایگان",
+        "subtitle": "فارسی‌محور، امن و ساخته‌شده برای موبایل"
+      },
+      {
+        "kind": "statement",
+        "statement": "اتصال امن با Host Key Verification",
+        "footnote": "01 · امنیت"
+      },
+      {
+        "kind": "statement",
+        "statement": "چند سشن و کلید خصوصی در یک تجربه خلوت",
+        "footnote": "02 · کارایی"
+      },
+      {
+        "kind": "statement",
+        "statement": "Snippets رمزنگاری‌شده؛ درج بدون اجرای خودکار",
+        "footnote": "03 · سرعت"
+      },
+      {
+        "kind": "statement",
+        "statement": "قدرت حرفه‌ای، بدون شلوغی رابط",
+        "footnote": "04 · تجربه"
+      },
+      {
+        "kind": "takeaway",
+        "title": "ترمینال",
+        "cta": "نسخه آزمایشی را نصب کن و بازخورد بده"
+      }
+    ],
+    "handle": "TerminalSSH",
+    "showPageNumber": true,
+    "visualStyle": "editorial",
+    "aspect": "4:5"
+  },
+  "validation": {
+    "ok": true,
+    "slideCount": 6
+  }
+}

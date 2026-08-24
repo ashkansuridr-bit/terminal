@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0",
+  "id": "terminal-ssh-launch",
+  "templateFamily": "announcement-brief",
+  "meta": {
+    "title": "ترمینال — SSH قدرتمند، ساده و رایگان",
+    "tags": [
+      "ssh",
+      "android",
+      "persian",
+      "security"
+    ]
+  },
+  "target": {
+    "aspect": "9:16",
+    "fps": 30,
+    "durationMode": "auto"
+  },
+  "style": {
+    "theme": "default",
+    "variant": "default",
+    "safeAreaProfile": "metaSafe"
+  },
+  "audio": {
+    "ducking": true
+  },
+  "assets": {},
+  "scenes": [
+    {
+      "id": "hero",
+      "kind": "hero",
+      "content": {
+        "title": "ترمینال",
+        "subtitle": "SSH حرفه‌ای، ساده و فارسی"
+      }
+    },
+    {
+      "id": "key-points",
+      "kind": "points",
+      "content": {
+        "title": "قدرت بدون شلوغی",
+        "points": [
+          "چند سشن هم‌زمان و ترمینال واقعی",
+          "Vault رمزنگاری‌شده و Host Key Verification",
+          "کلید خصوصی و Snippets امن"
+        ]
+      }
+    },
+    {
+      "id": "cta",
+      "kind": "cta",
+      "content": {
+        "line1": "برای کار واقعی روی سرور، از موبایل"
+      }
+    }
+  ]
+}

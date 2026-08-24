@@ -1,0 +1,126 @@
+<resources>
+    <string name="app_name">ترمینال SSH</string>
+
+    <string name="tab_hosts">سرورها</string>
+    <string name="tab_terminal">ترمینال</string>
+    <string name="tab_keys">کلیدها</string>
+    <string name="tab_settings">تنظیمات</string>
+
+    <string name="hosts_empty_title">هنوز سروری اضافه نکرده‌اید</string>
+    <string name="hosts_empty_body">برای شروع، یک سرور اضافه کنید یا از اتصال سریع استفاده کنید.</string>
+    <string name="hosts_search">جستجوی سرور، کاربر یا برچسب</string>
+    <string name="hosts_add">افزودن سرور</string>
+    <string name="quick_connect">اتصال سریع</string>
+    <string name="recent">اخیر</string>
+    <string name="favorites">نشان‌شده</string>
+    <string name="host_favorite">نشان کردن %1$s</string>
+    <string name="host_unfavorite">برداشتن نشان %1$s</string>
+    <string name="host_edit">ویرایش %1$s</string>
+
+    <string name="field_label">نام نمایشی</string>
+    <string name="field_host">آدرس سرور</string>
+    <string name="field_port">پورت</string>
+    <string name="field_username">نام کاربری</string>
+    <string name="field_password">رمز عبور</string>
+    <string name="field_group">گروه</string>
+    <string name="field_tags">برچسب‌ها (با کاما)</string>
+    <string name="auth_password">رمز عبور</string>
+    <string name="auth_key">کلید خصوصی</string>
+    <string name="save">ذخیره</string>
+    <string name="cancel">انصراف</string>
+    <string name="delete">حذف</string>
+    <string name="connect">اتصال</string>
+    <string name="disconnect">قطع اتصال</string>
+
+    <string name="state_idle">آماده</string>
+    <string name="state_connecting">در حال اتصال…</string>
+    <string name="state_verifying">در انتظار تأیید کلید سرور</string>
+    <string name="state_authenticating">در حال احراز هویت…</string>
+    <string name="state_connected">متصل</string>
+    <string name="state_reconnecting">اتصال مجدد…</string>
+    <string name="state_disconnected">قطع شد</string>
+    <string name="state_failed">ناموفق</string>
+
+    <string name="hostkey_title">تأیید کلید سرور</string>
+    <string name="hostkey_body">این اولین اتصال شما به این سرور است. فقط در صورتی ادامه دهید که این اثر انگشت دقیقاً همان چیزی است که انتظار دارید.</string>
+    <string name="hostkey_trust">اعتماد و اتصال</string>
+    <string name="hostkey_changed_title">کلید سرور تغییر کرده است</string>
+    <string name="hostkey_changed_body">اتصال متوقف شد. این می‌تواند نشانه حمله شنود باشد. تا زمانی که از تغییر کلید سرور مطمئن نشده‌اید ادامه ندهید.</string>
+    <string name="hostkey_forget">فراموش کردن کلید ذخیره‌شده</string>
+
+    <string name="keys_empty">هیچ کلید خصوصی‌ای وارد نشده است.</string>
+    <string name="keys_import">وارد کردن کلید</string>
+    <string name="keys_imported">کلید وارد شد</string>
+    <string name="key_delete">حذف کلید %1$s</string>
+    <string name="snippet_delete">حذف قطعه‌کد %1$s</string>
+
+    <string name="settings_appearance">ظاهر</string>
+    <string name="settings_theme">پوستهٔ ترمینال</string>
+    <string name="settings_palette_persian_neon">نئون ایرانی</string>
+    <string name="settings_palette_oled">مشکی OLED</string>
+    <string name="settings_palette_midnight">نیمه‌شب</string>
+    <string name="settings_palette_solarized">سولاریزد</string>
+    <string name="settings_palette_classic">سبز کلاسیک</string>
+    <string name="settings_palette_amber">کهربایی</string>
+    <string name="settings_fontsize">اندازه قلم</string>
+    <string name="settings_fontsize_value">اندازه قلم %1$d</string>
+    <string name="settings_security">امنیت</string>
+    <string name="settings_biometric">قفل با اثر انگشت</string>
+    <string name="settings_paste_confirm">تأیید قبل از چسباندن چندخطی</string>
+    <string name="settings_keepalive">ارسال بستهٔ زنده‌نگه‌دار</string>
+    <string name="settings_about">درباره</string>
+
+    <string name="paste_confirm_title">چسباندن %1$d خط؟</string>
+    <string name="paste_confirm_body">این متن مستقیماً در ترمینال اجرا می‌شود.</string>
+    <string name="paste">چسباندن</string>
+    <string name="show_keyboard">نمایش صفحه‌کلید</string>
+    <string name="terminal_key_interrupt">وقفه، Control+C</string>
+    <string name="terminal_key_eof">پایان ورودی، Control+D</string>
+    <string name="terminal_key_clear">پاک‌کردن صفحه، Control+L</string>
+    <string name="terminal_key_up">پیکان بالا</string>
+    <string name="terminal_key_down">پیکان پایین</string>
+    <string name="terminal_key_left">پیکان چپ</string>
+    <string name="terminal_key_right">پیکان راست</string>
+    <string name="close_session">بستن سشن %1$s</string>
+
+    <string name="notif_channel">سشن‌های فعال</string>
+    <string name="notif_title">ترمینال SSH</string>
+    <string name="notif_sessions">%1$d سشن فعال</string>
+    <string name="notif_disconnect_all">قطع همه</string>
+
+    <string name="err_host_required">آدرس سرور و نام کاربری لازم است</string>
+    <string name="err_port_range">پورت باید بین ۱ تا ۶۵۵۳۵ باشد</string>
+    <string name="err_no_credential">اعتبارنامه‌ای برای این سرور ذخیره نشده است</string>
+    <string name="settings_subtitle">ظاهر، امنیت و حساب اختیاری برنامه را مدیریت کنید.</string>
+    <string name="settings_security_summary">کلیدها و رمزها محلی و رمزنگاری‌شده نگه‌داری می‌شوند.</string>
+    <string name="settings_known_hosts">کلیدهای شناخته‌شده (%1$d)</string>
+    <string name="settings_about_body">رایگان · فارسی‌محور · SSH امن · ساخته‌شده برای کار حرفه‌ای روی موبایل</string>
+    <string name="google_account_title">حساب اختیاری</string>
+    <string name="google_account_optional">برای SSH لازم نیست؛ برای همگام‌سازی آینده و بازیابی چنددستگاهی است.</string>
+    <string name="google_sign_in">ورود با Google</string>
+    <string name="google_sign_out">خروج از حساب Google</string>
+    <string name="google_sign_in_success">ورود با Google انجام شد</string>
+    <string name="google_sign_in_failed">ورود با Google انجام نشد</string>
+    <string name="google_sign_out_success">از حساب Google خارج شدید</string>
+    <string name="google_not_configured">شناسه Google OAuth برای این build تنظیم نشده است</string>
+    <string name="google_no_credential">حساب Google‌ای روی این دستگاه پیدا نشد</string>
+    <string name="home_secure_title">ترمینال امن، سریع و فارسی</string>
+    <string name="home_secure_body">سرورها، سشن‌های زنده و کلیدهای شما در یک فضای ساده و حرفه‌ای.</string>
+    <string name="home_hosts_count">%1$d سرور</string>
+    <string name="home_sessions_count">%1$d سشن زنده</string>
+    <string name="home_vault_badge">Vault امن</string>
+    <string name="home_new_connection">اتصال جدید</string>
+    <string name="keys_import_failed">خطا در وارد کردن کلید</string>
+    <string name="host_save_failed">ذخیرهٔ سرور انجام نشد؛ تنظیمات امنیتی دستگاه را بررسی کنید</string>
+<string name="keys_material_hash">هش یکپارچگی فایل کلید</string>
+    <string name="settings_version">نسخه %1$s</string>
+    <string name="snippets_title">دستورهای آماده</string>
+    <string name="snippets_private">متن دستورها فقط در Vault رمزنگاری‌شده نگه‌داری می‌شود.</string>
+    <string name="snippets_add">افزودن دستور آماده</string>
+    <string name="snippets_empty">هنوز دستور آماده‌ای ندارید.</string>
+    <string name="snippets_name">نام</string>
+    <string name="snippets_command">دستور</string>
+    <string name="snippets_insert">درج</string>
+    <string name="snippets_insert_hint">فقط درج می‌شود؛ Enter خودکار ارسال نمی‌شود.</string>
+    <string name="snippets_short">دستور</string>
+</resources>
