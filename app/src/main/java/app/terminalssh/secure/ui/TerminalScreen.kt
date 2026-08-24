@@ -261,7 +261,7 @@ private fun StatusBar(session: SshSession) {
         Text(text, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
         Spacer(Modifier.weight(1f))
         Text(
-            session.profile.subtitle,
+            ltr(session.profile.subtitle),
             style = MaterialTheme.typography.labelSmall,
             color = TextSecondary,
             fontFamily = FontFamily.Monospace,

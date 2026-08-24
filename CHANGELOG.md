@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased — code review fixes
+
+- Fixed: a clean remote shell exit (typing `exit`) no longer triggers an automatic
+  reconnect loop; only a channel close without an exit-status (an actual dropped
+  connection) does. Detected via the SSH exit-status the remote sends when the shell
+  process itself terminates.
+- Fixed: automatic-reconnect eligibility (`SshSession.isTransient`) now checks the
+  exception type (network I/O failures vs. `JSchException`), extracted into a pure,
+  unit-tested `ReconnectPolicy`, instead of a substring match against the exception
+  message. An exception with no message (e.g. a bug) is no longer silently retried
+  three times under a "Reconnecting…" label.
+- Fixed: a quick-connect password is now wiped from memory as soon as the connection
+  succeeds for any host with a stored vault credential, instead of staying decrypted
+  in memory for the life of the session.
+- Fixed: deleting a private-key host now also deletes its stored passphrase from the
+  vault. Previously only password-auth hosts were cleaned up, leaving passphrase
+  ciphertext orphaned in `SharedPreferences` with no UI path to remove it.
+- Fixed: the foreground service's type is now `specialUse` instead of `dataSync`.
+  Starting with Android 15, `dataSync` foreground services are capped at ~6 hours of
+  execution per rolling 24-hour window, which could cut off a long-lived interactive
+  SSH session left backgrounded overnight.
+- Fixed: the RTL bidi isolate (`ltr()`) is now applied to `HostProfile.subtitle`
+  (`username@host:port`) in the host list, host edit sheet, and terminal header —
+  the same string shape the isolate helper's own doc comment cites as its motivating
+  bug, previously left unwrapped in these three call sites.
+
 ## 0.4.1 — AndroidKeyStore crash fix
 
 - Fixed the add-server crash caused by supplying a caller-generated GCM IV to an

@@ -305,7 +305,7 @@ private fun HostCard(
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(ltr(profile.displayName), style = MaterialTheme.typography.titleMedium)
-            Text(profile.subtitle, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+            Text(ltr(profile.subtitle), style = MaterialTheme.typography.labelSmall, color = TextSecondary)
             if (profile.tags.isNotEmpty()) {
                 Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {

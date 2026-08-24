@@ -187,7 +187,7 @@ fun PasswordPrompt(
         title = { Text(ltr(profile.displayName)) },
         text = {
             Column {
-                Text(profile.subtitle, style = MaterialTheme.typography.labelSmall)
+                Text(ltr(profile.subtitle), style = MaterialTheme.typography.labelSmall)
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = password,

@@ -2,6 +2,7 @@ package app.terminalssh.secure.ssh
 
 import android.os.Handler
 import android.os.Looper
+import app.terminalssh.secure.model.AuthMethod
 import app.terminalssh.secure.model.HostProfile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -81,6 +82,10 @@ class SshSession(
             }
             shell = opened
             _state.value = SshSessionState.Connected
+            // A password only needs to stay decrypted in memory if reconnecting will
+            // need it again; a saved host re-fetches it from the vault instead, so
+            // wipe it as soon as it has served its purpose.
+            if (hasStoredCredential()) clearPendingPassword()
             startReader(opened, gen)
         } catch (first: FirstUseRequired) {
             if (gen != generation.get()) {
@@ -100,7 +105,7 @@ class SshSession(
             _state.value = SshSessionState.Failed(changed.message ?: "host key rejected", hostKeyChanged = true)
         } catch (t: Throwable) {
             if (gen != generation.get()) return
-            if (autoReconnect && attempt < MAX_RECONNECT && isTransient(t)) {
+            if (autoReconnect && attempt < MAX_RECONNECT && ReconnectPolicy.isTransient(t)) {
                 _state.value = SshSessionState.Reconnecting(attempt + 1, MAX_RECONNECT)
                 Thread.sleep(RECONNECT_DELAY_MS * (attempt + 1))
                 doConnect(gen, attempt + 1)
@@ -150,7 +155,15 @@ class SshSession(
                 buffer.fill(0)
                 if (gen == generation.get()) {
                     shell = null
-                    if (autoReconnect) {
+                    // The remote end sends an exit-status when the shell process itself
+                    // terminated (e.g. the user typed `exit`) — that is a deliberate
+                    // close, not a dropped connection, and must not trigger a reconnect
+                    // loop the user has no way to stop short of the explicit disconnect
+                    // action. Absence of an exit-status (-1) means the channel went away
+                    // without the remote side saying why, which is what reconnect exists
+                    // for.
+                    val remoteExitedCleanly = runCatching { open.channel.exitStatus }.getOrDefault(-1) >= 0
+                    if (autoReconnect && !remoteExitedCleanly) {
                         _state.value = SshSessionState.Reconnecting(1, MAX_RECONNECT)
                         io.execute { doConnect(gen, attempt = 0) }
                     } else {
@@ -210,9 +223,10 @@ class SshSession(
         pendingPassword = null
     }
 
-    private fun isTransient(t: Throwable): Boolean {
-        val message = (t.message ?: "").lowercase()
-        return "auth" !in message && "denied" !in message && "credential" !in message
+    /** True when a reconnect can re-derive the credential from the vault, without [pendingPassword]. */
+    private fun hasStoredCredential(): Boolean = when (val auth = profile.auth) {
+        is AuthMethod.Password -> auth.vaultRef.isNotBlank()
+        is AuthMethod.PrivateKey -> true
     }
 
     companion object {

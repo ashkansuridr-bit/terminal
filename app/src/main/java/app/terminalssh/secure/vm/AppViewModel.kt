@@ -98,8 +98,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun deleteHost(profile: HostProfile) {
-        (profile.auth as? AuthMethod.Password)?.vaultRef?.takeIf { it.isNotBlank() }
-            ?.let { container.vault.delete(it, VaultAad.PASSWORD) }
+        // The private key itself is a reusable Keys-screen entity, removed separately
+        // via deleteKey(); only the per-host secret dies with the host.
+        when (val auth = profile.auth) {
+            is AuthMethod.Password -> auth.vaultRef.takeIf { it.isNotBlank() }
+                ?.let { container.vault.delete(it, VaultAad.PASSWORD) }
+            is AuthMethod.PrivateKey -> auth.passphraseVaultRef?.takeIf { it.isNotBlank() }
+                ?.let { container.vault.delete(it, VaultAad.PASSPHRASE) }
+        }
         container.hosts.delete(profile.id)
         _hosts.value = container.hosts.hosts()
     }
