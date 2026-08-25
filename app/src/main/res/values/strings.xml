@@ -240,4 +240,16 @@
     <string name="settings_palette_catppuccin">Catppuccin</string>
     <string name="settings_palette_tokyo_night">Tokyo Night</string>
     <string name="settings_export_failed">خروجی گرفتن تنظیمات انجام نشد</string>
+    <string name="agent_install_title">نصب عامل کدنویسی</string>
+    <string name="agent_install_body">اسکریپت روی همین سرور اجرا می‌شود. قبل از اجرا کاملش را ببینید؛ چیزی پنهانی اجرا نمی‌شود.</string>
+    <string name="agent_which">کدام عامل</string>
+    <string name="agent_package_manager">بسته‌مدیر سرور</string>
+    <string name="agent_pm_skip">نامشخص — رد شود</string>
+    <string name="agent_install_tmux">نصب tmux همراه آن</string>
+    <string name="agent_install_tmux_why">بدون آن، سشن عامل با قطع اتصال از بین می‌رود</string>
+    <string name="agent_project_dir">مسیر پروژه (اختیاری)</string>
+    <string name="agent_review_script">اسکریپتی که اجرا می‌شود</string>
+    <string name="agent_run_install">اجرای نصب</string>
+    <string name="agent_launch">اجرای عامل در tmux</string>
+    <string name="agent_short">عامل</string>
 </resources>

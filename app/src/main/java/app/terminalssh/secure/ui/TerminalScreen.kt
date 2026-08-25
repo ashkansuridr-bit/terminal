@@ -114,6 +114,7 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     }
 
     var snippetsOpen by remember(active.id) { mutableStateOf(false) }
+    var agentSheetOpen by remember(active.id) { mutableStateOf(false) }
     val terminalFocusRequester = remember(active.id) { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val rootView = LocalView.current
@@ -169,8 +170,20 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
             active,
             onShowKeyboard = showKeyboard,
             onSnippets = { snippetsOpen = true },
+            onAgents = { agentSheetOpen = true },
         )
         PasteAndHostKeyDialogs(viewModel, active)
+        if (agentSheetOpen) {
+            AgentInstallSheet(
+                onDismiss = { agentSheetOpen = false },
+                onRunScript = { script ->
+                    agentSheetOpen = false
+                    // Sent as terminal input rather than executed out of band, so the
+                    // user watches it run in the session they are already looking at.
+                    active.send(script + "\n")
+                },
+            )
+        }
         if (snippetsOpen) {
             val snippets by viewModel.snippets.collectAsStateWithLifecycle()
             SnippetSheet(
@@ -333,6 +346,7 @@ private fun KeyToolbar(
     session: SshSession,
     onShowKeyboard: () -> Unit,
     onSnippets: () -> Unit,
+    onAgents: () -> Unit,
 ) {
     var ctrl by remember { mutableStateOf(false) }
     var alt by remember { mutableStateOf(false) }
@@ -373,6 +387,7 @@ private fun KeyToolbar(
 
             val primary: @Composable () -> Unit = {
                 ToolKey(stringResource(R.string.snippets_short)) { onSnippets() }
+                ToolKey(stringResource(R.string.agent_short)) { onAgents() }
                 ToolKey("Esc") { session.send(byteArrayOf(0x1B)) }
                 ToolKey("Tab") { session.send(byteArrayOf(0x09)) }
                 ToolKey("Ctrl", active = ctrl, toggle = true) { ctrl = !ctrl; alt = false }

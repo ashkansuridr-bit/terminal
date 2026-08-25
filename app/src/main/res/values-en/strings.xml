@@ -240,4 +240,16 @@
     <string name="settings_palette_catppuccin">Catppuccin</string>
     <string name="settings_palette_tokyo_night">Tokyo Night</string>
     <string name="settings_export_failed">Could not export the settings</string>
+    <string name="agent_install_title">Install a coding agent</string>
+    <string name="agent_install_body">This runs on the connected server. Read it before running it — nothing is executed that you have not seen.</string>
+    <string name="agent_which">Which agent</string>
+    <string name="agent_package_manager">Server package manager</string>
+    <string name="agent_pm_skip">Unknown — skip</string>
+    <string name="agent_install_tmux">Install tmux alongside</string>
+    <string name="agent_install_tmux_why">Without it the agent session dies with the connection</string>
+    <string name="agent_project_dir">Project directory (optional)</string>
+    <string name="agent_review_script">The script that will run</string>
+    <string name="agent_run_install">Run the install</string>
+    <string name="agent_launch">Launch the agent in tmux</string>
+    <string name="agent_short">Agent</string>
 </resources>
