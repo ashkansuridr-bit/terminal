@@ -148,4 +148,11 @@ val TerminalPalettes = listOf(
     TerminalPalette("solarized", "سولاریزد", Color(0xFF002B36), Color(0xFF93A1A1), Color(0xFFB58900)),
     TerminalPalette("classic", "سبز کلاسیک", Color(0xFF031008), Color(0xFF58F58A), Color(0xFF58F58A)),
     TerminalPalette("amber", "کهربایی", Color(0xFF100B04), Color(0xFFFFC66D), Amber),
+    // Community palettes, using each project's published background, foreground and a
+    // representative accent rather than an approximation.
+    TerminalPalette("dracula", "Dracula", Color(0xFF282A36), Color(0xFFF8F8F2), Color(0xFFBD93F9)),
+    TerminalPalette("nord", "Nord", Color(0xFF2E3440), Color(0xFFD8DEE9), Color(0xFF88C0D0)),
+    TerminalPalette("gruvbox", "Gruvbox", Color(0xFF282828), Color(0xFFEBDBB2), Color(0xFFFABD2F)),
+    TerminalPalette("catppuccin", "Catppuccin", Color(0xFF1E1E2E), Color(0xFFCDD6F4), Color(0xFFF5C2E7)),
+    TerminalPalette("tokyo_night", "Tokyo Night", Color(0xFF1A1B26), Color(0xFFC0CAF5), Color(0xFF7AA2F7)),
 )
