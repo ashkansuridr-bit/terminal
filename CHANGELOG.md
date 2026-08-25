@@ -1,5 +1,84 @@
 # Changelog
 
+## Unreleased — code review fixes and follow-up features
+
+### Added
+
+- **Install and launch coding agents on the connected server** — Claude Code,
+  OpenCode or Aider — with prerequisites resolved for apt, dnf, pacman or apk,
+  and tmux installed alongside so the agent session survives a dropped
+  connection. The full script is shown before anything runs; the installers
+  download to a file and run it as a separate step rather than piping a remote
+  script into a shell.
+- **SFTP file browser with a resumable transfer queue.** Rides the terminal
+  session's existing connection, so browsing files never means authenticating a
+  second time. Downloads and uploads go through the system file picker, so the
+  app needs no storage permission. A dropped connection re-queues transfers
+  instead of abandoning them; a permission error stops immediately rather than
+  retrying pointlessly.
+- **Generate SSH keys inside the app** (Ed25519 on Android 13+, ECDSA P-256, or
+  RSA-3072). The private half goes straight to the vault and is wiped from memory;
+  the public half is shown once to copy into `authorized_keys`, and is never
+  written to the vault or shown again.
+- **Import servers from an OpenSSH `~/.ssh/config`**, and **export the list back
+  out** as one. The export contains no passwords, passphrases, private keys, or
+  vault references, so it is safe to keep as a backup.
+- **Biometric / device-credential app lock**, re-armed whenever the app leaves the
+  foreground. Offered only when the device has an enrolled credential, so enabling
+  it can never make the app unopenable.
+- **Automatic clipboard clearing** for terminal copies, on a configurable delay,
+  and only when the clipboard still holds what the terminal put there.
+- **Launcher shortcuts** for the four most recently used servers. They carry only
+  a host id; the app lock still applies.
+- **Fuzzy host search** with relevance ranking — "pdb" finds "prod-db-01" — now
+  also searching the new per-host notes field.
+- **Per-host notes and an environment band** (dev / staging / production), shown
+  on the leading edge of the host row so "production" registers before the tap.
+- **Per-host reconnect budget**, because a flaky VPS and a LAN box should not
+  share one retry policy.
+
+### Changed
+
+- **The key toolbar gives haptic and visual feedback on every press**, and lays
+  out in two rows instead of one scrolling row on windows 600dp and wider — large
+  phone landscape, tablets, unfolded foldables. Keys are ordered by how often they
+  are actually reached for.
+- **Layouts adapt to the window, not the device.** Page margins grow with width
+  and text columns get a reading-width cap, so a host row is not stretched across
+  a tablet with its name and actions at opposite ends of the screen.
+- **An animated splash mark**, and a status dot that pulses only while a
+  connection is being established.
+- Reconnect delay is now exponential with full jitter instead of linear, so
+  several tabs recovering from one Wi-Fi drop stop retrying in lockstep.
+- Connection failures are classified and shown as a sentence explaining what to
+  change, in Persian or English, instead of raw JSch text.
+
+### Fixed
+
+- Fixed: a clean remote shell exit (typing `exit`) no longer triggers an automatic
+  reconnect loop; only a channel close without an exit-status (an actual dropped
+  connection) does. Detected via the SSH exit-status the remote sends when the shell
+  process itself terminates.
+- Fixed: automatic-reconnect eligibility (`SshSession.isTransient`) now checks the
+  exception type (network I/O failures vs. `JSchException`), extracted into a pure,
+  unit-tested `ReconnectPolicy`, instead of a substring match against the exception
+  message. An exception with no message (e.g. a bug) is no longer silently retried
+  three times under a "Reconnecting…" label.
+- Fixed: a quick-connect password is now wiped from memory as soon as the connection
+  succeeds for any host with a stored vault credential, instead of staying decrypted
+  in memory for the life of the session.
+- Fixed: deleting a private-key host now also deletes its stored passphrase from the
+  vault. Previously only password-auth hosts were cleaned up, leaving passphrase
+  ciphertext orphaned in `SharedPreferences` with no UI path to remove it.
+- Fixed: the foreground service's type is now `specialUse` instead of `dataSync`.
+  Starting with Android 15, `dataSync` foreground services are capped at ~6 hours of
+  execution per rolling 24-hour window, which could cut off a long-lived interactive
+  SSH session left backgrounded overnight.
+- Fixed: the RTL bidi isolate (`ltr()`) is now applied to `HostProfile.subtitle`
+  (`username@host:port`) in the host list, host edit sheet, and terminal header —
+  the same string shape the isolate helper's own doc comment cites as its motivating
+  bug, previously left unwrapped in these three call sites.
+
 ## 0.4.1 — AndroidKeyStore crash fix
 
 - Fixed the add-server crash caused by supplying a caller-generated GCM IV to an

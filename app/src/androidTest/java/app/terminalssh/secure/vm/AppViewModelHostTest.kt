@@ -77,6 +77,27 @@ class AppViewModelHostTest {
         }
     }
 
+    @Test fun deletingPrivateKeyHostRemovesStoredPassphrase() {
+        val viewModel = AppViewModel(app)
+        val passphraseBytes = "passphrase-secret".encodeToByteArray()
+        val passphraseRef = "passphrase-ref-test"
+        app.vault.put(passphraseRef, passphraseBytes, VaultAad.PASSPHRASE)
+        val profile = HostProfile(
+            id = "key-host-test",
+            host = "127.0.0.1",
+            username = "tester",
+            auth = AuthMethod.PrivateKey(keyVaultRef = "key-ref-test", passphraseVaultRef = passphraseRef),
+        )
+        app.hosts.upsert(profile)
+
+        assertTrue(app.vault.get(passphraseRef, VaultAad.PASSPHRASE) != null)
+
+        viewModel.deleteHost(profile)
+
+        assertTrue(app.vault.get(passphraseRef, VaultAad.PASSPHRASE) == null)
+        assertTrue(viewModel.hosts.value.none { it.id == profile.id })
+    }
+
     @Test fun sessionPasswordIsClearedAfterOpening() {
         val viewModel = AppViewModel(app)
         val password = charArrayOf('s', '3', 'c', 'r', 'e', 't')

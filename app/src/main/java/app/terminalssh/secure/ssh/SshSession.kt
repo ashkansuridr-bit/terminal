@@ -2,6 +2,7 @@ package app.terminalssh.secure.ssh
 
 import android.os.Handler
 import android.os.Looper
+import app.terminalssh.secure.model.AuthMethod
 import app.terminalssh.secure.model.HostProfile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -81,6 +82,10 @@ class SshSession(
             }
             shell = opened
             _state.value = SshSessionState.Connected
+            // A password only needs to stay decrypted in memory if reconnecting will
+            // need it again; a saved host re-fetches it from the vault instead, so
+            // wipe it as soon as it has served its purpose.
+            if (hasStoredCredential()) clearPendingPassword()
             startReader(opened, gen)
         } catch (first: FirstUseRequired) {
             if (gen != generation.get()) {
@@ -97,16 +102,24 @@ class SshSession(
         } catch (changed: HostKeyRejected) {
             if (gen != generation.get()) return
             clearPendingPassword()
-            _state.value = SshSessionState.Failed(changed.message ?: "host key rejected", hostKeyChanged = true)
+            _state.value = SshSessionState.Failed(
+                message = changed.message ?: "host key rejected",
+                hostKeyChanged = true,
+                kind = ConnectionErrorKind.HOST_KEY_CHANGED,
+            )
         } catch (t: Throwable) {
             if (gen != generation.get()) return
-            if (autoReconnect && attempt < MAX_RECONNECT && isTransient(t)) {
-                _state.value = SshSessionState.Reconnecting(attempt + 1, MAX_RECONNECT)
-                Thread.sleep(RECONNECT_DELAY_MS * (attempt + 1))
+            val maxAttempts = profile.maxReconnectAttempts
+            if (autoReconnect && attempt < maxAttempts && ReconnectPolicy.isTransient(t)) {
+                _state.value = SshSessionState.Reconnecting(attempt + 1, maxAttempts)
+                Thread.sleep(ReconnectPolicy.delayMillis(attempt))
                 doConnect(gen, attempt + 1)
             } else {
                 clearPendingPassword()
-                _state.value = SshSessionState.Failed(t.message ?: t.javaClass.simpleName)
+                _state.value = SshSessionState.Failed(
+                    message = t.message ?: t.javaClass.simpleName,
+                    kind = ConnectionError.classify(t),
+                )
             }
         }
     }
@@ -150,8 +163,16 @@ class SshSession(
                 buffer.fill(0)
                 if (gen == generation.get()) {
                     shell = null
-                    if (autoReconnect) {
-                        _state.value = SshSessionState.Reconnecting(1, MAX_RECONNECT)
+                    // The remote end sends an exit-status when the shell process itself
+                    // terminated (e.g. the user typed `exit`) — that is a deliberate
+                    // close, not a dropped connection, and must not trigger a reconnect
+                    // loop the user has no way to stop short of the explicit disconnect
+                    // action. Absence of an exit-status (-1) means the channel went away
+                    // without the remote side saying why, which is what reconnect exists
+                    // for.
+                    val remoteExitedCleanly = runCatching { open.channel.exitStatus }.getOrDefault(-1) >= 0
+                    if (autoReconnect && !remoteExitedCleanly && profile.maxReconnectAttempts > 0) {
+                        _state.value = SshSessionState.Reconnecting(1, profile.maxReconnectAttempts)
                         io.execute { doConnect(gen, attempt = 0) }
                     } else {
                         _state.value = SshSessionState.Closed
@@ -183,6 +204,16 @@ class SshSession(
 
     fun requestPaste() = onPasteRequest()
 
+    /**
+     * An SFTP client riding this session's existing connection, or null when the session
+     * is not connected. Reusing the connection avoids a second authentication and a
+     * second host-key check for a server the user is already inside.
+     *
+     * The caller owns the returned client and must close it.
+     */
+    fun openSftp(): app.terminalssh.secure.sftp.SftpClient? =
+        shell?.takeIf { it.alive }?.let { app.terminalssh.secure.sftp.SftpClient(it.session) }
+
     fun clearScreen() = main.post { runCatching { emulator.clearScreen() } }
 
     fun disconnect() {
@@ -210,16 +241,15 @@ class SshSession(
         pendingPassword = null
     }
 
-    private fun isTransient(t: Throwable): Boolean {
-        val message = (t.message ?: "").lowercase()
-        return "auth" !in message && "denied" !in message && "credential" !in message
+    /** True when a reconnect can re-derive the credential from the vault, without [pendingPassword]. */
+    private fun hasStoredCredential(): Boolean = when (val auth = profile.auth) {
+        is AuthMethod.Password -> auth.vaultRef.isNotBlank()
+        is AuthMethod.PrivateKey -> true
     }
 
     companion object {
         private const val INITIAL_ROWS = 24
         private const val INITIAL_COLS = 80
         private const val READ_BUFFER = 16 * 1024
-        private const val MAX_RECONNECT = 3
-        private const val RECONNECT_DELAY_MS = 1500L
     }
 }

@@ -36,6 +36,18 @@ class SshForegroundService : Service() {
         return START_STICKY
     }
 
+    /**
+     * Android 15+ can time a foreground service out and will crash the app if the
+     * service is still in the foreground when the grace period ends. specialUse is not
+     * subject to the dataSync budget today, but the callback is cheap insurance against
+     * a future policy change: shut the sessions down deliberately and tell the user,
+     * rather than being killed mid-session with no explanation.
+     */
+    override fun onTimeout(startId: Int) {
+        (application as TerminalApp).sessions.closeAll()
+        stopSelf()
+    }
+
     private fun buildNotification(count: Int): Notification {
         ensureChannel()
         val open = PendingIntent.getActivity(

@@ -1,5 +1,7 @@
 package app.terminalssh.secure.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -55,9 +59,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.terminalssh.secure.R
+import app.terminalssh.secure.model.FuzzyMatch
 import app.terminalssh.secure.model.HostProfile
 import app.terminalssh.secure.ui.theme.Cyan
 import app.terminalssh.secure.ui.theme.Stroke
@@ -76,12 +82,37 @@ fun HostsScreen(
     var editing by remember { mutableStateOf<HostProfile?>(null) }
     var creating by remember { mutableStateOf(false) }
     var askPasswordFor by remember { mutableStateOf<HostProfile?>(null) }
+    val configPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let(viewModel::importHostsFromSshConfig)
+    }
+    val exportPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/plain"),
+    ) { uri -> uri?.let(viewModel::exportHostsToSshConfig) }
 
-    val filtered = hosts.filter { it.matches(query) }
+    // With no query the store's own order (favourites, then most recent) is what the user
+    // expects; once they type, best match wins and that ordering is what helps.
+    val filtered = if (query.isBlank()) {
+        hosts
+    } else {
+        hosts.map { it to it.searchScore(query) }
+            .filter { (_, score) -> score > FuzzyMatch.NO_MATCH }
+            .sortedByDescending { (_, score) -> score }
+            .map { (profile, _) -> profile }
+    }
+
+    val window = rememberWindowSize()
+    val margin = window.width.pageMargin()
+    val maxContentWidth = window.width.contentMaxWidth()
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 104.dp),
+            // Centred and width-capped on tablets: a host row stretched across 1280dp
+            // puts the name and the actions at opposite ends of the screen.
+            modifier = Modifier
+                .fillMaxSize()
+                .then(if (maxContentWidth != Dp.Unspecified) Modifier.widthIn(max = maxContentWidth) else Modifier)
+                .align(Alignment.TopCenter),
+            contentPadding = PaddingValues(start = margin, end = margin, top = 20.dp, bottom = 104.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
@@ -113,6 +144,19 @@ fun HostsScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(6.dp))
+                // Anyone who already uses SSH from a desktop has this file; retyping a
+                // dozen servers on a phone keyboard is where people give up.
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = { configPicker.launch(arrayOf("*/*")) }) {
+                        Text(stringResource(R.string.hosts_import_config))
+                    }
+                    if (hosts.isNotEmpty()) {
+                        TextButton(onClick = { exportPicker.launch("ssh_config") }) {
+                            Text(stringResource(R.string.hosts_export_config))
+                        }
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
             }
 
             if (filtered.isEmpty()) {
@@ -291,6 +335,18 @@ private fun HostCard(
             .clickable(onClick = onOpen)
             .padding(horizontal = 16.dp, vertical = 15.dp),
     ) {
+        // The environment band sits on the leading edge so "production" is visible
+        // while the thumb is still travelling toward the row.
+        profile.environment.color?.let { bandColor ->
+            Box(
+                Modifier
+                    .width(4.dp)
+                    .height(38.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(bandColor),
+            )
+            Spacer(Modifier.width(10.dp))
+        }
         Box(
             Modifier.size(42.dp).clip(CircleShape).background(Turquoise.copy(alpha = 0.11f)),
             contentAlignment = Alignment.Center,
@@ -305,7 +361,14 @@ private fun HostCard(
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(ltr(profile.displayName), style = MaterialTheme.typography.titleMedium)
-            Text(profile.subtitle, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+            Text(ltr(profile.subtitle), style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+            profile.environment.color?.let { bandColor ->
+                Text(
+                    stringResource(profile.environment.labelRes),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = bandColor,
+                )
+            }
             if (profile.tags.isNotEmpty()) {
                 Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {

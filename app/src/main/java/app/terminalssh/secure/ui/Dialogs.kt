@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.terminalssh.secure.R
+import app.terminalssh.secure.agents.DangerousCommand
 import app.terminalssh.secure.ssh.SshSession
 import app.terminalssh.secure.ssh.SshSessionState
 import app.terminalssh.secure.ui.theme.Amber
@@ -97,7 +98,11 @@ fun PasteAndHostKeyDialogs(viewModel: AppViewModel, session: SshSession) {
         // Clipboard text can use LF, CRLF, or legacy CR separators. Kotlin's lineSequence
         // handles all three and avoids letting CR-only command batches bypass confirmation.
         val lines = text.lineSequence().count()
-        val needsConfirm = viewModel.settings.confirmMultilinePaste && lines > 1
+        // A single-line paste can still be the worst thing that happens today, so a
+        // recognised destructive command always confirms regardless of line count.
+        val danger = remember(text) { DangerousCommand.inspect(text) }
+        val needsConfirm =
+            (viewModel.settings.confirmMultilinePaste && lines > 1) || danger != null
 
         // Empty clipboard or a single line: paste without interrupting the user.
         LaunchedEffect(text, needsConfirm) {
@@ -112,9 +117,25 @@ fun PasteAndHostKeyDialogs(viewModel: AppViewModel, session: SshSession) {
         if (text.isNotEmpty() && needsConfirm) {
             AlertDialog(
                 onDismissRequest = { viewModel.pasteRequested.value = false },
-                title = { Text(stringResource(R.string.paste_confirm_title, lines)) },
+                title = {
+                    Text(
+                        if (danger != null) {
+                            stringResource(R.string.danger_confirm_title)
+                        } else {
+                            stringResource(R.string.paste_confirm_title, lines)
+                        },
+                    )
+                },
                 text = {
                     Column {
+                        danger?.let { finding ->
+                            Text(
+                                stringResource(R.string.danger_confirm_body, finding.reason),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Danger,
+                            )
+                            Spacer(Modifier.height(8.dp))
+                        }
                         Text(stringResource(R.string.paste_confirm_body), style = MaterialTheme.typography.bodyMedium)
                         Spacer(Modifier.height(12.dp))
                         Fingerprint(text.take(240))
@@ -124,7 +145,13 @@ fun PasteAndHostKeyDialogs(viewModel: AppViewModel, session: SshSession) {
                     TextButton(onClick = {
                         session.send(text)
                         viewModel.pasteRequested.value = false
-                    }) { Text(stringResource(R.string.paste)) }
+                    }) {
+                        Text(
+                            stringResource(R.string.paste),
+                            // A destructive action should not look like the easy default.
+                            color = if (danger != null) Danger else MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 },
                 dismissButton = {
                     TextButton(onClick = { viewModel.pasteRequested.value = false }) {

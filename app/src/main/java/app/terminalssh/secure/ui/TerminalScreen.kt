@@ -16,6 +16,21 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -35,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
@@ -64,6 +80,7 @@ import app.terminalssh.secure.vm.AppViewModel
 import kotlinx.coroutines.launch
 import org.connectbot.terminal.Terminal
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     val sessions by viewModel.sessions.sessions.collectAsStateWithLifecycle()
@@ -98,6 +115,12 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     }
 
     var snippetsOpen by remember(active.id) { mutableStateOf(false) }
+    var agentSheetOpen by remember(active.id) { mutableStateOf(false) }
+    var composeOpen by remember(active.id) { mutableStateOf(false) }
+    // Hoisted above the bar so an unsent prompt survives the bar closing, a reconnect,
+    // or a rotation. Losing a long prompt to a passing tunnel is the other half of the
+    // problem this bar solves.
+    var composeDraft by rememberSaveable(active.id) { mutableStateOf("") }
     val terminalFocusRequester = remember(active.id) { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val rootView = LocalView.current
@@ -124,7 +147,15 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
         Unit
     }
 
-    Column(Modifier.fillMaxSize().imePadding()) {
+    // imePadding lifts the toolbar to sit directly on the keyboard; navigationBarsPadding
+    // only applies when the keyboard is down, since the IME already covers the nav bar.
+    // Applying both unconditionally is what leaves a dead strip under the toolbar.
+    Column(
+        Modifier
+            .fillMaxSize()
+            .imePadding()
+            .then(if (WindowInsets.isImeVisible) Modifier else Modifier.navigationBarsPadding()),
+    ) {
         SessionTabs(
             sessions = sessions,
             activeId = activeId,
@@ -141,12 +172,44 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                 onPasteRequest = { active.requestPaste() },
             )
         }
+        if (composeOpen) {
+            ComposeBar(
+                draft = composeDraft,
+                onDraftChange = { composeDraft = it },
+                onSend = { text ->
+                    // Sent as one payload with a single trailing newline, so a multi-line
+                    // prompt reaches the agent as one submission rather than as N commands.
+                    active.send(text.trimEnd() + "\n")
+                    composeDraft = ""
+                },
+                onDismiss = { composeOpen = false },
+            )
+        }
         KeyToolbar(
             active,
             onShowKeyboard = showKeyboard,
             onSnippets = { snippetsOpen = true },
+            onAgents = { agentSheetOpen = true },
+            onCompose = { composeOpen = !composeOpen },
+            composeActive = composeOpen,
         )
         PasteAndHostKeyDialogs(viewModel, active)
+        if (agentSheetOpen) {
+            AgentInstallSheet(
+                onDismiss = { agentSheetOpen = false },
+                hasKey = { agent -> viewModel.hasAgentKey(agent, active.profile.id) },
+                onSaveKey = { agent, hostScoped, key ->
+                    viewModel.saveAgentKey(agent, active.profile.id.takeIf { hostScoped }, key)
+                },
+                onInjectKey = { agent -> viewModel.injectAgentKey(agent, active) },
+                onRunScript = { script ->
+                    agentSheetOpen = false
+                    // Sent as terminal input rather than executed out of band, so the
+                    // user watches it run in the session they are already looking at.
+                    active.send(script + "\n")
+                },
+            )
+        }
         if (snippetsOpen) {
             val snippets by viewModel.snippets.collectAsStateWithLifecycle()
             SnippetSheet(
@@ -237,7 +300,38 @@ private fun StatusDot(state: SshSessionState) {
         else -> TextSecondary
     }
     val color by animateColorAsState(target, label = "status")
-    Box(Modifier.size(8.dp).clip(CircleShape).background(color))
+
+    // While a connection is being established the dot pulses, so "working" is readable
+    // at a glance without occupying any more space than the idle indicator. Everything
+    // else is a steady dot: motion here would mean nothing and cost battery.
+    val busy = state.isBusy
+    val transition = rememberInfiniteTransition(label = "status-pulse")
+    val pulse by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (busy) 1.55f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(760, easing = Motion.Standard),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "status-pulse-scale",
+    )
+
+    Box(Modifier.size(14.dp), contentAlignment = Alignment.Center) {
+        if (busy) {
+            Box(
+                Modifier
+                    .size(8.dp)
+                    .graphicsLayer {
+                        scaleX = pulse
+                        scaleY = pulse
+                        alpha = (1.6f - pulse).coerceIn(0f, 1f)
+                    }
+                    .clip(CircleShape)
+                    .background(color),
+            )
+        }
+        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
+    }
 }
 
 @Composable
@@ -249,7 +343,7 @@ private fun StatusBar(session: SshSession) {
         is SshSessionState.AwaitingHostKeyApproval -> stringResource(R.string.state_verifying)
         SshSessionState.Connected -> stringResource(R.string.state_connected)
         is SshSessionState.Reconnecting -> stringResource(R.string.state_reconnecting) + " ${s.attempt}/${s.max}"
-        is SshSessionState.Failed -> stringResource(R.string.state_failed) + " — ${s.message}"
+        is SshSessionState.Failed -> stringResource(s.kind.stringRes)
         SshSessionState.Closed -> stringResource(R.string.state_disconnected)
     }
     Row(
@@ -261,7 +355,7 @@ private fun StatusBar(session: SshSession) {
         Text(text, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
         Spacer(Modifier.weight(1f))
         Text(
-            session.profile.subtitle,
+            ltr(session.profile.subtitle),
             style = MaterialTheme.typography.labelSmall,
             color = TextSecondary,
             fontFamily = FontFamily.Monospace,
@@ -278,6 +372,9 @@ private fun KeyToolbar(
     session: SshSession,
     onShowKeyboard: () -> Unit,
     onSnippets: () -> Unit,
+    onAgents: () -> Unit,
+    onCompose: () -> Unit,
+    composeActive: Boolean,
 ) {
     var ctrl by remember { mutableStateOf(false) }
     var alt by remember { mutableStateOf(false) }
@@ -297,49 +394,80 @@ private fun KeyToolbar(
         }
     }
 
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        ToolKey(
-            label = "⌨",
-            contentDescription = stringResource(R.string.show_keyboard),
-            onClick = onShowKeyboard,
-        )
+    // Keys are ordered by how often they are actually reached for, because on a narrow
+    // phone everything past the first handful costs a scroll. Arrows stay adjacent so the
+    // cluster is findable by shape rather than by reading each label.
+    BoxWithConstraints(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
+        // A 600dp-wide window (large phone landscape, tablet, unfolded foldable) has room
+        // for two rows, which removes the scroll entirely on those devices.
+        val twoRows = maxWidth >= 600.dp
+
         Row(
-            Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            ToolKey(stringResource(R.string.snippets_short)) { onSnippets() }
-            ToolKey("Esc") { session.send(byteArrayOf(0x1B)) }
-            ToolKey("Tab") { session.send(byteArrayOf(0x09)) }
-            ToolKey("Ctrl", active = ctrl, toggle = true) { ctrl = !ctrl; alt = false }
-            ToolKey("Alt", active = alt, toggle = true) { alt = !alt; ctrl = false }
-            ToolKey("^C", contentDescription = stringResource(R.string.terminal_key_interrupt)) {
-                session.send(byteArrayOf(0x03)); ctrl = false
+            ToolKey(
+                label = "⌨",
+                contentDescription = stringResource(R.string.show_keyboard),
+                onClick = onShowKeyboard,
+            )
+
+            val primary: @Composable () -> Unit = {
+                ToolKey(stringResource(R.string.snippets_short)) { onSnippets() }
+                ToolKey(stringResource(R.string.agent_short)) { onAgents() }
+                ToolKey(
+                    stringResource(R.string.compose_short),
+                    active = composeActive,
+                    toggle = true,
+                ) { onCompose() }
+                ToolKey("Esc") { session.send(byteArrayOf(0x1B)) }
+                ToolKey("Tab") { session.send(byteArrayOf(0x09)) }
+                ToolKey("Ctrl", active = ctrl, toggle = true) { ctrl = !ctrl; alt = false }
+                ToolKey("Alt", active = alt, toggle = true) { alt = !alt; ctrl = false }
+                ToolKey("^C", contentDescription = stringResource(R.string.terminal_key_interrupt)) {
+                    session.send(byteArrayOf(0x03)); ctrl = false
+                }
+                ToolKey("^D", contentDescription = stringResource(R.string.terminal_key_eof)) {
+                    session.send(byteArrayOf(0x04)); ctrl = false
+                }
+                ToolKey("^L", contentDescription = stringResource(R.string.terminal_key_clear)) {
+                    session.send(byteArrayOf(0x0C)); ctrl = false
+                }
+                ToolKey("↑", contentDescription = stringResource(R.string.terminal_key_up)) { session.send("\u001B[A") }
+                ToolKey("↓", contentDescription = stringResource(R.string.terminal_key_down)) { session.send("\u001B[B") }
+                ToolKey("←", contentDescription = stringResource(R.string.terminal_key_left)) { session.send("\u001B[D") }
+                ToolKey("→", contentDescription = stringResource(R.string.terminal_key_right)) { session.send("\u001B[C") }
             }
-            ToolKey("^D", contentDescription = stringResource(R.string.terminal_key_eof)) {
-                session.send(byteArrayOf(0x04)); ctrl = false
+
+            val secondary: @Composable () -> Unit = {
+                ToolKey("|") { sendText("|") }
+                ToolKey("/") { sendText("/") }
+                ToolKey("-") { sendText("-") }
+                ToolKey("~") { sendText("~") }
+                ToolKey("Home") { session.send("\u001B[H") }
+                ToolKey("End") { session.send("\u001B[F") }
+                ToolKey("PgUp") { session.send("\u001B[5~") }
+                ToolKey("PgDn") { session.send("\u001B[6~") }
             }
-            ToolKey("^L", contentDescription = stringResource(R.string.terminal_key_clear)) {
-                session.send(byteArrayOf(0x0C)); ctrl = false
+
+            if (twoRows) {
+                Column(
+                    Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { primary() }
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { secondary() }
+                }
+            } else {
+                Row(
+                    Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    primary()
+                    secondary()
+                }
             }
-            ToolKey("↑", contentDescription = stringResource(R.string.terminal_key_up)) { session.send("\u001B[A") }
-            ToolKey("↓", contentDescription = stringResource(R.string.terminal_key_down)) { session.send("\u001B[B") }
-            ToolKey("←", contentDescription = stringResource(R.string.terminal_key_left)) { session.send("\u001B[D") }
-            ToolKey("→", contentDescription = stringResource(R.string.terminal_key_right)) { session.send("\u001B[C") }
-            ToolKey("|") { sendText("|") }
-            ToolKey("/") { sendText("/") }
-            ToolKey("-") { sendText("-") }
-            ToolKey("~") { sendText("~") }
-            ToolKey("Home") { session.send("\u001B[H") }
-            ToolKey("End") { session.send("\u001B[F") }
-            ToolKey("PgUp") { session.send("\u001B[5~") }
-            ToolKey("PgDn") { session.send("\u001B[6~") }
         }
     }
 }
@@ -352,11 +480,23 @@ private fun ToolKey(
     contentDescription: String? = null,
     onClick: () -> Unit,
 ) {
+    val haptics = LocalHapticFeedback.current
+    val interactions = remember { MutableInteractionSource() }
+    val isPressed by interactions.collectIsPressedAsState()
+    // A physical key gives travel; a glass one has to give something back instead.
+    val scale by animateFloatAsState(if (isPressed) 0.92f else 1f, Motion.press(), label = "key-press")
+
+    val press: () -> Unit = {
+        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        onClick()
+    }
+
     Text(
         label,
         style = MaterialTheme.typography.labelLarge,
         color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
         modifier = Modifier
+            .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(RoundedCornerShape(9.dp))
             .background(if (active) Turquoise else MaterialTheme.colorScheme.surfaceVariant)
             .then(
@@ -367,9 +507,15 @@ private fun ToolKey(
             .then(
                 if (toggle) Modifier.toggleable(
                     value = active,
+                    interactionSource = interactions,
+                    indication = null,
                     role = Role.Button,
-                    onValueChange = { onClick() },
-                ) else Modifier.clickable(onClick = onClick),
+                    onValueChange = { press() },
+                ) else Modifier.clickable(
+                    interactionSource = interactions,
+                    indication = null,
+                    onClick = press,
+                ),
             )
             .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
             .padding(horizontal = 13.dp, vertical = 9.dp),
