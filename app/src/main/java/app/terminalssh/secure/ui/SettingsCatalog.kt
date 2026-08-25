@@ -60,14 +60,14 @@ fun SettingsCatalog(store: SettingsStore, onChanged: () -> Unit) {
     var query by remember { mutableStateOf("") }
     var advanced by remember { mutableStateOf(false) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
             singleLine = true,
             placeholder = { Text(stringResource(R.string.settings_search), color = TextSecondary) },
             leadingIcon = { Icon(Icons.Outlined.Search, null, tint = TextSecondary) },
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -119,7 +119,7 @@ fun SettingsCatalog(store: SettingsStore, onChanged: () -> Unit) {
             val specs = SettingsRegistry.byGroup(group).filter { advanced || !it.advanced }
             if (specs.isEmpty()) return@forEach
 
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 stringResource(group.titleRes),
                 style = MaterialTheme.typography.labelLarge,

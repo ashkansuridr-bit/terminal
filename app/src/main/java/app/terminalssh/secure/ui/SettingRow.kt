@@ -65,7 +65,7 @@ fun SettingRow(
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             // Long-press resets. Discoverability is the trade-off, so the changed marker
             // below doubles as the hint that there is something to go back from.
             .combinedClickable(
@@ -78,7 +78,7 @@ fun SettingRow(
                 },
                 onLongClickLabel = resetLabel,
             )
-            .padding(vertical = 6.dp),
+            .padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -95,7 +95,7 @@ fun SettingRow(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(Turquoise.copy(alpha = 0.12f))
-                                .padding(horizontal = 6.dp, vertical = 1.dp),
+                                .padding(horizontal = 8.dp, vertical = 1.dp),
                         )
                     }
                 }

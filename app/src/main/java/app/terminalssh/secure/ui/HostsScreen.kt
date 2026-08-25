@@ -112,7 +112,7 @@ fun HostsScreen(
                 .fillMaxSize()
                 .then(if (maxContentWidth != Dp.Unspecified) Modifier.widthIn(max = maxContentWidth) else Modifier)
                 .align(Alignment.TopCenter),
-            contentPadding = PaddingValues(start = margin, end = margin, top = 20.dp, bottom = 104.dp),
+            contentPadding = PaddingValues(start = margin, end = margin, top = 24.dp, bottom = 104.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
@@ -143,7 +143,7 @@ fun HostsScreen(
                     ),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(8.dp))
                 // Anyone who already uses SSH from a desktop has this file; retyping a
                 // dozen servers on a phone keyboard is where people give up.
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -182,7 +182,7 @@ fun HostsScreen(
             contentColor = MaterialTheme.colorScheme.onPrimary,
             icon = { Icon(Icons.Outlined.Add, null) },
             text = { Text(stringResource(R.string.hosts_add), fontWeight = FontWeight.SemiBold) },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(24.dp),
         )
     }
 
@@ -226,7 +226,7 @@ private fun HeroCard(
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(26.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(
                 Brush.linearGradient(
                     listOf(
@@ -236,8 +236,8 @@ private fun HeroCard(
                     )
                 )
             )
-            .border(1.dp, Turquoise.copy(alpha = 0.22f), RoundedCornerShape(26.dp))
-            .padding(18.dp),
+            .border(1.dp, Turquoise.copy(alpha = 0.22f), RoundedCornerShape(24.dp))
+            .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -270,10 +270,10 @@ private fun HeroCard(
             MetricChip(Icons.Outlined.Security, stringResource(R.string.home_vault_badge))
         }
 
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(16.dp))
         Row(
             Modifier
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(16.dp))
                 .background(Turquoise)
                 .clickable(onClick = onAdd)
                 .heightIn(min = 48.dp)
@@ -285,7 +285,7 @@ private fun HeroCard(
                         true
                     }
                 }
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(Icons.Outlined.Add, null, tint = MaterialTheme.colorScheme.onPrimary)
@@ -308,11 +308,11 @@ private fun MetricChip(
         Modifier
             .clip(RoundedCornerShape(999.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f))
-            .padding(horizontal = 10.dp, vertical = 7.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, null, modifier = Modifier.size(15.dp), tint = Turquoise)
-        Spacer(Modifier.width(6.dp))
+        Icon(icon, null, modifier = Modifier.size(16.dp), tint = Turquoise)
+        Spacer(Modifier.width(8.dp))
         Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
     }
 }
@@ -329,11 +329,11 @@ private fun HostCard(
         modifier = Modifier
             .fillMaxWidth()
             .animateContentSize()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, Stroke, RoundedCornerShape(20.dp))
+            .border(1.dp, Stroke, RoundedCornerShape(24.dp))
             .clickable(onClick = onOpen)
-            .padding(horizontal = 16.dp, vertical = 15.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {
         // The environment band sits on the leading edge so "production" is visible
         // while the thumb is still travelling toward the row.
@@ -341,14 +341,14 @@ private fun HostCard(
             Box(
                 Modifier
                     .width(4.dp)
-                    .height(38.dp)
+                    .height(40.dp)
                     .clip(RoundedCornerShape(2.dp))
                     .background(bandColor),
             )
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(12.dp))
         }
         Box(
-            Modifier.size(42.dp).clip(CircleShape).background(Turquoise.copy(alpha = 0.11f)),
+            Modifier.size(40.dp).clip(CircleShape).background(Turquoise.copy(alpha = 0.11f)),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -358,7 +358,7 @@ private fun HostCard(
                 fontWeight = FontWeight.SemiBold,
             )
         }
-        Spacer(Modifier.width(14.dp))
+        Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) {
             Text(ltr(profile.displayName), style = MaterialTheme.typography.titleMedium)
             Text(ltr(profile.subtitle), style = MaterialTheme.typography.labelSmall, color = TextSecondary)
@@ -370,8 +370,8 @@ private fun HostCard(
                 )
             }
             if (profile.tags.isNotEmpty()) {
-                Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     profile.tags.take(3).forEach { TagChip(it) }
                 }
             }
@@ -411,7 +411,7 @@ private fun TagChip(text: String) {
         style = MaterialTheme.typography.labelSmall,
         color = TextSecondary,
         modifier = Modifier
-            .clip(RoundedCornerShape(7.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(horizontal = 8.dp, vertical = 3.dp),
     )
@@ -421,7 +421,7 @@ private fun TagChip(text: String) {
 private fun EmptyState() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 58.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 56.dp),
     ) {
         Text(stringResource(R.string.hosts_empty_title), style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))

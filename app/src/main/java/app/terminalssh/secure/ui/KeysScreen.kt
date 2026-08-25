@@ -63,22 +63,22 @@ fun KeysScreen(viewModel: AppViewModel) {
 
     LazyColumn(
         Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
             Text(stringResource(R.string.tab_keys), style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(16.dp))
             Button(
                 onClick = { generating = true },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
             ) { Text(stringResource(R.string.keys_generate)) }
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick = { picker.launch(arrayOf("*/*")) },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
             ) { Text(stringResource(R.string.keys_import)) }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
         }
 
         if (keys.isEmpty()) {

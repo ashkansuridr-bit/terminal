@@ -73,8 +73,8 @@ fun SnippetSheet(
                 .verticalScroll(rememberScrollState())
                 .imePadding()
                 .navigationBarsPadding()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 28.dp),
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -98,11 +98,11 @@ fun SnippetSheet(
                         .fillMaxWidth()
                         .background(
                             MaterialTheme.colorScheme.surfaceVariant,
-                            RoundedCornerShape(18.dp),
+                            RoundedCornerShape(16.dp),
                         )
-                        .border(1.dp, Stroke, RoundedCornerShape(18.dp))
-                        .padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                        .border(1.dp, Stroke, RoundedCornerShape(16.dp))
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     OutlinedTextField(
                         value = name,
@@ -122,7 +122,7 @@ fun SnippetSheet(
                         ),
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         TextButton(
                             onClick = {
                                 command = ""
@@ -162,7 +162,7 @@ fun SnippetSheet(
                     stringResource(R.string.snippets_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextSecondary,
-                    modifier = Modifier.padding(vertical = 20.dp),
+                    modifier = Modifier.padding(vertical = 24.dp),
                 )
             }
 
@@ -177,7 +177,7 @@ fun SnippetSheet(
                             RoundedCornerShape(16.dp),
                         )
                         .border(1.dp, Stroke, RoundedCornerShape(16.dp))
-                        .padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 10.dp),
+                        .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text(entry.name, style = MaterialTheme.typography.titleMedium)

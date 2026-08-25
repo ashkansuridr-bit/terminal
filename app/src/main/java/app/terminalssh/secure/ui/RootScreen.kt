@@ -111,12 +111,12 @@ fun RootScreen(viewModel: AppViewModel, launchHostId: String? = null) {
                 enter = slideInVertically { it } + fadeIn(),
                 exit = slideOutVertically { it } + fadeOut(),
             ) {
-            Box(Modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Box(Modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 12.dp)) {
                 Surface(
-                    shape = RoundedCornerShape(28.dp),
+                    shape = RoundedCornerShape(24.dp),
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
                     tonalElevation = 0.dp,
-                    shadowElevation = 10.dp,
+                    shadowElevation = 12.dp,
                 ) {
                     NavigationBar(
                         containerColor = androidx.compose.ui.graphics.Color.Transparent,

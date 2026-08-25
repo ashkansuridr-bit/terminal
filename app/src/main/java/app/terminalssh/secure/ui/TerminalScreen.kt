@@ -94,13 +94,13 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(stringResource(R.string.hosts_empty_title), style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             Text(
                 stringResource(R.string.hosts_empty_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextSecondary,
             )
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(16.dp))
             Text(
                 stringResource(R.string.tab_hosts),
                 color = Turquoise,
@@ -108,7 +108,7 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surface)
                     .clickable(onClick = onGoToHosts)
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
             )
         }
         return
@@ -271,7 +271,7 @@ private fun SessionTabs(
                         role = Role.Tab,
                         onClick = { onSelect(session.id) },
                     )
-                    .padding(start = 12.dp, end = 6.dp, top = 7.dp, bottom = 7.dp),
+                    .padding(start = 12.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
             ) {
                 StatusDot(state)
                 Spacer(Modifier.width(8.dp))
@@ -316,7 +316,7 @@ private fun StatusDot(state: SshSessionState) {
         label = "status-pulse-scale",
     )
 
-    Box(Modifier.size(14.dp), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(16.dp), contentAlignment = Alignment.Center) {
         if (busy) {
             Box(
                 Modifier
@@ -348,7 +348,7 @@ private fun StatusBar(session: SshSession) {
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
         StatusDot(state)
         Spacer(Modifier.width(8.dp))
@@ -403,9 +403,9 @@ private fun KeyToolbar(
         val twoRows = maxWidth >= 600.dp
 
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             ToolKey(
                 label = "⌨",
@@ -454,15 +454,15 @@ private fun KeyToolbar(
             if (twoRows) {
                 Column(
                     Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { primary() }
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { secondary() }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { primary() }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { secondary() }
                 }
             } else {
                 Row(
                     Modifier.weight(1f).horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     primary()
                     secondary()
@@ -497,7 +497,7 @@ private fun ToolKey(
         color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
         modifier = Modifier
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .clip(RoundedCornerShape(9.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(if (active) Turquoise else MaterialTheme.colorScheme.surfaceVariant)
             .then(
                 if (contentDescription != null) Modifier.semantics {
@@ -518,6 +518,6 @@ private fun ToolKey(
                 ),
             )
             .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-            .padding(horizontal = 13.dp, vertical = 9.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
     )
 }

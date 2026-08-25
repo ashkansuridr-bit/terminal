@@ -49,11 +49,11 @@ fun PasteAndHostKeyDialogs(viewModel: AppViewModel, session: SshSession) {
             text = {
                 Column {
                     Text(stringResource(R.string.hostkey_body), style = MaterialTheme.typography.bodyMedium)
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(16.dp))
                     Fingerprint("${pending.host}:${pending.port}")
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(8.dp))
                     Fingerprint(pending.algorithm)
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(8.dp))
                     Fingerprint(pending.fingerprint)
                 }
             },
@@ -173,8 +173,8 @@ private fun Fingerprint(text: String) {
         color = TextSecondary,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 12.dp, vertical = 9.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
     )
 }

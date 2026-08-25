@@ -75,7 +75,7 @@ fun ComposeBar(
                     Icons.Outlined.Close,
                     stringResource(R.string.cancel),
                     tint = TextSecondary,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(16.dp),
                 )
             }
         }

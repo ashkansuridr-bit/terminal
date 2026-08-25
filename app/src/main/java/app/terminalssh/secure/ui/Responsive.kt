@@ -74,7 +74,7 @@ fun heightClassFor(height: Dp): HeightClass = when {
  * single line of text stretched edge to edge, which is unreadable for a different reason.
  */
 fun WidthClass.pageMargin(): Dp = when (this) {
-    WidthClass.COMPACT -> 20.dp
+    WidthClass.COMPACT -> 24.dp
     WidthClass.MEDIUM -> 32.dp
     WidthClass.EXPANDED -> 48.dp
 }

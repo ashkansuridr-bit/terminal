@@ -56,12 +56,17 @@ private val Scheme = darkColorScheme(
     onError = Ink,
 )
 
+/**
+ * Corner radii on a 4dp grid like everything else. The previous 9/13/18/24/30 were close
+ * to these but off the grid, which is invisible on any one component and reads as
+ * carelessness once several sit next to each other.
+ */
 private val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(9.dp),
-    small = RoundedCornerShape(13.dp),
-    medium = RoundedCornerShape(18.dp),
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
     large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(30.dp),
+    extraLarge = RoundedCornerShape(32.dp),
 )
 
 /**
@@ -111,13 +116,34 @@ private fun persian(
     platformStyle = PlatformTextStyle(includeFontPadding = false),
 )
 
+/**
+ * Every Material 3 style is defined, not just the ones in use today.
+ *
+ * An undefined style silently falls back to the Material default, which is a Latin-first
+ * face with non-zero letterSpacing — the exact thing the note above says breaks a
+ * connected script. Two styles were previously left undefined and were rendering Persian
+ * in the fallback font, letter-spaced. Filling the whole scale means the next screen that
+ * reaches for titleSmall cannot reintroduce that.
+ */
 private val AppTypography = Typography(
+    displayLarge = persian(45, 56, FontWeight.Bold),
+    displayMedium = persian(36, 46, FontWeight.Bold),
+    displaySmall = persian(32, 41, FontWeight.Bold),
+
+    headlineLarge = persian(34, 45, FontWeight.Bold),
     headlineMedium = persian(29, 42, FontWeight.Bold),
+    headlineSmall = persian(24, 34, FontWeight.SemiBold),
+
     titleLarge = persian(20, 31, FontWeight.SemiBold),
     titleMedium = persian(16, 26, FontWeight.Medium),
+    titleSmall = persian(14, 22, FontWeight.SemiBold),
+
     bodyLarge = persian(16, 27),
     bodyMedium = persian(14, 24),
+    bodySmall = persian(12, 20),
+
     labelLarge = persian(14, 21, FontWeight.Medium),
+    labelMedium = persian(12, 18, FontWeight.Medium),
     labelSmall = persian(12, 19, color = TextSecondary),
 )
 

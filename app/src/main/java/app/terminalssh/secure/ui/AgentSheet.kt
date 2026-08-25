@@ -84,7 +84,7 @@ fun AgentInstallSheet(
                     .fillMaxWidth()
                     .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 22.dp),
+                    .padding(horizontal = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
@@ -217,7 +217,7 @@ fun AgentInstallSheet(
                     fontFamily = FontFamily.Monospace,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.background)
                         .heightIn(max = 220.dp)
                         .verticalScroll(rememberScrollState())
@@ -229,12 +229,12 @@ fun AgentInstallSheet(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Column(
-                Modifier.fillMaxWidth().padding(horizontal = 22.dp).padding(top = 12.dp, bottom = 20.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(top = 12.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Button(
                     onClick = { onRunScript(script) },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
                 ) { Text(stringResource(R.string.agent_run_install)) }
 
                 TextButton(

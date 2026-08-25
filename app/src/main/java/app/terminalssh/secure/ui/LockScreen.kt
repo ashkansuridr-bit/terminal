@@ -41,7 +41,7 @@ fun LockScreen(onUnlock: () -> Unit) {
             Text(
                 stringResource(R.string.lock_title),
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = 20.dp),
+                modifier = Modifier.padding(top = 24.dp),
                 textAlign = TextAlign.Center,
             )
             Text(
@@ -51,7 +51,7 @@ fun LockScreen(onUnlock: () -> Unit) {
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 8.dp),
             )
-            Button(onClick = onUnlock, modifier = Modifier.padding(top = 28.dp)) {
+            Button(onClick = onUnlock, modifier = Modifier.padding(top = 24.dp)) {
                 Text(stringResource(R.string.lock_unlock))
             }
         }

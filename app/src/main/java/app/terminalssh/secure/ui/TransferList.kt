@@ -68,7 +68,7 @@ fun TransferStrip(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -135,7 +135,7 @@ private fun TransferRow(
                         Icons.Outlined.Pause,
                         stringResource(R.string.sftp_pause),
                         tint = TextSecondary,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(16.dp),
                     )
                 }
             }
@@ -145,7 +145,7 @@ private fun TransferRow(
                         Icons.Outlined.PlayArrow,
                         stringResource(R.string.sftp_resume),
                         tint = Turquoise,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(16.dp),
                     )
                 }
             }
@@ -155,7 +155,7 @@ private fun TransferRow(
                         Icons.Outlined.Close,
                         stringResource(R.string.sftp_cancel),
                         tint = TextSecondary,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(16.dp),
                     )
                 }
             }

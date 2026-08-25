@@ -87,7 +87,7 @@ fun HostEditSheet(
                 .fillMaxWidth()
                 .weight(1f, fill = false)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 22.dp),
+                .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
@@ -128,8 +128,8 @@ fun HostEditSheet(
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 22.dp)
-                .padding(top = 12.dp, bottom = 20.dp),
+                .padding(horizontal = 24.dp)
+                .padding(top = 12.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             error?.let { Text(it, color = Danger, style = MaterialTheme.typography.labelSmall) }
@@ -164,7 +164,7 @@ fun HostEditSheet(
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
             ) { Text(stringResource(R.string.save)) }
 
             if (initial != null) {
@@ -223,7 +223,7 @@ private fun Field(
  */
 @Composable
 private fun EnvironmentPicker(selected: Environment, onSelect: (Environment) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             stringResource(R.string.field_environment),
             style = MaterialTheme.typography.labelMedium,

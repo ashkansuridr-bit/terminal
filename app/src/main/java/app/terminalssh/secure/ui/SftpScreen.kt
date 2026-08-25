@@ -104,7 +104,7 @@ fun SftpBrowser(
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                        .padding(horizontal = 24.dp, vertical = 12.dp),
                 )
             }
         }
@@ -143,7 +143,7 @@ private fun PathBar(
 ) {
     val crumbs = app.terminalssh.secure.sftp.RemotePath.breadcrumbs(path)
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(
@@ -169,9 +169,9 @@ private fun PathBar(
                     fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Normal,
                     color = if (isCurrent) MaterialTheme.colorScheme.onSurface else TextSecondary,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(8.dp))
                         .clickable(enabled = !isCurrent) { onNavigate(target) }
-                        .padding(horizontal = 6.dp, vertical = 8.dp),
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
                 )
             }
         }
@@ -208,7 +208,7 @@ private fun EntryRow(entry: RemoteEntry, onClick: () -> Unit) {
                 },
             )
             // A 56dp row clears the 48dp minimum touch target with room for a mis-tap.
-            .padding(horizontal = 12.dp, vertical = 14.dp),
+            .padding(horizontal = 12.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -219,9 +219,9 @@ private fun EntryRow(entry: RemoteEntry, onClick: () -> Unit) {
             },
             contentDescription = null,
             tint = if (entry.isDirectory) Turquoise else TextSecondary,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(24.dp),
         )
-        Spacer(Modifier.width(14.dp))
+        Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 ltr(entry.name),
@@ -246,9 +246,9 @@ private fun EmptyDirectory() {
                 Icons.Outlined.Folder,
                 null,
                 tint = TextSecondary.copy(alpha = 0.4f),
-                modifier = Modifier.size(44.dp),
+                modifier = Modifier.size(48.dp),
             )
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             Text(
                 stringResource(R.string.sftp_empty),
                 style = MaterialTheme.typography.bodyMedium,

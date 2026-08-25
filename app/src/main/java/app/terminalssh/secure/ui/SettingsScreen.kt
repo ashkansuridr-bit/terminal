@@ -111,8 +111,8 @@ fun SettingsScreen(viewModel: AppViewModel) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .then(if (maxContentWidth != Dp.Unspecified) Modifier.widthIn(max = maxContentWidth) else Modifier)
-            .padding(horizontal = window.width.pageMargin(), vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+            .padding(horizontal = window.width.pageMargin(), vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
             stringResource(R.string.tab_settings),
@@ -138,8 +138,8 @@ fun SettingsScreen(viewModel: AppViewModel) {
         // and changed markers — all generated rather than hand-written per setting.
         Section(stringResource(R.string.tab_settings)) {
             SettingsCatalog(store = settingsStore, onChanged = { revision++ })
-            Spacer(Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Spacer(Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = { exportLauncher.launch("terminal-ssh-settings.json") }) {
                     Text(stringResource(R.string.settings_export), style = MaterialTheme.typography.labelSmall)
                 }
@@ -161,10 +161,10 @@ fun SettingsScreen(viewModel: AppViewModel) {
                 stringResource(R.string.settings_theme),
                 style = MaterialTheme.typography.labelLarge,
             )
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             // Six 48 dp targets plus 6 dp gaps fit the 320 dp content width of a common
             // 360 dp handset, retaining accessible targets without horizontal clipping.
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TerminalPalettes.forEach { palette ->
                     val paletteName = stringResource(
                         when (palette.id) {
@@ -205,7 +205,7 @@ fun SettingsScreen(viewModel: AppViewModel) {
                     }
                 }
             }
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(16.dp))
             // Formatted through resources so the digit shows in the locale's numerals;
             // string concatenation would leave a Latin "14" beside Persian counts elsewhere.
             Text(
@@ -240,14 +240,14 @@ fun SettingsScreen(viewModel: AppViewModel) {
         Section(stringResource(R.string.settings_security)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Security, null, tint = Turquoise)
-                Spacer(Modifier.size(10.dp))
+                Spacer(Modifier.size(12.dp))
                 Text(
                     stringResource(R.string.settings_security_summary),
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextSecondary,
                 )
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             ToggleRow(stringResource(R.string.settings_paste_confirm), pasteConfirm) {
                 pasteConfirm = it
                 settings.confirmMultilinePaste = it
@@ -370,7 +370,7 @@ private fun AccountSection(
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(
                 Brush.linearGradient(
                     listOf(
@@ -380,13 +380,13 @@ private fun AccountSection(
                     )
                 )
             )
-            .border(1.dp, Turquoise.copy(alpha = 0.22f), RoundedCornerShape(22.dp))
-            .padding(18.dp),
+            .border(1.dp, Turquoise.copy(alpha = 0.22f), RoundedCornerShape(24.dp))
+            .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier
-                    .size(44.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
                     .background(Turquoise.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
@@ -411,7 +411,7 @@ private fun AccountSection(
             }
         }
 
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(16.dp))
         AnimatedVisibility(visible = signedInName == null) {
             Button(
                 onClick = onSignIn,
@@ -438,10 +438,10 @@ private fun Section(title: String, content: @Composable () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, Stroke, RoundedCornerShape(20.dp))
-            .padding(17.dp),
+            .border(1.dp, Stroke, RoundedCornerShape(24.dp))
+            .padding(16.dp),
     ) {
         Text(title, style = MaterialTheme.typography.titleMedium, color = Turquoise)
         Spacer(Modifier.height(12.dp))
