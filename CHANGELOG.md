@@ -4,6 +4,12 @@
 
 ### Added
 
+- **Install and launch coding agents on the connected server** — Claude Code,
+  OpenCode or Aider — with prerequisites resolved for apt, dnf, pacman or apk,
+  and tmux installed alongside so the agent session survives a dropped
+  connection. The full script is shown before anything runs; the installers
+  download to a file and run it as a separate step rather than piping a remote
+  script into a shell.
 - **SFTP file browser with a resumable transfer queue.** Rides the terminal
   session's existing connection, so browsing files never means authenticating a
   second time. Downloads and uploads go through the system file picker, so the
