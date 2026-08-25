@@ -268,4 +268,6 @@
     <string name="compose_send">ارسال</string>
     <string name="compose_lines">%1$d خط</string>
     <string name="compose_short">گفت‌وگو</string>
+    <string name="danger_confirm_title">این فرمان خطرناک است</string>
+    <string name="danger_confirm_body">تشخیص داده شد: %1$s. قبل از ادامه مطمئن شو روی کدام سرور هستی.</string>
 </resources>

@@ -268,4 +268,6 @@
     <string name="compose_send">Send</string>
     <string name="compose_lines">%1$d lines</string>
     <string name="compose_short">Chat</string>
+    <string name="danger_confirm_title">This command is dangerous</string>
+    <string name="danger_confirm_body">Detected: %1$s. Check which server you are on before continuing.</string>
 </resources>
