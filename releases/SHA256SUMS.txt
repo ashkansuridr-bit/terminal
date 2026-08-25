@@ -1,2 +1,2 @@
-b6ecf72588fc02a222f9b1c4fa003034196c9d9c8b5752ed63b867d372198f8b  TerminalSSH-0.5.0-preview-arm64-v8a.apk
-4f1197a71f8dfcd92b655d56d6a16f5626350cc2c30f0ae0d5c7657de03ec244  TerminalSSH-0.5.0-preview-armeabi-v7a.apk
+a4c659c6bb0fd8711d19764985021c5103f60fecff077e401e3f92c982aeb54f  TerminalSSH-0.5.0-preview-arm64-v8a.apk
+d9a97b01a232469c6c25ce52086172459c5639d4f4b7f6befd2af90ac65d8cbb  TerminalSSH-0.5.0-preview-armeabi-v7a.apk
