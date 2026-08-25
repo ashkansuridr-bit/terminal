@@ -19,7 +19,7 @@ checks={
  'min sdk 26':'minSdk = 26' in build,
  'release minification':'isMinifyEnabled = true' in build,
  'release resource shrink':'isShrinkResources = true' in build,
- 'final version':'versionName = "0.4.1"' in build,
+ 'final version':'versionName = "0.5.0"' in build,
  'final app id':'applicationId = "app.terminalssh.secure"' in build,
  'namespace matches app id':'namespace = "app.terminalssh.secure"' in build,
  'external signing config':'TERMINAL_KEYSTORE_PATH' in build and 'TERMINAL_KEYSTORE_PASSWORD' in build and 'TERMINAL_KEY_ALIAS' in build and 'TERMINAL_KEY_PASSWORD' in build,

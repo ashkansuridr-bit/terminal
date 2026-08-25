@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — code review fixes and follow-up features
+## 0.5.0 — coding agents, SFTP, key generation, app lock and personalization
 
 ### Added
 

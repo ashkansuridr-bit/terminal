@@ -38,8 +38,8 @@ checks = {
         "R.string.snippets_short" in term,
     "version label follows BuildConfig":
         "BuildConfig.VERSION_NAME" in settings,
-    "version bumped to 0.4.1":
-        'versionName = "0.4.1"' in gradle,
+    "version bumped to 0.5.0":
+        'versionName = "0.5.0"' in gradle,
 }
 
 for name, ok in checks.items():
