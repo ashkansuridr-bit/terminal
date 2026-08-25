@@ -262,4 +262,10 @@
     <string name="agent_key_save">Save key</string>
     <string name="agent_key_inject">Set the key in this session</string>
     <string name="agent_key_stored">Key stored</string>
+    <string name="compose_title">Conversation mode</string>
+    <string name="compose_hint">Enter adds a line; send with the button</string>
+    <string name="compose_placeholder">Write your request…</string>
+    <string name="compose_send">Send</string>
+    <string name="compose_lines">%1$d lines</string>
+    <string name="compose_short">Chat</string>
 </resources>

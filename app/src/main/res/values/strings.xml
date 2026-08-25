@@ -262,4 +262,10 @@
     <string name="agent_key_save">ذخیرهٔ کلید</string>
     <string name="agent_key_inject">تنظیم کلید در این سشن</string>
     <string name="agent_key_stored">کلید ذخیره‌شده دارد</string>
+    <string name="compose_title">حالت گفت‌وگو</string>
+    <string name="compose_hint">Enter خط جدید می‌سازد؛ با دکمهٔ ارسال بفرست</string>
+    <string name="compose_placeholder">درخواستت را بنویس…</string>
+    <string name="compose_send">ارسال</string>
+    <string name="compose_lines">%1$d خط</string>
+    <string name="compose_short">گفت‌وگو</string>
 </resources>

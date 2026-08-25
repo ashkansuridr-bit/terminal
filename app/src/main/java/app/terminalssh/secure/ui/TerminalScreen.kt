@@ -50,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
@@ -115,6 +116,11 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
 
     var snippetsOpen by remember(active.id) { mutableStateOf(false) }
     var agentSheetOpen by remember(active.id) { mutableStateOf(false) }
+    var composeOpen by remember(active.id) { mutableStateOf(false) }
+    // Hoisted above the bar so an unsent prompt survives the bar closing, a reconnect,
+    // or a rotation. Losing a long prompt to a passing tunnel is the other half of the
+    // problem this bar solves.
+    var composeDraft by rememberSaveable(active.id) { mutableStateOf("") }
     val terminalFocusRequester = remember(active.id) { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val rootView = LocalView.current
@@ -166,11 +172,26 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                 onPasteRequest = { active.requestPaste() },
             )
         }
+        if (composeOpen) {
+            ComposeBar(
+                draft = composeDraft,
+                onDraftChange = { composeDraft = it },
+                onSend = { text ->
+                    // Sent as one payload with a single trailing newline, so a multi-line
+                    // prompt reaches the agent as one submission rather than as N commands.
+                    active.send(text.trimEnd() + "\n")
+                    composeDraft = ""
+                },
+                onDismiss = { composeOpen = false },
+            )
+        }
         KeyToolbar(
             active,
             onShowKeyboard = showKeyboard,
             onSnippets = { snippetsOpen = true },
             onAgents = { agentSheetOpen = true },
+            onCompose = { composeOpen = !composeOpen },
+            composeActive = composeOpen,
         )
         PasteAndHostKeyDialogs(viewModel, active)
         if (agentSheetOpen) {
@@ -352,6 +373,8 @@ private fun KeyToolbar(
     onShowKeyboard: () -> Unit,
     onSnippets: () -> Unit,
     onAgents: () -> Unit,
+    onCompose: () -> Unit,
+    composeActive: Boolean,
 ) {
     var ctrl by remember { mutableStateOf(false) }
     var alt by remember { mutableStateOf(false) }
@@ -393,6 +416,11 @@ private fun KeyToolbar(
             val primary: @Composable () -> Unit = {
                 ToolKey(stringResource(R.string.snippets_short)) { onSnippets() }
                 ToolKey(stringResource(R.string.agent_short)) { onAgents() }
+                ToolKey(
+                    stringResource(R.string.compose_short),
+                    active = composeActive,
+                    toggle = true,
+                ) { onCompose() }
                 ToolKey("Esc") { session.send(byteArrayOf(0x1B)) }
                 ToolKey("Tab") { session.send(byteArrayOf(0x09)) }
                 ToolKey("Ctrl", active = ctrl, toggle = true) { ctrl = !ctrl; alt = false }
