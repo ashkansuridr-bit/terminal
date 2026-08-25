@@ -28,6 +28,9 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -76,6 +79,7 @@ import app.terminalssh.secure.vm.AppViewModel
 import kotlinx.coroutines.launch
 import org.connectbot.terminal.Terminal
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     val sessions by viewModel.sessions.sessions.collectAsStateWithLifecycle()
@@ -136,7 +140,15 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
         Unit
     }
 
-    Column(Modifier.fillMaxSize().imePadding()) {
+    // imePadding lifts the toolbar to sit directly on the keyboard; navigationBarsPadding
+    // only applies when the keyboard is down, since the IME already covers the nav bar.
+    // Applying both unconditionally is what leaves a dead strip under the toolbar.
+    Column(
+        Modifier
+            .fillMaxSize()
+            .imePadding()
+            .then(if (WindowInsets.isImeVisible) Modifier else Modifier.navigationBarsPadding()),
+    ) {
         SessionTabs(
             sessions = sessions,
             activeId = activeId,

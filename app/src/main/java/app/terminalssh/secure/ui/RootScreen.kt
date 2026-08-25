@@ -1,6 +1,14 @@
 package app.terminalssh.secure.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -47,6 +55,7 @@ import app.terminalssh.secure.vm.AppViewModel
 
 enum class Tab { HOSTS, TERMINAL, FILES, KEYS, SETTINGS }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun RootScreen(viewModel: AppViewModel, launchHostId: String? = null) {
     var tab by rememberSaveable { mutableStateOf(Tab.HOSTS) }
@@ -84,11 +93,25 @@ fun RootScreen(viewModel: AppViewModel, launchHostId: String? = null) {
         if (viewModel.hasStoredSecret(profile)) openTerminal(profile, null)
     }
 
+    // While the soft keyboard is up there is no room to spare, and the nav dock would
+    // otherwise sit as dead space between the key toolbar and the keyboard — exactly
+    // where the user is looking. It slides away instead of vanishing so the tab bar does
+    // not appear to teleport when the keyboard closes.
+    val imeVisible = WindowInsets.isImeVisible
+
     Scaffold(
         containerColor = Ink,
         snackbarHost = { SnackbarHost(snackbar) },
+        // The terminal manages its own IME inset so the toolbar can sit flush against
+        // the keyboard; letting the Scaffold consume it too would double-count it.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            Box(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            AnimatedVisibility(
+                visible = !imeVisible,
+                enter = slideInVertically { it } + fadeIn(),
+                exit = slideOutVertically { it } + fadeOut(),
+            ) {
+            Box(Modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp)) {
                 Surface(
                     shape = RoundedCornerShape(28.dp),
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
@@ -112,6 +135,7 @@ fun RootScreen(viewModel: AppViewModel, launchHostId: String? = null) {
                         TabItem(tab, Tab.SETTINGS, Icons.Outlined.Settings, stringResource(R.string.tab_settings)) { tab = it }
                     }
                 }
+            }
             }
         },
     ) { padding ->
