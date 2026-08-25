@@ -252,4 +252,14 @@
     <string name="agent_run_install">Run the install</string>
     <string name="agent_launch">Launch the agent in tmux</string>
     <string name="agent_short">Agent</string>
+    <string name="agent_key_saved">Key saved</string>
+    <string name="agent_key_save_failed">Could not save the key</string>
+    <string name="agent_key_missing">No key is stored for this agent</string>
+    <string name="agent_key_injected">Key set for this session</string>
+    <string name="agent_key_title">API key</string>
+    <string name="agent_key_hint">Kept in the same encrypted vault as your SSH secrets</string>
+    <string name="agent_key_scope_host">Only for this server</string>
+    <string name="agent_key_save">Save key</string>
+    <string name="agent_key_inject">Set the key in this session</string>
+    <string name="agent_key_stored">Key stored</string>
 </resources>

@@ -176,6 +176,11 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
         if (agentSheetOpen) {
             AgentInstallSheet(
                 onDismiss = { agentSheetOpen = false },
+                hasKey = { agent -> viewModel.hasAgentKey(agent, active.profile.id) },
+                onSaveKey = { agent, hostScoped, key ->
+                    viewModel.saveAgentKey(agent, active.profile.id.takeIf { hostScoped }, key)
+                },
+                onInjectKey = { agent -> viewModel.injectAgentKey(agent, active) },
                 onRunScript = { script ->
                     agentSheetOpen = false
                     // Sent as terminal input rather than executed out of band, so the

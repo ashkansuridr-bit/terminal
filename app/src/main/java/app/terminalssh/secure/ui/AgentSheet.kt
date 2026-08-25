@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import app.terminalssh.secure.R
 import app.terminalssh.secure.agents.AgentInstallScript
@@ -56,12 +57,17 @@ import app.terminalssh.secure.ui.theme.Turquoise
 fun AgentInstallSheet(
     onDismiss: () -> Unit,
     onRunScript: (String) -> Unit,
+    hasKey: (CodingAgent) -> Boolean = { false },
+    onSaveKey: (CodingAgent, Boolean, CharArray) -> Unit = { _, _, _ -> },
+    onInjectKey: (CodingAgent) -> Unit = {},
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var agent by remember { mutableStateOf(CodingAgent.CLAUDE_CODE) }
     var packageManager by remember { mutableStateOf<PackageManager?>(PackageManager.APT) }
     var installTmux by remember { mutableStateOf(true) }
     var projectDir by remember { mutableStateOf("") }
+    var apiKey by remember { mutableStateOf("") }
+    var hostScopedKey by remember { mutableStateOf(false) }
 
     val script = remember(agent, packageManager, installTmux) {
         AgentInstallScript.installScript(agent, packageManager, installTmux)
@@ -151,6 +157,58 @@ fun AgentInstallSheet(
                     shape = MaterialTheme.shapes.small,
                     modifier = Modifier.fillMaxWidth(),
                 )
+
+                // Only shown for agents that authenticate with an environment variable;
+                // OpenCode signs in its own way and a key field would be a dead end.
+                agent.apiKeyVariable?.let { variable ->
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Label(stringResource(R.string.agent_key_title) + "  ·  " + variable)
+                        if (hasKey(agent)) {
+                            Spacer(Modifier.height(0.dp))
+                            Text(
+                                "  " + stringResource(R.string.agent_key_stored),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Turquoise,
+                            )
+                        }
+                    }
+                    Text(
+                        stringResource(R.string.agent_key_hint),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextSecondary,
+                    )
+                    OutlinedTextField(
+                        value = apiKey,
+                        onValueChange = { apiKey = it },
+                        label = { Text(stringResource(R.string.agent_key_title)) },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = hostScopedKey, onCheckedChange = { hostScopedKey = it })
+                        Text(
+                            stringResource(R.string.agent_key_scope_host),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(
+                            onClick = {
+                                onSaveKey(agent, hostScopedKey, apiKey.toCharArray())
+                                apiKey = ""
+                            },
+                            enabled = apiKey.isNotBlank(),
+                        ) { Text(stringResource(R.string.agent_key_save)) }
+                        TextButton(
+                            onClick = { onInjectKey(agent) },
+                            enabled = hasKey(agent),
+                        ) { Text(stringResource(R.string.agent_key_inject)) }
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
 
                 Label(stringResource(R.string.agent_review_script))
                 Text(

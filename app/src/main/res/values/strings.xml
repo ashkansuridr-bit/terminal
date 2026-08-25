@@ -252,4 +252,14 @@
     <string name="agent_run_install">اجرای نصب</string>
     <string name="agent_launch">اجرای عامل در tmux</string>
     <string name="agent_short">عامل</string>
+    <string name="agent_key_saved">کلید ذخیره شد</string>
+    <string name="agent_key_save_failed">ذخیرهٔ کلید انجام نشد</string>
+    <string name="agent_key_missing">برای این عامل کلیدی ذخیره نشده است</string>
+    <string name="agent_key_injected">کلید در این سشن تنظیم شد</string>
+    <string name="agent_key_title">کلید API</string>
+    <string name="agent_key_hint">در همان Vault رمزنگاری‌شدهٔ کلیدهای SSH نگه‌داری می‌شود</string>
+    <string name="agent_key_scope_host">فقط برای همین سرور</string>
+    <string name="agent_key_save">ذخیرهٔ کلید</string>
+    <string name="agent_key_inject">تنظیم کلید در این سشن</string>
+    <string name="agent_key_stored">کلید ذخیره‌شده دارد</string>
 </resources>

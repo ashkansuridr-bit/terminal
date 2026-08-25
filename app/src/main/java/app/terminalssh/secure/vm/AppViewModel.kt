@@ -22,6 +22,9 @@ import app.terminalssh.secure.model.AuthMethod
 import app.terminalssh.secure.model.HostProfile
 import app.terminalssh.secure.model.KeyEntry
 import app.terminalssh.secure.model.SnippetEntry
+import app.terminalssh.secure.agents.AgentInstallScript
+import app.terminalssh.secure.agents.AgentKeyRef
+import app.terminalssh.secure.agents.CodingAgent
 import app.terminalssh.secure.security.KeyAlgorithm
 import app.terminalssh.secure.security.KeyGeneration
 import app.terminalssh.secure.security.SecretEncoding
@@ -499,6 +502,69 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return queried?.takeIf { it.isNotBlank() }
             ?: uri.lastPathSegment?.substringAfterLast('/')?.takeIf { it.isNotBlank() }
             ?: "upload"
+    }
+
+    // ---- coding agent API keys ----
+
+    /**
+     * Stores an agent credential in the same vault the SSH secrets use.
+     *
+     * @param hostId scope the key to one server, or null to make it the fallback for all.
+     */
+    fun saveAgentKey(agent: CodingAgent, hostId: String?, key: CharArray) {
+        val bytes = SecretEncoding.utf8(key)
+        try {
+            val ref = if (hostId.isNullOrBlank()) {
+                AgentKeyRef.global(agent)
+            } else {
+                AgentKeyRef.forHost(agent, hostId)
+            }
+            container.vault.put(ref, bytes, VaultAad.AGENT_API_KEY)
+            _toast.value = string(R.string.agent_key_saved)
+        } catch (_: Exception) {
+            _toast.value = string(R.string.agent_key_save_failed)
+        } finally {
+            bytes.fill(0)
+            key.fill('\u0000')
+        }
+    }
+
+    fun hasAgentKey(agent: CodingAgent, hostId: String?): Boolean =
+        AgentKeyRef.resolutionOrder(agent, hostId).any { ref ->
+            container.vault.get(ref, VaultAad.AGENT_API_KEY)?.also { it.fill(0) } != null
+        }
+
+    fun deleteAgentKey(agent: CodingAgent, hostId: String?) {
+        val ref = if (hostId.isNullOrBlank()) {
+            AgentKeyRef.global(agent)
+        } else {
+            AgentKeyRef.forHost(agent, hostId)
+        }
+        container.vault.delete(ref, VaultAad.AGENT_API_KEY)
+    }
+
+    /**
+     * Sends the agent's key into the session as an environment variable.
+     *
+     * The command is written so it does not land in shell history, and the decrypted
+     * bytes are wiped as soon as they have been handed to the session.
+     */
+    fun injectAgentKey(agent: CodingAgent, session: SshSession): Boolean {
+        val variable = agent.apiKeyVariable ?: return false
+        val bytes = AgentKeyRef.resolutionOrder(agent, session.profile.id)
+            .firstNotNullOfOrNull { ref -> container.vault.get(ref, VaultAad.AGENT_API_KEY) }
+            ?: run {
+                _toast.value = string(R.string.agent_key_missing)
+                return false
+            }
+        return try {
+            val command = AgentInstallScript.exportKeyCommand(variable, bytes.toString(Charsets.UTF_8))
+            session.send(command + "\n")
+            _toast.value = string(R.string.agent_key_injected)
+            true
+        } finally {
+            bytes.fill(0)
+        }
     }
 
     fun deleteKey(entry: KeyEntry) {
