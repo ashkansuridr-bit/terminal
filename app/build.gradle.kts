@@ -61,6 +61,29 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
+        /**
+         * A shareable test build: minified like release, but under its own application id
+         * and signed with the debug key.
+         *
+         * The distinct id is the point. A build signed with a throwaway key but carrying
+         * the production id can never be upgraded to the real signed release — Android
+         * refuses a signature change — and uninstalling to fix that destroys the
+         * AndroidKeyStore vault, taking every saved password and private key with it.
+         * This variant installs alongside the real app instead.
+         */
+        create("preview") {
+            initWith(getByName("release"))
+            // initWith does not carry the shrinker settings, and without them this build
+            // ships the whole material-icons library: 18 MB instead of 6 MB.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            applicationIdSuffix = ".preview"
+            versionNameSuffix = "-preview"
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+        }
+
         release {
             isMinifyEnabled = true
             isShrinkResources = true
