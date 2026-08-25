@@ -19,8 +19,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.terminalssh.secure.R
 
-// Iranian-premium identity: deep graphite, turquoise from the app mark,
-// cyan for motion/connection progress and emerald for healthy secure state.
+// Iranian-premium identity: deep graphite with four accents that each mean one thing.
+// Turquoise is the brand and marks what succeeded; cyan means work in progress; amber
+// means the app has stopped and is waiting on the user; red means it failed. See
+// ConnectionStatus, which is where that mapping is actually enforced.
 val Ink = Color(0xFF07090C)
 val Surface1 = Color(0xFF101317)
 val Surface2 = Color(0xFF171B20)
@@ -29,7 +31,6 @@ val Stroke = Color(0xFF2A3037)
 val TextPrimary = Color(0xFFF4F7F8)
 val TextSecondary = Color(0xFF9AA4AC)
 val Turquoise = Color(0xFF35D7AE)
-val Emerald = Color(0xFF34D399)
 val Cyan = Color(0xFF5AC8FA)
 val Amber = Color(0xFFFFC66D)
 val Danger = Color(0xFFFF7082)
@@ -43,7 +44,7 @@ private val Scheme = darkColorScheme(
     onSecondary = Ink,
     secondaryContainer = Color(0xFF12323B),
     onSecondaryContainer = Color(0xFFD4F8FF),
-    tertiary = Emerald,
+    tertiary = Cyan,
     onTertiary = Ink,
     background = Ink,
     onBackground = TextPrimary,

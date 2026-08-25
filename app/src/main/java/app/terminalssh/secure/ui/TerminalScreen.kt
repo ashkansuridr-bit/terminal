@@ -70,9 +70,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.terminalssh.secure.R
 import app.terminalssh.secure.ssh.SshSession
 import app.terminalssh.secure.ssh.SshSessionState
-import app.terminalssh.secure.ui.theme.Amber
-import app.terminalssh.secure.ui.theme.Cyan
-import app.terminalssh.secure.ui.theme.Danger
 import app.terminalssh.secure.ui.theme.Stroke
 import app.terminalssh.secure.ui.theme.TextSecondary
 import app.terminalssh.secure.ui.theme.Turquoise
@@ -292,14 +289,9 @@ private fun SessionTabs(
 
 @Composable
 private fun StatusDot(state: SshSessionState) {
-    val target = when (state) {
-        is SshSessionState.Connected -> Turquoise
-        is SshSessionState.Connecting, is SshSessionState.Reconnecting -> Cyan
-        is SshSessionState.AwaitingHostKeyApproval -> Amber
-        is SshSessionState.Failed -> Danger
-        else -> TextSecondary
-    }
-    val color by animateColorAsState(target, label = "status")
+    // Shared with the host list rather than restated here: the two screens had already
+    // drifted apart on what colour a connecting session is.
+    val color by animateColorAsState(state.status().color, label = "status")
 
     // While a connection is being established the dot pulses, so "working" is readable
     // at a glance without occupying any more space than the idle indicator. Everything

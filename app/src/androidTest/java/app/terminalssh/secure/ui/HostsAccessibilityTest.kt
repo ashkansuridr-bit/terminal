@@ -97,6 +97,12 @@ class HostsAccessibilityTest {
     }
 
     private companion object {
-        const val TIMEOUT_MS = 5_000L
+        /**
+         * Generous on purpose. These assert that a control exists and is reachable, not
+         * that it appeared quickly: an emulator without KVM takes tens of seconds to
+         * bring up a cold Compose screen, and a tight bound there fails honest code for
+         * reasons that have nothing to do with the code.
+         */
+        const val TIMEOUT_MS = 60_000L
     }
 }

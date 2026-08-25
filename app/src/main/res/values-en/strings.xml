@@ -7,7 +7,7 @@
     <string name="tab_settings">Settings</string>
 
     <string name="hosts_empty_title">No hosts yet</string>
-    <string name="hosts_empty_body">Add a server to get started, or use quick connect.</string>
+    <string name="hosts_empty_body">Add your servers once. Passwords and keys stay in the device’s encrypted vault, so there is nothing left to remember.</string>
     <string name="hosts_search">Search host, user or tag</string>
     <string name="hosts_add">Add host</string>
     <string name="quick_connect">Quick connect</string>
@@ -104,11 +104,8 @@
     <string name="google_sign_out_success">Signed out of Google</string>
     <string name="google_not_configured">Google OAuth client ID is not configured for this build</string>
     <string name="google_no_credential">No Google account was found on this device</string>
-    <string name="home_secure_title">Secure, fast SSH with a Persian soul</string>
-    <string name="home_secure_body">Hosts, live sessions, and keys in one calm professional workspace.</string>
     <string name="home_hosts_count">%1$d hosts</string>
     <string name="home_sessions_count">%1$d live</string>
-    <string name="home_vault_badge">Secure vault</string>
     <string name="home_new_connection">New connection</string>
     <string name="keys_import_failed">Key import failed</string>
     <string name="host_save_failed">Could not save the server; check the device security settings</string>
@@ -270,4 +267,21 @@
     <string name="compose_short">Chat</string>
     <string name="danger_confirm_title">This command is dangerous</string>
     <string name="danger_confirm_body">Detected: %1$s. Check which server you are on before continuing.</string>
+    <!-- host list: presence and recency -->
+    <string name="host_last_never">Never connected</string>
+    <string name="host_last_just_now">Just now</string>
+    <string name="host_last_minutes">%1$d min ago</string>
+    <string name="host_last_hours">%1$d h ago</string>
+    <string name="host_last_yesterday">Yesterday</string>
+    <string name="host_last_days">%1$d days ago</string>
+    <string name="host_last_weeks">%1$d weeks ago</string>
+    <string name="host_last_months">%1$d months ago</string>
+    <string name="hosts_section_live">Working now</string>
+    <string name="hosts_section_favorites">Starred</string>
+    <string name="hosts_section_recent">Recent</string>
+    <string name="hosts_section_all">All hosts</string>
+    <string name="hosts_no_results_title">No hosts found</string>
+    <string name="hosts_no_results_body">Nothing matched \u201c%1$s\u201d.</string>
+    <string name="hosts_clear_search">Clear search</string>
+    <string name="hosts_empty_hint">Already have an ssh config on your computer? Import the whole file at once.</string>
 </resources>

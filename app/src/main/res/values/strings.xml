@@ -7,7 +7,7 @@
     <string name="tab_settings">تنظیمات</string>
 
     <string name="hosts_empty_title">هنوز سروری اضافه نکرده‌اید</string>
-    <string name="hosts_empty_body">برای شروع، یک سرور اضافه کنید یا از اتصال سریع استفاده کنید.</string>
+    <string name="hosts_empty_body">سرورهایتان را یک‌بار اضافه کنید؛ رمز و کلید در Vault رمزنگاری‌شدهٔ دستگاه می‌ماند و دیگر لازم نیست چیزی را به خاطر بسپارید.</string>
     <string name="hosts_search">جستجوی سرور، کاربر یا برچسب</string>
     <string name="hosts_add">افزودن سرور</string>
     <string name="quick_connect">اتصال سریع</string>
@@ -104,11 +104,8 @@
     <string name="google_sign_out_success">از حساب Google خارج شدید</string>
     <string name="google_not_configured">شناسه Google OAuth برای این build تنظیم نشده است</string>
     <string name="google_no_credential">حساب Google‌ای روی این دستگاه پیدا نشد</string>
-    <string name="home_secure_title">ترمینال امن، سریع و فارسی</string>
-    <string name="home_secure_body">سرورها، سشن‌های زنده و کلیدهای شما در یک فضای ساده و حرفه‌ای.</string>
     <string name="home_hosts_count">%1$d سرور</string>
     <string name="home_sessions_count">%1$d سشن زنده</string>
-    <string name="home_vault_badge">Vault امن</string>
     <string name="home_new_connection">اتصال جدید</string>
     <string name="keys_import_failed">خطا در وارد کردن کلید</string>
     <string name="host_save_failed">ذخیرهٔ سرور انجام نشد؛ تنظیمات امنیتی دستگاه را بررسی کنید</string>
@@ -270,4 +267,21 @@
     <string name="compose_short">گفت‌وگو</string>
     <string name="danger_confirm_title">این فرمان خطرناک است</string>
     <string name="danger_confirm_body">تشخیص داده شد: %1$s. قبل از ادامه مطمئن شو روی کدام سرور هستی.</string>
+    <!-- host list: presence and recency -->
+    <string name="host_last_never">هنوز متصل نشده</string>
+    <string name="host_last_just_now">همین حالا</string>
+    <string name="host_last_minutes">%1$d دقیقه پیش</string>
+    <string name="host_last_hours">%1$d ساعت پیش</string>
+    <string name="host_last_yesterday">دیروز</string>
+    <string name="host_last_days">%1$d روز پیش</string>
+    <string name="host_last_weeks">%1$d هفته پیش</string>
+    <string name="host_last_months">%1$d ماه پیش</string>
+    <string name="hosts_section_live">در حال کار</string>
+    <string name="hosts_section_favorites">نشان‌شده</string>
+    <string name="hosts_section_recent">اخیر</string>
+    <string name="hosts_section_all">همهٔ سرورها</string>
+    <string name="hosts_no_results_title">سروری پیدا نشد</string>
+    <string name="hosts_no_results_body">هیچ سروری با «%1$s» جور در نیامد.</string>
+    <string name="hosts_clear_search">پاک کردن جستجو</string>
+    <string name="hosts_empty_hint">اگر روی کامپیوترتان فایل ssh config دارید، همه‌شان را یکجا وارد کنید.</string>
 </resources>

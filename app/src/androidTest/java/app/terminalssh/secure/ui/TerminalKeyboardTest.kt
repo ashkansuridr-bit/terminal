@@ -338,7 +338,13 @@ class TerminalKeyboardTest {
         instrumentation.targetContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
     private companion object {
-        const val UI_TIMEOUT_MS = 5_000L
+        /**
+         * Generous on purpose. These assert that a control exists and is reachable, not
+         * that it appeared quickly: an emulator without KVM takes tens of seconds to
+         * bring up a cold Compose screen, and a tight bound there fails honest code for
+         * reasons that have nothing to do with the code.
+         */
+        const val UI_TIMEOUT_MS = 60_000L
         const val IME_POLL_ATTEMPTS = 30
         const val IME_POLL_MS = 100L
     }
