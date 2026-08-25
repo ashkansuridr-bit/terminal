@@ -1,12 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The graphite surface of the source artwork, sampled from it directly
+  (#242529 at the top face down to #101115 at the base).
+
+  It fills the whole 108dp viewport with square corners on purpose: the launcher mask
+  supplies the rounded-square silhouette, so drawing the artwork's own rounded tile here
+  would round an already-rounded shape and leave the icon visibly inset from its neighbours.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
     <path android:pathData="M0,0h108v108h-108z">
-        <aapt:attr xmlns:aapt="http://schemas.android.com/aapt" name="android:fillColor">
+        <aapt:attr name="android:fillColor">
             <gradient android:type="linear"
-                android:startX="0" android:startY="0" android:endX="108" android:endY="108">
-                <item android:offset="0" android:color="#FF0B0F14"/>
-                <item android:offset="1" android:color="#FF12202A"/>
+                android:startX="18" android:startY="0"
+                android:endX="90" android:endY="108">
+                <item android:offset="0" android:color="#FF242529"/>
+                <item android:offset="1" android:color="#FF101115"/>
             </gradient>
         </aapt:attr>
     </path>
