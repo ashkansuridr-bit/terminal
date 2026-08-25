@@ -180,6 +180,49 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Schema-driven settings store, rendered generically by the settings screen. */
+    val settingsStore get() = container.settingsStore
+
+    /**
+     * Writes preferences to a file the user picks. Contains no credentials: the registry
+     * holds preferences only, and only values that differ from their default are written
+     * so a restored backup cannot freeze today's defaults in place.
+     */
+    fun exportSettings(uri: Uri) {
+        viewModelScope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                runCatching {
+                    val json = container.settingsStore.exportJson()
+                    getApplication<Application>().contentResolver.openOutputStream(uri)
+                        ?.use { it.write(json.toByteArray(Charsets.UTF_8)) }
+                        ?: error("cannot write settings file")
+                }.isSuccess
+            }
+            _toast.value = string(if (ok) R.string.settings_exported else R.string.settings_export_failed)
+        }
+    }
+
+    /** @param onApplied invoked on the main thread so the settings screen can re-read values. */
+    fun importSettings(uri: Uri, onApplied: () -> Unit) {
+        viewModelScope.launch {
+            val applied = withContext(Dispatchers.IO) {
+                runCatching {
+                    val text = getApplication<Application>().contentResolver.openInputStream(uri)
+                        ?.use { it.readBytes().toString(Charsets.UTF_8) }
+                        ?: error("cannot read settings file")
+                    container.settingsStore.importJson(text)
+                }.getOrNull()
+            }
+            if (applied == null) {
+                _toast.value = string(R.string.settings_import_failed)
+            } else {
+                onApplied()
+                _toast.value = getApplication<Application>()
+                    .getString(R.string.settings_imported, applied)
+            }
+        }
+    }
+
     fun toggleFavorite(profile: HostProfile) {
         container.hosts.upsert(profile.copy(favorite = !profile.favorite))
         _hosts.value = container.hosts.hosts()
