@@ -329,4 +329,5 @@
     <string name="sftp_file_type_code">کد</string>
     <string name="sftp_file_type_document">سند</string>
     <string name="sftp_file_type_pdf">PDF</string>
+    <string name="download">دانلود</string>
 </resources>

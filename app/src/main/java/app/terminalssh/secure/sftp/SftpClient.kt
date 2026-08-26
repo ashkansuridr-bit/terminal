@@ -98,6 +98,43 @@ class SftpClient(private val session: Session) : AutoCloseable {
         return PosixPermissions.ownerGroup(attrs.toString())
     }
 
+    /**
+     * Recursively lists all files under [remotePath], returning pairs of
+     * (remotePath, relativePath) for each non-directory entry. Used by
+     * recursive folder download (#26).
+     */
+    fun listRecursive(remotePath: String): List<Pair<String, String>> {
+        val normalized = RemotePath.normalize(remotePath)
+        val results = mutableListOf<Pair<String, String>>()
+        walkRecursive(normalized, "", results)
+        return results
+    }
+
+    private fun walkRecursive(remotePath: String, relativePath: String, results: MutableList<Pair<String, String>>) {
+        val entries = list(remotePath)
+        for (entry in entries) {
+            val childRelative = if (relativePath.isEmpty()) entry.name else "$relativePath/${entry.name}"
+            if (entry.isDirectory) {
+                walkRecursive(entry.path, childRelative, results)
+            } else {
+                results.add(entry.path to childRelative)
+            }
+        }
+    }
+
+    /**
+     * Recursively lists all local files under [localPath], returning pairs of
+     * (localPath, relativePath) for each file. Used by recursive folder upload (#27).
+     */
+    fun listLocalRecursive(localPath: java.io.File): List<Pair<java.io.File, String>> {
+        val results = mutableListOf<Pair<java.io.File, String>>()
+        localPath.walkTopDown().filter { it.isFile }.forEach { file ->
+            val relativePath = file.relativeTo(localPath).path
+            results.add(file to relativePath)
+        }
+        return results
+    }
+
     /** The target of a symlink, or null when [remotePath] isn't one or it can't be read. */
     fun readlink(remotePath: String): String? =
         runCatching { channel().readlink(RemotePath.normalize(remotePath)) }.getOrNull()

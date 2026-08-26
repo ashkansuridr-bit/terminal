@@ -197,6 +197,132 @@ class SftpController(
     suspend fun symlinkTarget(path: String): String? =
         runCatching { withContext(Dispatchers.IO) { client().readlink(path) } }.getOrNull()
 
+    /**
+     * Counts files in a remote directory recursively. Used by the confirmation
+     * dialog for recursive folder download (#26).
+     */
+    suspend fun countRemoteFiles(path: String): Int =
+        withContext(Dispatchers.IO) { client().listRecursive(path).size }
+
+    /**
+     * Recursively downloads a remote folder: walks the directory tree, queues each
+     * file as its own resumable Transfer. The destination tree is mirrored under
+     * [destinationTreeUri] using SAF's DocumentsContract.
+     */
+    fun downloadFolder(remotePath: String, destinationTreeUri: android.net.Uri, displayName: String) = scope.launch {
+        val entries = withContext(Dispatchers.IO) { client().listRecursive(remotePath) }
+        val parentDocUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(
+            destinationTreeUri,
+            android.provider.DocumentsContract.getTreeDocumentId(destinationTreeUri),
+        )
+        // Create subdirectories
+        val subdirs = entries.map { it.second.substringBeforeLast('/', "") }.filter { it.isNotEmpty() }.toSet()
+        val dirMap = mutableMapOf<String, android.net.Uri>()
+        dirMap[""] = parentDocUri
+
+        for (subdir in subdirs) {
+            val parts = subdir.split("/")
+            var currentParent = parentDocUri
+            var currentPath = ""
+            for (part in parts) {
+                currentPath = if (currentPath.isEmpty()) part else "$currentPath/$part"
+                if (currentPath !in dirMap) {
+                    val dirUri = runCatching {
+                        android.provider.DocumentsContract.createDocument(
+                            contentResolver, currentParent,
+                            android.provider.DocumentsContract.Document.MIME_TYPE_DIR, part,
+                        )
+                    }.getOrNull()
+                    if (dirUri != null) {
+                        dirMap[currentPath] = dirUri
+                        currentParent = dirUri
+                    }
+                } else {
+                    currentParent = dirMap[currentPath]!!
+                }
+            }
+        }
+
+        // Queue downloads
+        for ((remoteFilePath, relativePath) in entries) {
+            val parentDir = relativePath.substringBeforeLast('/', "")
+            val fileName = relativePath.substringAfterLast('/')
+            val targetParent = dirMap[parentDir] ?: parentDocUri
+            val destination = runCatching {
+                android.provider.DocumentsContract.createDocument(
+                    contentResolver, targetParent,
+                    "application/octet-stream", fileName,
+                )
+            }.getOrNull() ?: continue
+            val entry = RemoteEntry(
+                name = fileName,
+                path = remoteFilePath,
+                isDirectory = false,
+                isSymlink = false,
+                sizeBytes = withContext(Dispatchers.IO) { client().size(remoteFilePath) },
+                modifiedEpochSeconds = 0L,
+                permissions = "",
+            )
+            enqueueDownload(entry, destination)
+        }
+    }
+
+    /**
+     * Counts local files in a directory recursively. Used by the confirmation
+     * dialog for recursive folder upload (#27).
+     */
+    fun countLocalFiles(path: java.io.File): Int = path.walkTopDown().filter { it.isFile }.count()
+
+    /**
+     * Recursively uploads a local folder to the remote server: mirrors the
+     * directory structure via makeDirectory, then queues each file.
+     */
+    fun uploadFolder(localPath: java.io.File, remotePath: String) = scope.launch {
+        val entries = withContext(Dispatchers.IO) { client().listLocalRecursive(localPath) }
+        val remoteBase = RemotePath.join(remotePath, localPath.name)
+
+        // Create subdirectories
+        val subdirs = entries.map { it.second.substringBeforeLast('/', "") }.filter { it.isNotEmpty() }.toSet()
+        withContext(Dispatchers.IO) {
+            val sftp = client()
+            for (subdir in subdirs) {
+                val fullRemoteDir = RemotePath.join(remoteBase, subdir)
+                // Create each path segment
+                val parts = subdir.split("/")
+                var current = remoteBase
+                for (part in parts) {
+                    current = RemotePath.join(current, part)
+                    runCatching { sftp.makeDirectory(current) }
+                }
+            }
+        }
+
+        // Queue uploads
+        for ((localFile, relativePath) in entries) {
+            val remoteFilePath = RemotePath.join(remoteBase, relativePath)
+            val displayName = localFile.name
+            val size = localFile.length()
+            val entry = RemoteEntry(
+                name = displayName,
+                path = remoteFilePath,
+                isDirectory = false,
+                isSymlink = false,
+                sizeBytes = size,
+                modifiedEpochSeconds = localFile.lastModified() / 1000,
+                permissions = "",
+            )
+            // Check for conflict
+            val exists = withContext(Dispatchers.IO) { client().exists(remoteFilePath) }
+            if (exists) {
+                val renamed = nonCollidingName(RemotePath.parent(remoteFilePath), displayName)
+                val renamedPath = RemotePath.join(RemotePath.parent(remoteFilePath), renamed)
+                enqueueUploadNow(android.net.Uri.fromFile(localFile), renamed, renamedPath)
+            } else {
+                enqueueUploadNow(android.net.Uri.fromFile(localFile), displayName, remoteFilePath)
+            }
+        }
+    }
+
     /** Changes POSIX mode bits on a remote file/directory, then refreshes. */
     fun chmod(entry: RemoteEntry, mode: Int) = scope.launch {
         val result = runCatching { withContext(Dispatchers.IO) { client().chmod(entry.path, mode) } }

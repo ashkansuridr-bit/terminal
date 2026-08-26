@@ -329,4 +329,5 @@
     <string name="sftp_file_type_code">Código</string>
     <string name="sftp_file_type_document">Documento</string>
     <string name="sftp_file_type_pdf">PDF</string>
+    <string name="download">Descargar</string>
 </resources>

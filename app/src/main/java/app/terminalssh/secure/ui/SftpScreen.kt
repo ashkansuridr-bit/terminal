@@ -98,6 +98,7 @@ fun SftpBrowser(
     listDirectories: suspend (String) -> List<RemoteEntry>,
     onChmod: (RemoteEntry, Int) -> Unit = { _, _ -> },
     onChmodRecursive: (String, Int) -> Unit = { _, _ -> },
+    onDownloadFolder: (RemoteEntry) -> Unit = {},
 ) {
     var newFolderPrompt by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<RemoteEntry?>(null) }
@@ -105,6 +106,7 @@ fun SftpBrowser(
     var detailsTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var moveTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var copyTarget by remember { mutableStateOf<RemoteEntry?>(null) }
+    var downloadFolderTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var selectionMode by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(setOf<String>()) }
     var deleteSelectedPrompt by remember { mutableStateOf(false) }
@@ -203,6 +205,7 @@ fun SftpBrowser(
                     onMoveRequest = { moveTarget = entry },
                     onCopyRequest = { copyTarget = entry },
                     onChmodRequest = { chmodTarget = entry },
+                    onDownloadFolderRequest = if (entry.isDirectory) {{ downloadFolderTarget = entry }} else null,
                 )
                 }
             }
@@ -244,6 +247,14 @@ fun SftpBrowser(
             fileName = entry.name,
             onConfirm = { mode -> onChmod(entry, mode); chmodTarget = null },
             onDismiss = { chmodTarget = null },
+        )
+    }
+
+    downloadFolderTarget?.let { entry ->
+        DownloadFolderConfirmDialog(
+            entry = entry,
+            onConfirm = { onDownloadFolder(entry); downloadFolderTarget = null },
+            onDismiss = { downloadFolderTarget = null },
         )
     }
 
@@ -450,6 +461,7 @@ private fun EntryRow(
     onMoveRequest: () -> Unit,
     onCopyRequest: () -> Unit,
     onChmodRequest: () -> Unit = {},
+    onDownloadFolderRequest: (() -> Unit)? = null,
 ) {
     var pressed by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -546,6 +558,12 @@ private fun EntryRow(
                 text = { Text(stringResource(R.string.sftp_chmod)) },
                 onClick = { menuOpen = false; onChmodRequest() },
             )
+            if (onDownloadFolderRequest != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.sftp_recursive_folder_download)) },
+                    onClick = { menuOpen = false; onDownloadFolderRequest() },
+                )
+            }
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.sftp_properties)) },
                 onClick = { menuOpen = false; onDetailsRequest() },
@@ -572,4 +590,28 @@ private fun EmptyDirectory() {
             )
         }
     }
+}
+
+/**
+ * Confirmation dialog for recursive folder download. Simple — just the name —
+ * because the file count is discovered asynchronously and the actual I/O is
+ * handled by the queue. Matches the app's "show consequences before action" principle.
+ */
+@Composable
+private fun DownloadFolderConfirmDialog(
+    entry: RemoteEntry,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.sftp_recursive_folder_download)) },
+        text = { Text(stringResource(R.string.sftp_recursive_download_confirm, entry.name, 0)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.download)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }

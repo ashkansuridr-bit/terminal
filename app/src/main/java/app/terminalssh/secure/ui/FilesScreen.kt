@@ -63,6 +63,7 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     val uploadConflict by sftp.uploadConflict.collectAsStateWithLifecycle()
     var pendingDownload by remember { mutableStateOf<RemoteEntry?>(null) }
     var pendingBatchDownload by remember { mutableStateOf<List<RemoteEntry>>(emptyList()) }
+    var pendingFolderDownload by remember { mutableStateOf<RemoteEntry?>(null) }
     val context = LocalContext.current
 
     val saveLauncher = rememberLauncherForActivityResult(
@@ -101,6 +102,17 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
         }
     }
 
+    // Folder download: picks a destination tree, then recursively downloads the folder
+    val folderDownloadTreeLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { treeUri ->
+        val entry = pendingFolderDownload
+        pendingFolderDownload = null
+        if (treeUri != null && entry != null) {
+            sftp.downloadFolder(entry.path, treeUri, entry.name)
+        }
+    }
+
     Column(Modifier.fillMaxSize().navigationBarsPadding()) {
         TransferStrip(
             transfers = transfers,
@@ -136,6 +148,10 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
             listDirectories = sftp::listDirectories,
             onChmod = { entry, mode -> sftp.chmod(entry, mode) },
             onChmodRecursive = { path, mode -> sftp.chmodRecursive(path, mode) },
+            onDownloadFolder = { entry ->
+                pendingFolderDownload = entry
+                folderDownloadTreeLauncher.launch(null)
+            },
         )
     }
 
