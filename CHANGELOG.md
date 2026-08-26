@@ -1,5 +1,58 @@
 # Changelog
 
+## 0.5.1 — a host list you can read at a glance
+
+### Changed
+
+- **The banner at the top of the host list is gone.** It spent roughly 250dp
+  restating the app's own tagline and three counts, and pushed the host rows —
+  the only thing that screen exists to show — below the fold on every launch. It
+  also carried a second "new connection" button that did exactly what the
+  floating one did. One primary action remains; on an empty app even that hides,
+  because the first-run panel already carries it full width. Both answer to the
+  same accessible name, so nothing quietly renames itself between states.
+- **Host rows have three levels instead of one**: name, `user@host`, and a third
+  line that says either what the connection is doing right now or when the host
+  was last used ("45 minutes ago", "yesterday", "never connected"). Hosts group
+  into working / starred / recent / all, with headings only once there is more
+  than one group to tell apart. A host with a live session is the only row that
+  gets a coloured edge — emphasis that applies to every row is not emphasis.
+- **One colour vocabulary across screens.** The terminal and the host list each
+  decided independently what a connection state looked like, and had already
+  drifted: a connecting session was cyan on one screen and amber on the other.
+  Four colours now mean four things everywhere — turquoise succeeded, cyan is
+  working, amber is waiting on you, red failed — and colour is never the only
+  signal, since every use sits next to its label.
+- Corner radii moved onto the same 4dp grid as everything else, and 118 arbitrary
+  spacing values across 16 files went with them.
+
+### Fixed
+
+- **Eight labels were rendering in the wrong typeface.** `labelMedium` and
+  `bodySmall` were used but never defined, so Compose fell back to the Material
+  defaults: Roboto at 0.4–0.5sp letter spacing. Persian is a connected script, so
+  any positive letter spacing pulls the joins apart — those labels were visibly
+  broken. All fifteen text styles are now defined in Vazirmatn at zero letter
+  spacing, and a test fails the build if a style is used without being defined or
+  if any letter spacing goes non-zero.
+- A session left open on a host was invisible from the host list, so returning to
+  it meant remembering which terminal tab it was in.
+
+### Removed
+
+- The `Emerald` accent, which sat beside turquoise in the palette and was
+  referenced nowhere.
+
+### Internal
+
+- `RelativeTime` buckets recency as data rather than formatted strings, so the
+  wording stays in `strings.xml` for translators and the logic is unit tested
+  without a `Context`.
+- Instrumentation timeouts move from 5s to 60s. They assert that a control exists
+  and is reachable, never that it appeared quickly; a cold Compose screen on an
+  emulator without KVM takes over ten seconds to first paint, so the old bound was
+  failing correct code for reasons unrelated to the code.
+
 ## 0.5.0 — coding agents, SFTP, key generation, app lock and personalization
 
 ### Added
