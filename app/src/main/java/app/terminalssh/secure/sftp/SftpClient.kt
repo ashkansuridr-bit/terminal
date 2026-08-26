@@ -65,6 +65,11 @@ class SftpClient(private val session: Session) : AutoCloseable {
         runCatching { channel().stat(RemotePath.normalize(remotePath)).size }
             .getOrDefault(Transfer.UNKNOWN_SIZE)
 
+    /** Modification time in epoch seconds, or 0 when unavailable. */
+    fun mtime(remotePath: String): Long =
+        runCatching { channel().stat(RemotePath.normalize(remotePath)).mTime.toLong() }
+            .getOrDefault(0L)
+
     /**
      * Whether [remotePath] currently exists on the server. A stat failure — including a
      * genuine "not found" — reads as false; the caller only needs a yes/no for a

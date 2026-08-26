@@ -3,6 +3,9 @@ package app.terminalssh.secure.sftp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
 
 /**
  * Ordering and lifecycle for file transfers, with no I/O of its own.
@@ -204,5 +207,63 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
 
         /** Oldest history entries fall off once this many are archived. */
         const val MAX_HISTORY = 50
+
+        private const val PERSIST_FILE = "transfer_queue.json"
+
+        /** Restores pending transfers from a previous session. RUNNING entries are
+         *  re-queued so they auto-resume on the next pump cycle. */
+        fun fromPersisted(persistFile: File): TransferQueue {
+            val queue = TransferQueue()
+            runCatching {
+                if (!persistFile.exists()) return@runCatching
+                val json = persistFile.readText()
+                val arr = JSONArray(json)
+                val transfers = mutableListOf<Transfer>()
+                for (i in 0 until arr.length()) {
+                    val obj = arr.getJSONObject(i)
+                    transfers.add(Transfer(
+                        id = obj.getString("id"),
+                        direction = TransferDirection.valueOf(obj.getString("direction")),
+                        remotePath = obj.getString("remotePath"),
+                        localUri = obj.getString("localUri"),
+                        displayName = obj.getString("displayName"),
+                        totalBytes = obj.optLong("totalBytes", Transfer.UNKNOWN_SIZE),
+                        transferredBytes = obj.optLong("transferredBytes", 0L),
+                        state = TransferState.valueOf(obj.getString("state")),
+                        attempts = obj.optInt("attempts", 0),
+                    ))
+                }
+                queue._transfers.value = transfers
+            }
+            return queue
+        }
+    }
+
+    /**
+     * Persists pending transfers to internal storage so they survive process death.
+     * RUNNING transfers are re-queued so they resume on next app launch.
+     */
+    fun persist(persistFile: File) {
+        val arr = JSONArray()
+        _transfers.value.filter { !it.state.isTerminal }.forEach { t ->
+            val state = if (t.state == TransferState.RUNNING) TransferState.QUEUED else t.state
+            arr.put(JSONObject().apply {
+                put("id", t.id)
+                put("direction", t.direction.name)
+                put("remotePath", t.remotePath)
+                put("localUri", t.localUri)
+                put("displayName", t.displayName)
+                put("totalBytes", t.totalBytes)
+                put("transferredBytes", t.transferredBytes)
+                put("state", state.name)
+                put("attempts", t.attempts)
+            })
+        }
+        runCatching { persistFile.writeText(arr.toString()) }
+    }
+
+    /** Clears the persisted file. */
+    fun clearPersisted(persistFile: File) {
+        runCatching { persistFile.delete() }
     }
 }

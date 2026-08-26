@@ -1,5 +1,8 @@
 package app.terminalssh.secure.ui
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +24,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.terminalssh.secure.R
@@ -92,7 +97,7 @@ fun TextEditorDialog(
 
 /**
  * Image preview dialog for remote files (#38).
- * Shows the image thumbnail from the downloaded staging file.
+ * Shows the image from the downloaded staging file.
  */
 @Composable
 fun ImagePreviewDialog(
@@ -101,6 +106,9 @@ fun ImagePreviewDialog(
     imageBytes: ByteArray?,
     onDismiss: () -> Unit,
 ) {
+    val bitmap = remember(imageBytes) {
+        imageBytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.sftp_preview_image)) },
@@ -114,13 +122,15 @@ fun ImagePreviewDialog(
                 Spacer(Modifier.height(8.dp))
                 if (isLoading) {
                     CircularProgressIndicator(modifier = Modifier.fillMaxWidth().padding(32.dp))
-                } else if (imageBytes != null) {
-                    SelectionContainer {
-                        Text(
-                            stringResource(R.string.sftp_preview),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
+                } else if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = fileName,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentScale = ContentScale.Fit,
+                    )
+                } else {
+                    Text(stringResource(R.string.sftp_preview))
                 }
             }
         },

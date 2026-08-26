@@ -331,4 +331,11 @@
     <string name="sftp_file_type_pdf">PDF</string>
     <string name="download">دانلود</string>
     <string name="loading">در حال بارگذاری...</string>
+    <string name="sftp_concurrent_edit_warning">این فایل در حین ویرایش شما توسط شخص دیگری تغییر کرده است. آیا می‌خواهید با این حال ذخیره کنید؟</string>
+    <string name="sftp_concurrent_edit_title">تغییر هم‌زمان</string>
+    <string name="sftp_force_save">ذخیره اجباری</string>
+    <string name="sftp_compress">فشرده‌سازی</string>
+    <string name="sftp_compress_selection">فشرده‌سازی انتخاب شده</string>
+    <string name="sftp_compressing">در حال فشرده‌سازی...</string>
+    <string name="sftp_compress_error">خطا در فشرده‌سازی</string>
 </resources>

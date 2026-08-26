@@ -77,6 +77,23 @@ object FileTypeIcons {
         }
     }
 
+    /** Simple MIME type guess for file content type detection. */
+    fun mimeFor(name: String): String {
+        val ext = name.substringAfterLast('.', "").lowercase()
+        return when {
+            ext in imageExtensions -> "image/$ext"
+            ext in videoExtensions -> "video/$ext"
+            ext in audioExtensions -> "audio/$ext"
+            ext in pdfExtensions -> "application/pdf"
+            ext in archiveExtensions -> "application/x-compressed"
+            ext == "json" -> "application/json"
+            ext == "xml" -> "text/xml"
+            ext == "html" || ext == "htm" -> "text/html"
+            ext == "csv" -> "text/csv"
+            else -> "text/plain"
+        }
+    }
+
     /** Label set loaded once from string resources; avoids recomposition overhead. */
     data class FileTypeLabels(
         val image: String,

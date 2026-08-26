@@ -331,4 +331,11 @@
     <string name="sftp_file_type_pdf">PDF</string>
     <string name="download">Download</string>
     <string name="loading">Loading...</string>
+    <string name="sftp_concurrent_edit_warning">This file was modified by someone else while you were editing. Save anyway?</string>
+    <string name="sftp_concurrent_edit_title">Concurrent Edit</string>
+    <string name="sftp_force_save">Force save</string>
+    <string name="sftp_compress">Compress</string>
+    <string name="sftp_compress_selection">Compress selection</string>
+    <string name="sftp_compressing">Compressing...</string>
+    <string name="sftp_compress_error">Failed to compress</string>
 </resources>

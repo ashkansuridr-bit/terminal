@@ -7,6 +7,7 @@ import app.terminalssh.secure.ssh.SessionRegistry
 import app.terminalssh.secure.storage.HostStore
 import app.terminalssh.secure.storage.KnownHostsStore
 import app.terminalssh.secure.settings.SettingsStore
+import app.terminalssh.secure.sftp.ThumbnailCache
 import app.terminalssh.secure.storage.Settings
 
 /** Single composition root. No DI framework: the graph is six objects. */
@@ -30,5 +31,6 @@ class TerminalApp : Application() {
         settingsStore = SettingsStore(this)
         client = JschSshClient(vault, knownHosts)
         sessions = SessionRegistry()
+        ThumbnailCache.init(cacheDir)
     }
 }

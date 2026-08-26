@@ -53,6 +53,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -72,6 +73,7 @@ import app.terminalssh.secure.sftp.SftpController
 import app.terminalssh.secure.ui.theme.Stroke
 import app.terminalssh.secure.ui.theme.TextSecondary
 import app.terminalssh.secure.ui.theme.Turquoise
+import kotlinx.coroutines.launch
 
 /**
  * Remote file browser.
@@ -102,7 +104,11 @@ fun SftpBrowser(
     onEditFile: (RemoteEntry) -> Unit = {},
     onPreviewFile: (RemoteEntry) -> Unit = {},
     fetchFileText: (suspend (String) -> Result<String>)? = null,
+    fetchFileTextForEdit: (suspend (String) -> Result<Pair<String, Long>>)? = null,
+    fetchFileBytes: (suspend (String) -> Result<ByteArray>)? = null,
     onUploadEditedText: ((String, String) -> Unit)? = null,
+    onUploadEditedTextChecked: (suspend (String, String) -> Result<Boolean>)? = null,
+    onCompressSelected: (List<RemoteEntry>) -> Unit = {},
 ) {
     var newFolderPrompt by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<RemoteEntry?>(null) }
@@ -136,6 +142,13 @@ fun SftpBrowser(
                     onDownloadSelected(state.entries.filter { it.path in selected && !it.isDirectory })
                 },
                 onDeleteSelected = { deleteSelectedPrompt = true },
+                onCompressSelected = {
+                    val entriesToCompress = state.entries.filter { it.path in selected }
+                    if (entriesToCompress.isNotEmpty()) {
+                        onCompressSelected(entriesToCompress)
+                        selectionMode = false; selected = emptySet()
+                    }
+                },
                 onClose = { selectionMode = false; selected = emptySet() },
             )
         } else {
@@ -270,17 +283,28 @@ fun SftpBrowser(
         RemoteTextEditor(
             entry = entry,
             fetchFileText = fetchFileText,
+            fetchFileTextForEdit = fetchFileTextForEdit,
             onUpload = { text -> onUploadEditedText?.invoke(entry.path, text); editTarget = null },
+            onUploadChecked = onUploadEditedTextChecked,
             onDismiss = { editTarget = null },
         )
     }
 
     previewTarget?.let { entry ->
-        RemoteTextPreview(
-            entry = entry,
-            fetchFileText = fetchFileText,
-            onDismiss = { previewTarget = null },
-        )
+        val isImage = FileTypeIcons.mimeFor(entry.name).startsWith("image/")
+        if (isImage) {
+            RemoteImagePreview(
+                entry = entry,
+                fetchFileBytes = fetchFileBytes,
+                onDismiss = { previewTarget = null },
+            )
+        } else {
+            RemoteTextPreview(
+                entry = entry,
+                fetchFileText = fetchFileText,
+                onDismiss = { previewTarget = null },
+            )
+        }
     }
 
     if (deleteSelectedPrompt) {
@@ -391,6 +415,7 @@ private fun SelectionBar(
     downloadEnabled: Boolean,
     onDownloadSelected: () -> Unit,
     onDeleteSelected: () -> Unit,
+    onCompressSelected: () -> Unit,
     onClose: () -> Unit,
 ) {
     Row(
@@ -408,6 +433,9 @@ private fun SelectionBar(
         )
         IconButton(onClick = onDownloadSelected, enabled = downloadEnabled) {
             Icon(Icons.Outlined.Download, stringResource(R.string.sftp_download_selected), tint = Turquoise)
+        }
+        IconButton(onClick = onCompressSelected, enabled = count > 0) {
+            Icon(Icons.Outlined.Description, stringResource(R.string.sftp_compress_selection), tint = Turquoise)
         }
         IconButton(onClick = onDeleteSelected, enabled = count > 0) {
             Icon(Icons.Outlined.Delete, stringResource(R.string.delete), tint = MaterialTheme.colorScheme.error)
@@ -659,33 +687,78 @@ private fun DownloadFolderConfirmDialog(
 private fun RemoteTextEditor(
     entry: RemoteEntry,
     fetchFileText: (suspend (String) -> Result<String>)?,
+    fetchFileTextForEdit: (suspend (String) -> Result<Pair<String, Long>>)? = null,
     onUpload: (String) -> Unit,
+    onUploadChecked: (suspend (String, String) -> Result<Boolean>)? = null,
     onDismiss: () -> Unit,
 ) {
     var loading by remember { mutableStateOf(true) }
     var content by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var concurrentEditWarning by remember { mutableStateOf(false) }
+    var hasConcurrentEdit by remember { mutableStateOf(false) }
 
     LaunchedEffect(entry.path) {
         loading = true
         error = null
-        val result = fetchFileText?.invoke(entry.path)
-        if (result != null) {
-            result.onSuccess { text -> content = text; loading = false }
+        if (fetchFileTextForEdit != null) {
+            fetchFileTextForEdit(entry.path)
+                .onSuccess { (text, _) -> content = text; loading = false }
                 .onFailure { e -> error = e.message; loading = false }
         } else {
-            loading = false
+            fetchFileText?.invoke(entry.path)
+                ?.onSuccess { text -> content = text; loading = false }
+                ?.onFailure { e -> error = e.message; loading = false }
         }
     }
 
-    TextEditorDialog(
-        fileName = entry.name,
-        isLoading = loading,
-        content = content,
-        onContentChange = { content = it },
-        onSave = { onUpload(content) },
-        onDismiss = onDismiss,
-    )
+    val scope = rememberCoroutineScope()
+
+    if (concurrentEditWarning) {
+        AlertDialog(
+            onDismissRequest = { concurrentEditWarning = false },
+            title = { Text(stringResource(R.string.sftp_concurrent_edit_title)) },
+            text = { Text(stringResource(R.string.sftp_concurrent_edit_warning)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    concurrentEditWarning = false
+                    onUpload(content)
+                }) {
+                    Text(stringResource(R.string.sftp_force_save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { concurrentEditWarning = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    } else {
+        TextEditorDialog(
+            fileName = entry.name,
+            isLoading = loading,
+            content = content,
+            onContentChange = { content = it },
+            onSave = {
+                if (onUploadChecked != null) {
+                    scope.launch {
+                        onUploadChecked(entry.path, content)
+                            .onSuccess { modifiedExternally ->
+                                if (modifiedExternally) {
+                                    concurrentEditWarning = true
+                                } else {
+                                    onUpload(content)
+                                }
+                            }
+                            .onFailure { onUpload(content) }
+                    }
+                } else {
+                    onUpload(content)
+                }
+            },
+            onDismiss = onDismiss,
+        )
+    }
 }
 
 @Composable
@@ -708,6 +781,42 @@ private fun RemoteTextPreview(
         fileName = entry.name,
         isLoading = loading,
         content = content,
+        onDismiss = onDismiss,
+    )
+}
+
+@Composable
+private fun RemoteImagePreview(
+    entry: RemoteEntry,
+    fetchFileBytes: (suspend (String) -> Result<ByteArray>)?,
+    onDismiss: () -> Unit,
+) {
+    var loading by remember { mutableStateOf(true) }
+    var imageBytes by remember { mutableStateOf<ByteArray?>(null) }
+
+    LaunchedEffect(entry.path) {
+        loading = true
+        // Check thumbnail cache first
+        val cached = app.terminalssh.secure.sftp.ThumbnailCache.get(entry.path)
+        if (cached != null) {
+            imageBytes = java.io.ByteArrayOutputStream().also { cached.compress(android.graphics.Bitmap.CompressFormat.JPEG, 75, it) }.toByteArray()
+            loading = false
+        } else {
+            val result = fetchFileBytes?.invoke(entry.path)
+            result?.onSuccess { bytes ->
+                imageBytes = bytes
+                // Cache the thumbnail
+                val bmp = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                if (bmp != null) app.terminalssh.secure.sftp.ThumbnailCache.put(entry.path, bmp)
+            }
+            loading = false
+        }
+    }
+
+    ImagePreviewDialog(
+        fileName = entry.name,
+        isLoading = loading,
+        imageBytes = imageBytes,
         onDismiss = onDismiss,
     )
 }

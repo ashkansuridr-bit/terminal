@@ -55,13 +55,26 @@ class SftpController(
     private val _browser = MutableStateFlow(BrowserState())
     val browser: StateFlow<BrowserState> = _browser.asStateFlow()
 
-    val queue = TransferQueue()
+    /** Persists pending transfers across process death. Stored in cacheDir for simplicity. */
+    private val persistFile = java.io.File(cacheDir, "transfer_queue.json")
+    val queue = TransferQueue.fromPersisted(persistFile)
 
     private val _uploadConflict = MutableStateFlow<UploadConflict?>(null)
     val uploadConflict: StateFlow<UploadConflict?> = _uploadConflict.asStateFlow()
 
     private var client: SftpClient? = null
     private var pumpJob: Job? = null
+
+    /** Auto-persist queue whenever it changes so pending transfers survive process death. */
+    private val persistJob = scope.launch {
+        queue.transfers.collect {
+            if (it.any { t -> !t.state.isTerminal }) {
+                queue.persist(persistFile)
+            } else {
+                queue.clearPersisted(persistFile)
+            }
+        }
+    }
 
     /**
      * Per-transfer SftpClient instances for parallel transfers. Each concurrent
@@ -323,9 +336,55 @@ class SftpController(
         }
     }
 
+    /** Downloads a remote file as raw bytes (for image preview, etc.). */
+    suspend fun downloadFileBytes(remotePath: String): Result<ByteArray> =
+        runCatching {
+            withContext(Dispatchers.IO) {
+                val sftp = client()
+                val baos = java.io.ByteArrayOutputStream()
+                sftp.download(remotePath, baos, 0L) {}
+                baos.toByteArray()
+            }
+        }
+
     /** Downloads a remote text file's content (for the in-app editor / preview). */
     suspend fun downloadFileText(remotePath: String, maxBytes: Long = 512_000): Result<String> =
         runCatching { withContext(Dispatchers.IO) { client().downloadText(remotePath, maxBytes) } }
+
+    /**
+     * Records the mtime of a file when the user starts editing it. Used by
+     * [uploadFileText] to detect concurrent edits (#37).
+     */
+    private val editMtimes = ConcurrentHashMap<String, Long>()
+
+    /** Downloads text AND records the mtime for concurrent-edit detection. */
+    suspend fun downloadFileTextForEdit(remotePath: String, maxBytes: Long = 512_000): Result<Pair<String, Long>> {
+        return runCatching {
+            withContext(Dispatchers.IO) {
+                val text = client().downloadText(remotePath, maxBytes)
+                val mtime = client().mtime(remotePath)
+                editMtimes[remotePath] = mtime
+                text to mtime
+            }
+        }
+    }
+
+    /**
+     * Uploads text content back to a remote path (after editing).
+     * If the mtime changed since download, the user is warned about a possible
+     * concurrent edit (#37) — returns true when the file was modified externally.
+     */
+    suspend fun uploadFileTextChecked(remotePath: String, text: String): Result<Boolean> {
+        return runCatching {
+            withContext(Dispatchers.IO) {
+                val currentMtime = client().mtime(remotePath)
+                val savedMtime = editMtimes.remove(remotePath)
+                val modifiedExternally = savedMtime != null && currentMtime != savedMtime
+                client().uploadText(remotePath, text)
+                modifiedExternally
+            }
+        }
+    }
 
     /** Uploads text content back to a remote path (after editing). */
     fun uploadFileText(remotePath: String, text: String) = scope.launch {
@@ -362,6 +421,48 @@ class SftpController(
                 recursiveChmod(sftp, entry.path, mode, failures)
             } else {
                 runCatching { sftp.chmod(entry.path, mode) }.onFailure { failures += it }
+            }
+        }
+    }
+
+    /**
+     * Compresses the selected remote files into a .zip on the server side:
+     * downloads them to a temp dir, zips them, and uploads the result.
+     * Returns the remote path of the created zip, or throws on failure.
+     */
+    suspend fun compressSelection(entries: List<RemoteEntry>, remoteDestDir: String): String {
+        return withContext(Dispatchers.IO) {
+            val sftp = client()
+            val tempDir = java.io.File(cacheDir, "compress_${System.currentTimeMillis()}")
+            tempDir.mkdirs()
+            try {
+                // Download all files to temp dir
+                for (entry in entries) {
+                    if (entry.isDirectory) continue
+                    val localFile = java.io.File(tempDir, entry.name)
+                    java.io.FileOutputStream(localFile).use { out ->
+                        sftp.download(entry.path, out, 0L) {}
+                    }
+                }
+                // Create zip from temp files
+                val zipName = "archive_${System.currentTimeMillis()}.zip"
+                val zipFile = java.io.File(cacheDir, zipName)
+                java.util.zip.ZipOutputStream(java.io.FileOutputStream(zipFile)).use { zos ->
+                    tempDir.listFiles()?.filter { it.isFile }?.forEach { file ->
+                        java.util.zip.ZipEntry(file.name).also { zos.putNextEntry(it) }
+                        file.inputStream().use { it.copyTo(zos) }
+                        zos.closeEntry()
+                    }
+                }
+                // Upload zip to remote destination
+                val remotePath = RemotePath.join(remoteDestDir, zipName)
+                java.io.FileInputStream(zipFile).use { inp ->
+                    sftp.upload(inp, remotePath, 0L) {}
+                }
+                zipFile.delete()
+                remotePath
+            } finally {
+                tempDir.deleteRecursively()
             }
         }
     }
@@ -606,6 +707,8 @@ class SftpController(
 
     fun close() {
         pumpJob?.cancel()
+        persistJob.cancel()
+        queue.persist(persistFile)
         transferClients.values.forEach { runCatching { it.close() } }
         transferClients.clear()
         runCatching { client?.close() }

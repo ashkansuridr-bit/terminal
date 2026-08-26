@@ -335,4 +335,11 @@
     <string name="sftp_file_type_pdf">PDF</string>
     <string name="download">تنزيل</string>
     <string name="loading">جاري التحميل...</string>
+    <string name="sftp_concurrent_edit_warning">تم تعديل هذا الملف بواسطة شخص آخر أثناء تحريرك له. هل تريد الحفظ على أي حال؟</string>
+    <string name="sftp_concurrent_edit_title">تحرير متزامن</string>
+    <string name="sftp_force_save">حفظ إجباري</string>
+    <string name="sftp_compress">ضغط</string>
+    <string name="sftp_compress_selection">ضغط المحدد</string>
+    <string name="sftp_compressing">جارٍ الضغط...</string>
+    <string name="sftp_compress_error">فشل الضغط</string>
 </resources>

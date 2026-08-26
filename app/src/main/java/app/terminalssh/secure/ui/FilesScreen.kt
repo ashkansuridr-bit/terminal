@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +33,7 @@ import app.terminalssh.secure.sftp.RemoteEntry
 import app.terminalssh.secure.sftp.SftpController
 import app.terminalssh.secure.ui.theme.TextSecondary
 import app.terminalssh.secure.vm.AppViewModel
+import kotlinx.coroutines.launch
 
 /**
  * SFTP tab. Rides the currently selected terminal session rather than opening its own
@@ -65,6 +67,7 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     var pendingBatchDownload by remember { mutableStateOf<List<RemoteEntry>>(emptyList()) }
     var pendingFolderDownload by remember { mutableStateOf<RemoteEntry?>(null) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     val saveLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream"),
@@ -159,7 +162,18 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                 // Preview file: the dialog handles download lifecycle
             },
             fetchFileText = sftp::downloadFileText,
+            fetchFileTextForEdit = sftp::downloadFileTextForEdit,
+            fetchFileBytes = sftp::downloadFileBytes,
             onUploadEditedText = { path, text -> sftp.uploadFileText(path, text) },
+            onUploadEditedTextChecked = sftp::uploadFileTextChecked,
+            onCompressSelected = { entries ->
+                scope.launch {
+                    try {
+                        val remotePath = sftp.compressSelection(entries, sftp.browser.value.path)
+                        sftp.refresh()
+                    } catch (_: Exception) {}
+                }
+            },
         )
     }
 

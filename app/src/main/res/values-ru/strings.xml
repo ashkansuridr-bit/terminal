@@ -333,4 +333,11 @@
     <string name="sftp_file_type_pdf">PDF</string>
     <string name="download">Скачать</string>
     <string name="loading">Загрузка...</string>
+    <string name="sftp_concurrent_edit_warning">Этот файл был изменён другим пользователем, пока вы редактировали. Сохранить всё равно?</string>
+    <string name="sftp_concurrent_edit_title">Одновременное редактирование</string>
+    <string name="sftp_force_save">Принудительно сохранить</string>
+    <string name="sftp_compress">Сжать</string>
+    <string name="sftp_compress_selection">Сжать выделенное</string>
+    <string name="sftp_compressing">Сжатие...</string>
+    <string name="sftp_compress_error">Ошибка сжатия</string>
 </resources>
