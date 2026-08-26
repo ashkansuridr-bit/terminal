@@ -289,9 +289,23 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 if (state is SshSessionState.Failed && !state.hostKeyChanged) {
                     _toast.value = string(state.kind.stringRes)
                 }
-                SshForegroundService.sync(getApplication(), sessions.liveCount())
+                syncForegroundService()
             }
         }
+        // Also observe active transfers to keep the foreground service alive during SFTP
+        viewModelScope.launch {
+            // Small delay to let SftpController initialize if needed
+            kotlinx.coroutines.delay(500)
+            val sftp = sftpControllers[session.id] ?: return@launch
+            sftp.queue.transfers.collect { syncForegroundService() }
+        }
+    }
+
+    private fun syncForegroundService() {
+        val activeTransfers = sftpControllers.values.sumOf {
+            it.queue.active.size
+        }
+        SshForegroundService.sync(getApplication(), sessions.liveCount(), activeTransfers)
     }
 
     fun trustHostKey(session: SshSession, pending: SshSessionState.AwaitingHostKeyApproval) {

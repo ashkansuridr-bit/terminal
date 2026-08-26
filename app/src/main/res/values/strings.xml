@@ -338,4 +338,6 @@
     <string name="sftp_compress_selection">فشرده‌سازی انتخاب شده</string>
     <string name="sftp_compressing">در حال فشرده‌سازی...</string>
     <string name="sftp_compress_error">خطا در فشرده‌سازی</string>
+    <string name="notif_sessions_transfers">%1$d اتصال فعال · %2$d انتقال فعال</string>
+    <string name="notif_transfers_active">%d انتقال فعال</string>
 </resources>

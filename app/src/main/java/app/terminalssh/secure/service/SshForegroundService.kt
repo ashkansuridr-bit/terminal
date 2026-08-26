@@ -16,6 +16,7 @@ import app.terminalssh.secure.ui.MainActivity
 /**
  * Keeps SSH sessions alive while the app is backgrounded, with a notification the
  * user can act on. Started when the first session connects, stopped when none remain.
+ * Also stays alive while SFTP transfers are active.
  */
 class SshForegroundService : Service() {
 
@@ -27,12 +28,13 @@ class SshForegroundService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        val count = intent?.getIntExtra(EXTRA_COUNT, 0) ?: 0
-        if (count <= 0) {
+        val sessionCount = intent?.getIntExtra(EXTRA_SESSION_COUNT, 0) ?: 0
+        val transferCount = intent?.getIntExtra(EXTRA_TRANSFER_COUNT, 0) ?: 0
+        if (sessionCount <= 0 && transferCount <= 0) {
             stopSelf()
             return START_NOT_STICKY
         }
-        startForeground(NOTIFICATION_ID, buildNotification(count))
+        startForeground(NOTIFICATION_ID, buildNotification(sessionCount, transferCount))
         return START_STICKY
     }
 
@@ -48,7 +50,7 @@ class SshForegroundService : Service() {
         stopSelf()
     }
 
-    private fun buildNotification(count: Int): Notification {
+    private fun buildNotification(sessionCount: Int, transferCount: Int): Notification {
         ensureChannel()
         val open = PendingIntent.getActivity(
             this, 0,
@@ -60,6 +62,12 @@ class SshForegroundService : Service() {
             Intent(this, SshForegroundService::class.java).setAction(ACTION_DISCONNECT_ALL),
             PendingIntent.FLAG_IMMUTABLE,
         )
+        val title = when {
+            transferCount > 0 && sessionCount > 0 ->
+                getString(R.string.notif_sessions_transfers, sessionCount, transferCount)
+            transferCount > 0 -> getString(R.string.notif_transfers_active, transferCount)
+            else -> getString(R.string.notif_sessions, sessionCount)
+        }
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(this, CHANNEL_ID)
         } else {
@@ -67,7 +75,7 @@ class SshForegroundService : Service() {
         }
         return builder
             .setContentTitle(getString(R.string.notif_title))
-            .setContentText(getString(R.string.notif_sessions, count))
+            .setContentText(title)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(open)
             .setOngoing(true)
@@ -91,12 +99,15 @@ class SshForegroundService : Service() {
     companion object {
         private const val CHANNEL_ID = "sessions"
         private const val NOTIFICATION_ID = 1001
-        private const val EXTRA_COUNT = "count"
+        private const val EXTRA_SESSION_COUNT = "session_count"
+        private const val EXTRA_TRANSFER_COUNT = "transfer_count"
         const val ACTION_DISCONNECT_ALL = "app.terminalssh.secure.DISCONNECT_ALL"
 
-        fun sync(context: Context, liveSessions: Int) {
-            val intent = Intent(context, SshForegroundService::class.java).putExtra(EXTRA_COUNT, liveSessions)
-            if (liveSessions > 0) {
+        fun sync(context: Context, liveSessions: Int, activeTransfers: Int = 0) {
+            val intent = Intent(context, SshForegroundService::class.java)
+                .putExtra(EXTRA_SESSION_COUNT, liveSessions)
+                .putExtra(EXTRA_TRANSFER_COUNT, activeTransfers)
+            if (liveSessions > 0 || activeTransfers > 0) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(intent)
                 } else {

@@ -340,4 +340,6 @@
     <string name="sftp_compress_selection">Сжать выделенное</string>
     <string name="sftp_compressing">Сжатие...</string>
     <string name="sftp_compress_error">Ошибка сжатия</string>
+    <string name="notif_sessions_transfers">%1$d активных сессий · %2$d активных передач</string>
+    <string name="notif_transfers_active">%d активных передач</string>
 </resources>

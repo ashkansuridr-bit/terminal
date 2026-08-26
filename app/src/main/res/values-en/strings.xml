@@ -338,4 +338,6 @@
     <string name="sftp_compress_selection">Compress selection</string>
     <string name="sftp_compressing">Compressing...</string>
     <string name="sftp_compress_error">Failed to compress</string>
+    <string name="notif_sessions_transfers">%1$d active sessions · %2$d active transfers</string>
+    <string name="notif_transfers_active">%d active transfers</string>
 </resources>

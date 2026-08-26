@@ -342,4 +342,6 @@
     <string name="sftp_compress_selection">ضغط المحدد</string>
     <string name="sftp_compressing">جارٍ الضغط...</string>
     <string name="sftp_compress_error">فشل الضغط</string>
+    <string name="notif_sessions_transfers">%1$d جلسات نشطة · %2$d نقل نشط</string>
+    <string name="notif_transfers_active">%d نقل نشط</string>
 </resources>
