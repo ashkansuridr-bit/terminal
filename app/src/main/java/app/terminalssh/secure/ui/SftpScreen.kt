@@ -37,6 +37,8 @@ import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -112,6 +114,13 @@ fun SftpBrowser(
     onSyncToRemote: ((RemoteEntry) -> Unit)? = null,
     onComputeSync: ((RemoteEntry) -> Unit)? = null,
     onExecuteSync: ((RemoteEntry, List<SftpController.SyncAction>, Boolean) -> Unit)? = null,
+    onToggleBookmark: ((String) -> Unit)? = null,
+    isBookmarked: ((String) -> Boolean)? = null,
+    onComputeFolderSize: ((String) -> Unit)? = null,
+    folderSizes: Map<String, Long> = emptyMap(),
+    onSaveSyncPreset: ((SftpController.SyncPreset) -> Unit)? = null,
+    syncPresets: List<SftpController.SyncPreset> = emptyList(),
+    onLoadSyncPreset: ((SftpController.SyncPreset) -> Unit)? = null,
 ) {
     var newFolderPrompt by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<RemoteEntry?>(null) }
@@ -129,6 +138,7 @@ fun SftpBrowser(
     var selected by remember { mutableStateOf(setOf<String>()) }
     var deleteSelectedPrompt by remember { mutableStateOf(false) }
     var chmodTarget by remember { mutableStateOf<RemoteEntry?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
 
     // A directory change invalidates any selection made in the previous one.
     LaunchedEffect(state.path) {
@@ -165,6 +175,10 @@ fun SftpBrowser(
                 onRefresh = onRefresh,
                 onUpload = onUpload,
                 onNewFolder = { newFolderPrompt = true },
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it },
+                isBookmarked = isBookmarked?.invoke(state.path) == true,
+                onToggleBookmark = if (onToggleBookmark != null) {{ onToggleBookmark(state.path) }} else null,
             )
         }
 
@@ -203,15 +217,21 @@ fun SftpBrowser(
         if (state.entries.isEmpty() && !state.loading) {
             EmptyDirectory()
         } else {
+            // Filter entries by search query (#35 search)
+            val filteredEntries = if (searchQuery.isBlank()) state.entries
+            else state.entries.filter { it.name.contains(searchQuery, ignoreCase = true) }
+
             LazyColumn(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                items(state.entries, key = { it.path }) { entry ->
+                items(filteredEntries, key = { it.path }) { entry ->
                     EntryRow(
                         entry = entry,
                         selectionMode = selectionMode,
                         selected = entry.path in selected,
+                        isBookmarked = isBookmarked?.invoke(entry.path) == true,
+                        folderSize = folderSizes[entry.path],
                         onClick = {
                             when {
                                 selectionMode -> selected = selected.toggle(entry.path)
@@ -234,6 +254,8 @@ fun SftpBrowser(
                     onEditRequest = if (!entry.isDirectory) {{ editTarget = entry }} else null,
                     onPreviewRequest = if (!entry.isDirectory) {{ previewTarget = entry }} else null,
                     onSyncRequest = if (entry.isDirectory) {{ syncTarget = entry }} else null,
+                    onToggleBookmark = if (onToggleBookmark != null) {{ onToggleBookmark(entry.path) }} else null,
+                    onComputeSize = if (entry.isDirectory && onComputeFolderSize != null) {{ onComputeFolderSize(entry.path) }} else null,
                 )
                 }
             }
@@ -477,6 +499,10 @@ private fun PathBar(
     onRefresh: () -> Unit,
     onUpload: () -> Unit,
     onNewFolder: () -> Unit,
+    searchQuery: String = "",
+    onSearchQueryChange: (String) -> Unit = {},
+    isBookmarked: Boolean = false,
+    onToggleBookmark: (() -> Unit)? = null,
 ) {
     val crumbs = app.terminalssh.secure.sftp.RemotePath.breadcrumbs(path)
     Row(
@@ -516,11 +542,38 @@ private fun PathBar(
         IconButton(onClick = onNewFolder) {
             Icon(Icons.Outlined.CreateNewFolder, stringResource(R.string.sftp_new_folder_title), tint = TextSecondary)
         }
+        if (onToggleBookmark != null) {
+            IconButton(onClick = onToggleBookmark) {
+                Icon(
+                    if (isBookmarked) Icons.Outlined.Star else Icons.Outlined.Star,
+                    stringResource(R.string.sftp_bookmark),
+                    tint = if (isBookmarked) MaterialTheme.colorScheme.tertiary else TextSecondary,
+                )
+            }
+        }
         IconButton(onClick = onUpload) {
             Icon(Icons.Outlined.Upload, stringResource(R.string.sftp_upload), tint = Turquoise)
         }
         IconButton(onClick = onRefresh) {
             Icon(Icons.Outlined.Refresh, stringResource(R.string.sftp_refresh), tint = TextSecondary)
+        }
+    }
+    // Search bar
+    if (onSearchQueryChange !== {}) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Outlined.Search, null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(4.dp))
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                placeholder = { Text(stringResource(R.string.sftp_search_hint), style = MaterialTheme.typography.labelSmall) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().height(40.dp),
+                textStyle = MaterialTheme.typography.labelMedium,
+            )
         }
     }
 }
@@ -544,6 +597,10 @@ private fun EntryRow(
     onEditRequest: (() -> Unit)? = null,
     onPreviewRequest: (() -> Unit)? = null,
     onSyncRequest: (() -> Unit)? = null,
+    isBookmarked: Boolean = false,
+    folderSize: Long? = null,
+    onToggleBookmark: (() -> Unit)? = null,
+    onComputeSize: (() -> Unit)? = null,
 ) {
     var pressed by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -599,13 +656,34 @@ private fun EntryRow(
             }
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        ltr(entry.name),
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (isBookmarked) {
+                        Icon(
+                            imageVector = Icons.Outlined.Star,
+                            contentDescription = stringResource(R.string.sftp_bookmark),
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                }
+                val sizeText = when {
+                    entry.isDirectory && folderSize != null -> FileSize.format(folderSize)
+                    entry.isDirectory -> ""
+                    else -> FileSize.format(entry.sizeBytes)
+                }
+                val permText = entry.permissions
+                val subtitle = listOfNotNull(
+                    sizeText.takeIf { it.isNotEmpty() },
+                    permText.takeIf { it.isNotEmpty() },
+                ).joinToString(" · ")
                 Text(
-                    ltr(entry.name),
-                    style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 1,
-                )
-                Text(
-                    if (entry.isDirectory) entry.permissions else "${FileSize.format(entry.sizeBytes)} · ${entry.permissions}",
+                    subtitle,
                     style = MaterialTheme.typography.labelSmall,
                     color = TextSecondary,
                     maxLines = 1,
@@ -668,6 +746,18 @@ private fun EntryRow(
                 text = { Text(stringResource(R.string.sftp_properties)) },
                 onClick = { menuOpen = false; onDetailsRequest() },
             )
+            if (onToggleBookmark != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(if (isBookmarked) R.string.sftp_unbookmark else R.string.sftp_bookmark)) },
+                    onClick = { menuOpen = false; onToggleBookmark() },
+                )
+            }
+            if (onComputeSize != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.sftp_compute_size)) },
+                    onClick = { menuOpen = false; onComputeSize() },
+                )
+            }
         }
     }
 }

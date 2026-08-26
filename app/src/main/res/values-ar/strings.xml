@@ -143,6 +143,10 @@
     <string name="field_environment">البيئة</string>
     <string name="field_jump_host">مضيف القفز</string>
     <string name="jump_host_none">بدون قفز</string>
+    <string name="sftp_bookmark">إشارة مرجعية</string>
+    <string name="sftp_unbookmark">إزالة الإشارة المرجعية</string>
+    <string name="sftp_compute_size">حساب حجم المجلد</string>
+    <string name="sftp_search_hint">البحث عن الملفات…</string>
     <string name="field_reconnect_attempts">عدد محاولات إعادة الاتصال</string>
     <string name="err_reconnect_range">لا يمكن أن يتجاوز عدد محاولات إعادة الاتصال 10</string>
     <string name="env_none">بدون فئة</string>

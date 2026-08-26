@@ -167,6 +167,23 @@ class SftpClient(private val session: Session) : AutoCloseable {
     fun readlink(remotePath: String): String? =
         runCatching { channel().readlink(RemotePath.normalize(remotePath)) }.getOrNull()
 
+    /**
+     * Recursively calculates the total size in bytes of all files under [remotePath].
+     * Directories themselves contribute 0; only files count. For non-directory entries
+     * this returns the file's own size. (#45)
+     */
+    fun recursiveSize(remotePath: String): Long {
+        val normalized = RemotePath.normalize(remotePath)
+        val stat = runCatching { channel().stat(normalized) }.getOrNull()
+        if (stat != null && !stat.isDir) return stat.size
+        var total = 0L
+        val entries = list(normalized)
+        for (entry in entries) {
+            total += if (entry.isDirectory) recursiveSize(entry.path) else entry.sizeBytes
+        }
+        return total
+    }
+
     override fun close() {
         runCatching { channel?.disconnect() }
         channel = null

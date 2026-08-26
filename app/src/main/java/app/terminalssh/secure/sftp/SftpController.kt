@@ -469,6 +469,50 @@ class SftpController(
 
     // ---- one-way sync (#28/#29) ----
 
+    // ---- bookmarked folders (#31) ----
+    private val _bookmarks = MutableStateFlow<List<String>>(emptyList())
+    val bookmarks: StateFlow<List<String>> = _bookmarks.asStateFlow()
+
+    fun toggleBookmark(path: String) {
+        val current = _bookmarks.value
+        _bookmarks.value = if (path in current) current - path else current + path
+    }
+
+    fun isBookmarked(path: String): Boolean = path in _bookmarks.value
+
+    // ---- sync presets (#48) ----
+    data class SyncPreset(
+        val id: String,
+        val name: String,
+        val localDir: String,
+        val remoteDir: String,
+        val deleteRemote: Boolean = false,
+    )
+
+    private val _syncPresets = MutableStateFlow<List<SyncPreset>>(emptyList())
+    val syncPresets: StateFlow<List<SyncPreset>> = _syncPresets.asStateFlow()
+
+    fun saveSyncPreset(preset: SyncPreset) {
+        _syncPresets.value = _syncPresets.value.filter { it.id != preset.id } + preset
+    }
+
+    fun deleteSyncPreset(id: String) {
+        _syncPresets.value = _syncPresets.value.filter { it.id != id }
+    }
+
+    // ---- folder size (#45) ----
+    private val _folderSizes = MutableStateFlow<Map<String, Long>>(emptyMap())
+    val folderSizes: StateFlow<Map<String, Long>> = _folderSizes.asStateFlow()
+
+    fun computeFolderSize(path: String) {
+        scope.launch {
+            val size = withContext(Dispatchers.IO) {
+                runCatching { client().recursiveSize(path) }.getOrDefault(0L)
+            }
+            _folderSizes.value = _folderSizes.value + (path to size)
+        }
+    }
+
     /** Describes one change in a sync plan. */
     data class SyncAction(
         val relativePath: String,

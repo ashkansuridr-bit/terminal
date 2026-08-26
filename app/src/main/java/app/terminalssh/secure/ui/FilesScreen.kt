@@ -180,6 +180,10 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                     // Full SAF integration requires more wiring
                 }
             },
+            onToggleBookmark = sftp::toggleBookmark,
+            isBookmarked = sftp::isBookmarked,
+            onComputeFolderSize = sftp::computeFolderSize,
+            folderSizes = sftp.folderSizes.collectAsStateWithLifecycle().value,
         )
     }
 
