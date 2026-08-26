@@ -141,6 +141,8 @@
     <string name="settings_lock_unavailable">لا يدعم هذا الجهاز القفل البيومتري.</string>
     <string name="field_notes">ملاحظات</string>
     <string name="field_environment">البيئة</string>
+    <string name="field_jump_host">مضيف القفز</string>
+    <string name="jump_host_none">بدون قفز</string>
     <string name="field_reconnect_attempts">عدد محاولات إعادة الاتصال</string>
     <string name="err_reconnect_range">لا يمكن أن يتجاوز عدد محاولات إعادة الاتصال 10</string>
     <string name="env_none">بدون فئة</string>

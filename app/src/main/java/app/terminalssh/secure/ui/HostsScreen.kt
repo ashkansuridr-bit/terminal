@@ -210,6 +210,7 @@ fun HostsScreen(
     if (creating || editing != null) {
         HostEditSheet(
             initial = editing,
+            availableHosts = hosts,
             onDismiss = { creating = false; editing = null },
             onSave = { profile, password ->
                 if (viewModel.saveHost(profile, password)) {

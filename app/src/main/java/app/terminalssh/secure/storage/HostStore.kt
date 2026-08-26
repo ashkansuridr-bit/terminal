@@ -78,6 +78,7 @@ class HostStore(context: Context) {
         put("lastConnectedAt", lastConnectedAt); put("policy", hostKeyPolicy.name)
         put("notes", notes); put("environment", environment.name)
         put("maxReconnectAttempts", maxReconnectAttempts)
+        put("jumpHostId", jumpHostId)
         put("tags", JSONArray().apply { tags.forEach { put(it) } })
         when (val a = auth) {
             is AuthMethod.Password -> { put("authType", "password"); put("vaultRef", a.vaultRef) }
@@ -118,6 +119,7 @@ class HostStore(context: Context) {
                 "maxReconnectAttempts",
                 HostProfile.DEFAULT_RECONNECT_ATTEMPTS,
             ).coerceIn(0, HostProfile.MAX_RECONNECT_ATTEMPTS),
+            jumpHostId = optString("jumpHostId", ""),
         )
     }
 

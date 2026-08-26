@@ -4,6 +4,7 @@ import app.terminalssh.secure.model.AuthMethod
 import app.terminalssh.secure.model.HostProfile
 import app.terminalssh.secure.security.AndroidKeyStoreVault
 import app.terminalssh.secure.security.VaultAad
+import app.terminalssh.secure.storage.HostStore
 import app.terminalssh.secure.storage.KnownHostsStore
 import com.jcraft.jsch.ChannelShell
 import com.jcraft.jsch.HostKey
@@ -21,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference
 class JschSshClient(
     private val vault: AndroidKeyStoreVault,
     private val knownHosts: KnownHostsStore,
+    private val hostStore: HostStore,
 ) {
     data class Shell(
         val session: Session,
@@ -92,6 +94,38 @@ class JschSshClient(
         val session = jsch.getSession(profile.username, profile.host, profile.port)
         session.setConfig("StrictHostKeyChecking", "yes")
         session.setConfig("PreferredAuthentications", "publickey,password,keyboard-interactive")
+
+        // ProxyJump: if this host has a jump host configured, tunnel through it.
+        val jumpProfile = profile.jumpHostId.takeIf { it.isNotBlank() }
+            ?.let { id -> hostStore.hosts().firstOrNull { it.id == id } }
+        if (jumpProfile != null) {
+            // Add the jump host's identity so JSch can authenticate to it.
+            when (val jumpAuth = jumpProfile.auth) {
+                is AuthMethod.PrivateKey -> {
+                    val key = requireNotNull(vault.get(jumpAuth.keyVaultRef, VaultAad.PRIVATE_KEY)) {
+                        "missing jump host private key"
+                    }
+                    val pass = jumpAuth.passphraseVaultRef?.let { vault.get(it, VaultAad.PASSPHRASE) }
+                    try {
+                        jsch.addIdentity("jump-${jumpProfile.id}", key, null, pass)
+                    } finally {
+                        key.fill(0)
+                        pass?.fill(0)
+                    }
+                }
+                is AuthMethod.Password -> {
+                    val pw = jumpProfile.auth.vaultRef.takeIf { it.isNotBlank() }
+                        ?.let { vault.get(it, VaultAad.PASSWORD) }
+                    if (pw != null) {
+                        try { session.setPassword(String(pw)) } finally { pw.fill(0) }
+                    }
+                }
+            }
+            val jumpUser = jumpProfile.username
+            val jumpHost = jumpProfile.host
+            val jumpPort = jumpProfile.port
+            session.setConfig("ProxyJump", "$jumpUser@$jumpHost:$jumpPort")
+        }
 
         if (profile.auth is AuthMethod.Password) {
             val password = passwordOverride

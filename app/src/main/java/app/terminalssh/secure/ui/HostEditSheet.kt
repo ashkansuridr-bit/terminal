@@ -45,6 +45,7 @@ import java.util.UUID
 @Composable
 fun HostEditSheet(
     initial: HostProfile?,
+    availableHosts: List<HostProfile> = emptyList(),
     onDismiss: () -> Unit,
     onSave: (HostProfile, CharArray?) -> Unit,
     onDelete: (HostProfile) -> Unit,
@@ -62,6 +63,7 @@ fun HostEditSheet(
     var reconnectAttempts by remember {
         mutableStateOf((initial?.maxReconnectAttempts ?: HostProfile.DEFAULT_RECONNECT_ATTEMPTS).toString())
     }
+    var jumpHostId by remember { mutableStateOf(initial?.jumpHostId ?: "") }
     var error by remember { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
     val requiredFieldsError = stringResource(R.string.err_host_required)
@@ -121,6 +123,50 @@ fun HostEditSheet(
             )
             EnvironmentPicker(environment) { environment = it }
 
+            // Jump host picker: select another saved host to tunnel through.
+            val otherHosts = availableHosts.filter { it.id != initial?.id }
+            if (otherHosts.isNotEmpty()) {
+                var expanded by remember { mutableStateOf(false) }
+                val selectedJump = otherHosts.firstOrNull { it.id == jumpHostId }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.field_jump_host),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = jumpHostId.isEmpty(),
+                            onClick = { jumpHostId = "" },
+                            label = { Text(stringResource(R.string.jump_host_none), style = MaterialTheme.typography.labelSmall) },
+                        )
+                        FilterChip(
+                            selected = jumpHostId.isNotEmpty(),
+                            onClick = { expanded = true },
+                            label = {
+                                Text(
+                                    selectedJump?.displayName ?: stringResource(R.string.field_jump_host),
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                            },
+                        )
+                        if (expanded) {
+                            androidx.compose.material3.DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false },
+                            ) {
+                                otherHosts.forEach { h ->
+                                    androidx.compose.material3.DropdownMenuItem(
+                                        text = { Text("${h.displayName} (${h.host})") },
+                                        onClick = { jumpHostId = h.id; expanded = false },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             Spacer(Modifier.height(4.dp))
         }
 
@@ -159,6 +205,7 @@ fun HostEditSheet(
                                 maxReconnectAttempts = reconnectAttempts.toIntOrNull()
                                     ?.coerceIn(0, HostProfile.MAX_RECONNECT_ATTEMPTS)
                                     ?: HostProfile.DEFAULT_RECONNECT_ATTEMPTS,
+                                jumpHostId = jumpHostId,
                             )
                             onSave(profile, password.takeIf { it.isNotEmpty() }?.toCharArray())
                         }

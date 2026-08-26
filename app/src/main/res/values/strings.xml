@@ -142,6 +142,8 @@
     <string name="settings_lock_unavailable">این دستگاه از قفل بیومتریک پشتیبانی نمی‌کند.</string>
     <string name="field_notes">یادداشت</string>
     <string name="field_environment">محیط</string>
+    <string name="field_jump_host">میزبان پرش</string>
+    <string name="jump_host_none">بدون پرش</string>
     <string name="field_reconnect_attempts">تعداد تلاش برای اتصال مجدد</string>
     <string name="err_reconnect_range">تعداد تلاش اتصال مجدد نمی‌تواند بیشتر از ۱۰ باشد</string>
     <string name="env_none">بدون دسته</string>

@@ -29,7 +29,7 @@ class TerminalApp : Application() {
         hosts = HostStore(this)
         settings = Settings(this)
         settingsStore = SettingsStore(this)
-        client = JschSshClient(vault, knownHosts)
+        client = JschSshClient(vault, knownHosts, hosts)
         sessions = SessionRegistry()
         ThumbnailCache.init(cacheDir)
     }

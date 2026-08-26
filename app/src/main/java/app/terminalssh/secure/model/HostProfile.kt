@@ -22,6 +22,9 @@ data class HostProfile(
     val environment: Environment = Environment.NONE,
     /** Reconnect attempts before giving up; per-host because a flaky VPS is not a LAN box. */
     val maxReconnectAttempts: Int = DEFAULT_RECONNECT_ATTEMPTS,
+    /** Optional jump host ID (references another saved host). When set, connections
+     *  tunnel through this host first using ProxyJump. */
+    val jumpHostId: String = "",
 ) {
     init {
         require(host.isNotBlank()) { "host must not be blank" }
