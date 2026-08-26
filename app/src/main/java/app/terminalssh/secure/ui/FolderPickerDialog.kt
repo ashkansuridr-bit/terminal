@@ -1,13 +1,10 @@
 package app.terminalssh.secure.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -66,7 +63,7 @@ fun FolderPickerDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            androidx.compose.foundation.layout.Column {
+            Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
                         onClick = { path = RemotePath.parent(path) },

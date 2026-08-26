@@ -131,6 +131,9 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                 batchDownloadTreeLauncher.launch(null)
             },
             fetchSymlinkTarget = sftp::symlinkTarget,
+            onMoveTo = sftp::moveTo,
+            onCopyTo = sftp::copyTo,
+            listDirectories = sftp::listDirectories,
         )
     }
 

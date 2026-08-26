@@ -67,6 +67,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.terminalssh.secure.R
 import app.terminalssh.secure.sftp.RemoteEntry
+import app.terminalssh.secure.sftp.RemotePath
 import app.terminalssh.secure.sftp.SftpController
 import app.terminalssh.secure.ui.theme.Stroke
 import app.terminalssh.secure.ui.theme.TextSecondary
@@ -92,11 +93,16 @@ fun SftpBrowser(
     onBatchDelete: (List<RemoteEntry>) -> Unit,
     onDownloadSelected: (List<RemoteEntry>) -> Unit,
     fetchSymlinkTarget: suspend (String) -> String?,
+    onMoveTo: (RemoteEntry, String) -> Unit,
+    onCopyTo: (RemoteEntry, String) -> Unit,
+    listDirectories: suspend (String) -> List<RemoteEntry>,
 ) {
     var newFolderPrompt by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var deleteTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var detailsTarget by remember { mutableStateOf<RemoteEntry?>(null) }
+    var moveTarget by remember { mutableStateOf<RemoteEntry?>(null) }
+    var copyTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var selectionMode by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(setOf<String>()) }
     var deleteSelectedPrompt by remember { mutableStateOf(false) }
@@ -191,10 +197,32 @@ fun SftpBrowser(
                         onRenameRequest = { renameTarget = entry },
                         onDeleteRequest = { deleteTarget = entry },
                         onDetailsRequest = { detailsTarget = entry },
+                        onMoveRequest = { moveTarget = entry },
+                        onCopyRequest = { copyTarget = entry },
                     )
                 }
             }
         }
+    }
+
+    moveTarget?.let { entry ->
+        FolderPickerDialog(
+            title = stringResource(R.string.sftp_move_to),
+            startPath = RemotePath.parent(entry.path),
+            listDirectories = listDirectories,
+            onPick = { destination -> onMoveTo(entry, destination); moveTarget = null },
+            onDismiss = { moveTarget = null },
+        )
+    }
+
+    copyTarget?.let { entry ->
+        FolderPickerDialog(
+            title = stringResource(R.string.sftp_copy_to),
+            startPath = RemotePath.parent(entry.path),
+            listDirectories = listDirectories,
+            onPick = { destination -> onCopyTo(entry, destination); copyTarget = null },
+            onDismiss = { copyTarget = null },
+        )
     }
 
     detailsTarget?.let { entry ->
@@ -405,6 +433,8 @@ private fun EntryRow(
     onRenameRequest: () -> Unit,
     onDeleteRequest: () -> Unit,
     onDetailsRequest: () -> Unit,
+    onMoveRequest: () -> Unit,
+    onCopyRequest: () -> Unit,
 ) {
     var pressed by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -479,6 +509,16 @@ private fun EntryRow(
                 text = { Text(stringResource(R.string.sftp_conflict_rename)) },
                 onClick = { menuOpen = false; onRenameRequest() },
             )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.sftp_move_to)) },
+                onClick = { menuOpen = false; onMoveRequest() },
+            )
+            if (!entry.isDirectory) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.sftp_copy_to)) },
+                    onClick = { menuOpen = false; onCopyRequest() },
+                )
+            }
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.delete)) },
                 onClick = { menuOpen = false; onDeleteRequest() },

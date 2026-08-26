@@ -199,6 +199,9 @@
     <string name="sftp_aggregate_progress">%1$d فایل (%2$d در حال انتقال) · %3$s از %4$s</string>
     <string name="sftp_aggregate_progress_no_size">%1$d فایل (%2$d در حال انتقال)</string>
     <string name="sftp_history">تاریخچه</string>
+    <string name="sftp_move_to">انتقال به…</string>
+    <string name="sftp_copy_to">کپی به…</string>
+    <string name="sftp_move_here">انتقال به اینجا</string>
     <string name="xfer_connection_lost">اتصال قطع شد؛ دوباره تلاش می‌شود.</string>
     <string name="xfer_permission_denied">سرور اجازه دسترسی به این مسیر را نداد.</string>
     <string name="xfer_not_found">فایل یا پوشه پیدا نشد.</string>
