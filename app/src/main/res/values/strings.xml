@@ -28,6 +28,7 @@
     <string name="auth_key">کلید خصوصی</string>
     <string name="save">ذخیره</string>
     <string name="cancel">انصراف</string>
+    <string name="ok">باشه</string>
     <string name="delete">حذف</string>
     <string name="connect">اتصال</string>
     <string name="disconnect">قطع اتصال</string>
@@ -187,6 +188,17 @@
     <string name="sftp_select">انتخاب</string>
     <string name="sftp_selected_count">%1$d مورد انتخاب شد</string>
     <string name="sftp_delete_selected_confirm_body">%1$d مورد برای همیشه حذف می‌شود.</string>
+    <string name="sftp_download_selected">دانلود موارد انتخاب‌شده</string>
+    <string name="sftp_detail_path">مسیر</string>
+    <string name="sftp_detail_size">حجم</string>
+    <string name="sftp_detail_modified">آخرین تغییر</string>
+    <string name="sftp_detail_permissions">مجوزها</string>
+    <string name="sftp_detail_target">مقصد لینک</string>
+    <string name="sftp_properties">مشخصات</string>
+    <string name="sftp_eta">%1$s مانده</string>
+    <string name="sftp_aggregate_progress">%1$d فایل (%2$d در حال انتقال) · %3$s از %4$s</string>
+    <string name="sftp_aggregate_progress_no_size">%1$d فایل (%2$d در حال انتقال)</string>
+    <string name="sftp_history">تاریخچه</string>
     <string name="xfer_connection_lost">اتصال قطع شد؛ دوباره تلاش می‌شود.</string>
     <string name="xfer_permission_denied">سرور اجازه دسترسی به این مسیر را نداد.</string>
     <string name="xfer_not_found">فایل یا پوشه پیدا نشد.</string>

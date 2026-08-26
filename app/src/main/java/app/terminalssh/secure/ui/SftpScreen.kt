@@ -33,6 +33,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.CreateNewFolder
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Refresh
@@ -89,10 +90,13 @@ fun SftpBrowser(
     onRename: (RemoteEntry, String) -> Unit,
     onDelete: (RemoteEntry) -> Unit,
     onBatchDelete: (List<RemoteEntry>) -> Unit,
+    onDownloadSelected: (List<RemoteEntry>) -> Unit,
+    fetchSymlinkTarget: suspend (String) -> String?,
 ) {
     var newFolderPrompt by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var deleteTarget by remember { mutableStateOf<RemoteEntry?>(null) }
+    var detailsTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var selectionMode by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(setOf<String>()) }
     var deleteSelectedPrompt by remember { mutableStateOf(false) }
@@ -105,8 +109,15 @@ fun SftpBrowser(
 
     Column(Modifier.fillMaxSize()) {
         if (selectionMode) {
+            // Directories aren't included yet — recursive folder download is a separate,
+            // larger feature; only files in the current selection are downloadable here.
+            val downloadableCount = state.entries.count { it.path in selected && !it.isDirectory }
             SelectionBar(
                 count = selected.size,
+                downloadEnabled = downloadableCount > 0,
+                onDownloadSelected = {
+                    onDownloadSelected(state.entries.filter { it.path in selected && !it.isDirectory })
+                },
                 onDeleteSelected = { deleteSelectedPrompt = true },
                 onClose = { selectionMode = false; selected = emptySet() },
             )
@@ -179,10 +190,19 @@ fun SftpBrowser(
                         },
                         onRenameRequest = { renameTarget = entry },
                         onDeleteRequest = { deleteTarget = entry },
+                        onDetailsRequest = { detailsTarget = entry },
                     )
                 }
             }
         }
+    }
+
+    detailsTarget?.let { entry ->
+        EntryDetailsDialog(
+            entry = entry,
+            fetchSymlinkTarget = fetchSymlinkTarget,
+            onDismiss = { detailsTarget = null },
+        )
     }
 
     if (deleteSelectedPrompt) {
@@ -290,6 +310,8 @@ private fun Set<String>.toggle(item: String): Set<String> = if (item in this) th
 @Composable
 private fun SelectionBar(
     count: Int,
+    downloadEnabled: Boolean,
+    onDownloadSelected: () -> Unit,
     onDeleteSelected: () -> Unit,
     onClose: () -> Unit,
 ) {
@@ -306,6 +328,9 @@ private fun SelectionBar(
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f),
         )
+        IconButton(onClick = onDownloadSelected, enabled = downloadEnabled) {
+            Icon(Icons.Outlined.Download, stringResource(R.string.sftp_download_selected), tint = Turquoise)
+        }
         IconButton(onClick = onDeleteSelected, enabled = count > 0) {
             Icon(Icons.Outlined.Delete, stringResource(R.string.delete), tint = MaterialTheme.colorScheme.error)
         }
@@ -379,6 +404,7 @@ private fun EntryRow(
     onSelectRequest: () -> Unit,
     onRenameRequest: () -> Unit,
     onDeleteRequest: () -> Unit,
+    onDetailsRequest: () -> Unit,
 ) {
     var pressed by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -456,6 +482,10 @@ private fun EntryRow(
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.delete)) },
                 onClick = { menuOpen = false; onDeleteRequest() },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.sftp_properties)) },
+                onClick = { menuOpen = false; onDetailsRequest() },
             )
         }
     }

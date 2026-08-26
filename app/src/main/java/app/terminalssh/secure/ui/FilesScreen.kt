@@ -1,5 +1,6 @@
 package app.terminalssh.secure.ui
 
+import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -57,8 +59,11 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
 
     val browser by sftp.browser.collectAsStateWithLifecycle()
     val transfers by sftp.queue.transfers.collectAsStateWithLifecycle()
+    val transferHistory by sftp.queue.history.collectAsStateWithLifecycle()
     val uploadConflict by sftp.uploadConflict.collectAsStateWithLifecycle()
     var pendingDownload by remember { mutableStateOf<RemoteEntry?>(null) }
+    var pendingBatchDownload by remember { mutableStateOf<List<RemoteEntry>>(emptyList()) }
+    val context = LocalContext.current
 
     val saveLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream"),
@@ -68,15 +73,38 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
         if (uri != null && entry != null) sftp.enqueueDownload(entry, uri)
     }
 
-    val openLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            sftp.enqueueUpload(uri, viewModel.displayNameFor(uri), browser.path)
+    val openLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenMultipleDocuments(),
+    ) { uris ->
+        uris.forEach { uri -> sftp.enqueueUpload(uri, viewModel.displayNameFor(uri), browser.path) }
+    }
+
+    // One destination folder for the whole batch, picked once via SAF, rather than a
+    // CreateDocument round-trip per file.
+    val batchDownloadTreeLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { treeUri ->
+        val entries = pendingBatchDownload
+        pendingBatchDownload = emptyList()
+        if (treeUri != null && entries.isNotEmpty()) {
+            val parentDocUri = DocumentsContract.buildDocumentUriUsingTree(
+                treeUri,
+                DocumentsContract.getTreeDocumentId(treeUri),
+            )
+            entries.forEach { entry ->
+                val name = app.terminalssh.secure.sftp.RemotePath.sanitizeDownloadName(entry.name)
+                val destination = runCatching {
+                    DocumentsContract.createDocument(context.contentResolver, parentDocUri, "application/octet-stream", name)
+                }.getOrNull()
+                if (destination != null) sftp.enqueueDownload(entry, destination)
+            }
         }
     }
 
     Column(Modifier.fillMaxSize().navigationBarsPadding()) {
         TransferStrip(
             transfers = transfers,
+            history = transferHistory,
             onPause = sftp::pause,
             onResume = sftp::resume,
             onCancel = sftp::cancel,
@@ -98,6 +126,11 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
             onRename = sftp::rename,
             onDelete = sftp::delete,
             onBatchDelete = sftp::deleteAll,
+            onDownloadSelected = { entries ->
+                pendingBatchDownload = entries
+                batchDownloadTreeLauncher.launch(null)
+            },
+            fetchSymlinkTarget = sftp::symlinkTarget,
         )
     }
 

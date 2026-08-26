@@ -152,6 +152,43 @@ class SftpController(
         failures.firstOrNull()?.let { showBrowserError(it) }
     }
 
+    /** Directory-only listing for the "move/copy to" folder picker; doesn't touch [browser]. */
+    suspend fun listDirectories(path: String): List<RemoteEntry> =
+        runCatching { withContext(Dispatchers.IO) { client().list(path).filter { it.isDirectory } } }
+            .getOrDefault(emptyList())
+
+    /** Moves [entry] into [destinationDirectory], keeping its filename, then refreshes. */
+    fun moveTo(entry: RemoteEntry, destinationDirectory: String) = scope.launch {
+        val target = RemotePath.join(destinationDirectory, RemotePath.name(entry.path))
+        val result = runCatching { withContext(Dispatchers.IO) { client().rename(entry.path, target) } }
+        if (result.isSuccess) refresh() else showBrowserError(result.exceptionOrNull()!!)
+    }
+
+    /**
+     * Copies [entry] into [destinationDirectory]. SFTP has no server-side copy, so this
+     * streams the file through a private temp file (download, then upload) rather than
+     * transferring it through the device twice over the network. Files only — copying a
+     * directory would mean walking and copying every descendant, out of scope here.
+     */
+    fun copyTo(entry: RemoteEntry, destinationDirectory: String) = scope.launch {
+        if (entry.isDirectory) return@launch
+        val target = RemotePath.join(destinationDirectory, RemotePath.name(entry.path))
+        val temp = File(cacheDir, "sftp-copy-${UUID.randomUUID()}")
+        val result = runCatching {
+            withContext(Dispatchers.IO) {
+                val sftp = client()
+                temp.outputStream().use { sink -> sftp.download(entry.path, sink, resumeFrom = 0L) {} }
+                temp.inputStream().use { source -> sftp.upload(source, target, resumeFrom = 0L) {} }
+            }
+        }
+        temp.delete()
+        if (result.isSuccess) refresh() else showBrowserError(result.exceptionOrNull()!!)
+    }
+
+    /** The target of a symlink, for the properties panel; null for anything else. */
+    suspend fun symlinkTarget(path: String): String? =
+        runCatching { withContext(Dispatchers.IO) { client().readlink(path) } }.getOrNull()
+
     /** Surfaces a failed browser-adjacent action (create/rename/delete) the same way a
      *  failed listing does: keep the current entries on screen, show an error banner. */
     private fun showBrowserError(t: Throwable) {

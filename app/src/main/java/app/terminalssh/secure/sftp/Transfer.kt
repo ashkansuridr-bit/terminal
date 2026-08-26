@@ -50,12 +50,28 @@ data class Transfer(
     /** Set only when [state] is [TransferState.FAILED]. */
     val errorKind: TransferErrorKind? = null,
     val attempts: Int = 0,
+    /** Wall-clock time (epoch millis) of the last [TransferQueue.markProgress] call; 0
+     *  means no progress has been reported yet for the current attempt. */
+    val lastProgressAt: Long = 0L,
+    /** Smoothed transfer rate in bytes/second; 0 until at least two progress samples
+     *  have arrived for the current attempt. */
+    val bytesPerSecond: Float = 0f,
+    /** Wall-clock time this transfer reached a terminal state; 0 while still live. */
+    val finishedAt: Long = 0L,
 ) {
     /** 0f..1f, or null when the server did not report a size. */
     val progress: Float?
         get() = when {
             totalBytes <= 0L -> null
             else -> (transferredBytes.toFloat() / totalBytes).coerceIn(0f, 1f)
+        }
+
+    /** Seconds remaining at the current rate, or null when there isn't enough information. */
+    val etaSeconds: Long?
+        get() = when {
+            state != TransferState.RUNNING -> null
+            totalBytes <= 0L || bytesPerSecond <= 0f -> null
+            else -> ((totalBytes - transferredBytes) / bytesPerSecond).toLong().coerceAtLeast(0L)
         }
 
     val canPause: Boolean get() = state == TransferState.RUNNING

@@ -206,6 +206,83 @@ class TransferQueueTest {
         assertEquals(TransferErrorKind.CONNECTION_LOST, queue.byId("a").errorKind)
     }
 
+    @Test fun rateIsZeroUntilASecondSample() {
+        val queue = TransferQueue()
+        queue.enqueue(transfer("a"))
+        queue.markRunning("a")
+        queue.markProgress("a", 100L, atMillis = 1_000L)
+        assertEquals(0f, queue.byId("a").bytesPerSecond)
+    }
+
+    @Test fun rateReflectsBytesOverTimeBetweenTwoSamples() {
+        val queue = TransferQueue()
+        queue.enqueue(transfer("a"))
+        queue.markRunning("a")
+        queue.markProgress("a", 0L, atMillis = 1_000L)
+        queue.markProgress("a", 500L, atMillis = 1_500L)
+        // 500 bytes over 500ms = 1000 bytes/sec.
+        assertEquals(1000f, queue.byId("a").bytesPerSecond)
+    }
+
+    @Test fun retryingResetsTheRateEstimate() {
+        val queue = TransferQueue()
+        queue.enqueue(transfer("a"))
+        queue.markRunning("a")
+        queue.markProgress("a", 0L, atMillis = 1_000L)
+        queue.markProgress("a", 500L, atMillis = 1_500L)
+        queue.fail("a", TransferErrorKind.CONNECTION_LOST)
+        queue.markRunning("a")
+        assertEquals(0f, queue.byId("a").bytesPerSecond)
+    }
+
+    @Test fun etaIsNullWithoutASpeedEstimate() {
+        val queue = TransferQueue()
+        queue.enqueue(transfer("a"))
+        queue.markRunning("a")
+        assertNull(queue.byId("a").etaSeconds)
+    }
+
+    @Test fun etaIsNullWhenNotRunning() {
+        val queue = TransferQueue()
+        queue.enqueue(transfer("a"))
+        assertNull(queue.byId("a").etaSeconds)
+    }
+
+    @Test fun clearFinishedArchivesCompletedAndCancelledIntoHistory() {
+        val queue = TransferQueue()
+        queue.enqueue(transfer("done"))
+        queue.enqueue(transfer("cancelled"))
+        queue.enqueue(transfer("failed"))
+        queue.markCompleted("done")
+        queue.cancel("cancelled")
+        queue.markRunning("failed")
+        queue.fail("failed", TransferErrorKind.PERMISSION_DENIED)
+
+        queue.clearFinished()
+
+        val archived = queue.history.value.map { it.id }.toSet()
+        assertEquals(setOf("done", "cancelled"), archived)
+    }
+
+    @Test fun clearFinishedRecordsWhenEachEntryFinished() {
+        val queue = TransferQueue()
+        queue.enqueue(transfer("a"))
+        queue.markCompleted("a", atMillis = 12_345L)
+        queue.clearFinished()
+        assertEquals(12_345L, queue.history.value.first { it.id == "a" }.finishedAt)
+    }
+
+    @Test fun historyStaysBoundedAndNewestFirst() {
+        val queue = TransferQueue()
+        repeat(TransferQueue.MAX_HISTORY + 5) { i ->
+            queue.enqueue(transfer("t$i"))
+            queue.markCompleted("t$i")
+            queue.clearFinished()
+        }
+        assertEquals(TransferQueue.MAX_HISTORY, queue.history.value.size)
+        assertEquals("t${TransferQueue.MAX_HISTORY + 4}", queue.history.value.first().id)
+    }
+
     @Test fun retriableKindsAreExactlyTheTransientOnes() {
         assertTrue(TransferErrorKind.CONNECTION_LOST.isRetriable)
         listOf(

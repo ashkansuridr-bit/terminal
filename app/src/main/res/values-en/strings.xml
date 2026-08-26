@@ -28,6 +28,7 @@
     <string name="auth_key">Private key</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
     <string name="delete">Delete</string>
     <string name="connect">Connect</string>
     <string name="disconnect">Disconnect</string>
@@ -187,6 +188,17 @@
     <string name="sftp_select">Select</string>
     <string name="sftp_selected_count">%1$d selected</string>
     <string name="sftp_delete_selected_confirm_body">%1$d items will be permanently deleted.</string>
+    <string name="sftp_download_selected">Download selected</string>
+    <string name="sftp_detail_path">Path</string>
+    <string name="sftp_detail_size">Size</string>
+    <string name="sftp_detail_modified">Last modified</string>
+    <string name="sftp_detail_permissions">Permissions</string>
+    <string name="sftp_detail_target">Link target</string>
+    <string name="sftp_properties">Properties</string>
+    <string name="sftp_eta">%1$s left</string>
+    <string name="sftp_aggregate_progress">%1$d files (%2$d running) · %3$s of %4$s</string>
+    <string name="sftp_aggregate_progress_no_size">%1$d files (%2$d running)</string>
+    <string name="sftp_history">History</string>
     <string name="xfer_connection_lost">The connection dropped; retrying.</string>
     <string name="xfer_permission_denied">The server refused access to that path.</string>
     <string name="xfer_not_found">That file or folder no longer exists.</string>

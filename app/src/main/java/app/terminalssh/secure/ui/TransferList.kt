@@ -13,16 +13,21 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -31,6 +36,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,13 +62,16 @@ import app.terminalssh.secure.ui.theme.Turquoise
 @Composable
 fun TransferStrip(
     transfers: List<Transfer>,
+    history: List<Transfer>,
     onPause: (String) -> Unit,
     onResume: (String) -> Unit,
     onCancel: (String) -> Unit,
     onClearFinished: () -> Unit,
 ) {
+    var showHistory by remember { mutableStateOf(false) }
+
     AnimatedVisibility(
-        visible = transfers.isNotEmpty(),
+        visible = transfers.isNotEmpty() || history.isNotEmpty(),
         enter = fadeIn() + expandVertically(),
         exit = fadeOut() + shrinkVertically(),
     ) {
@@ -80,6 +91,11 @@ fun TransferStrip(
                     fontWeight = FontWeight.SemiBold,
                 )
                 Spacer(Modifier.weight(1f))
+                if (history.isNotEmpty()) {
+                    IconButton(onClick = { showHistory = true }, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Outlined.History, stringResource(R.string.sftp_history), tint = TextSecondary)
+                    }
+                }
                 if (transfers.any { it.state.isTerminal }) {
                     TextButton(onClick = onClearFinished) {
                         Text(
@@ -90,16 +106,88 @@ fun TransferStrip(
                 }
             }
 
-            transfers.forEach { transfer ->
-                TransferRow(
-                    transfer = transfer,
-                    onPause = { onPause(transfer.id) },
-                    onResume = { onResume(transfer.id) },
-                    onCancel = { onCancel(transfer.id) },
-                )
+            val live = transfers.filterNot { it.state.isTerminal }
+            if (live.size > 1) {
+                AggregateSummary(live)
+            }
+
+            if (transfers.isNotEmpty()) {
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 280.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(transfers, key = { it.id }) { transfer ->
+                        TransferRow(
+                            transfer = transfer,
+                            onPause = { onPause(transfer.id) },
+                            onResume = { onResume(transfer.id) },
+                            onCancel = { onCancel(transfer.id) },
+                        )
+                    }
+                }
             }
         }
     }
+
+    if (showHistory) {
+        TransferHistoryDialog(history = history, onDismiss = { showHistory = false })
+    }
+}
+
+@Composable
+private fun TransferHistoryDialog(history: List<Transfer>, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.sftp_history)) },
+        text = {
+            LazyColumn(modifier = Modifier.heightIn(max = 360.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(history, key = { it.id }) { transfer ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            if (transfer.direction == TransferDirection.DOWNLOAD) Icons.Outlined.Download else Icons.Outlined.Upload,
+                            contentDescription = null,
+                            tint = TextSecondary,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(ltr(transfer.displayName), style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                            Text(
+                                if (transfer.state == TransferState.CANCELLED) {
+                                    stringResource(R.string.sftp_cancel)
+                                } else {
+                                    stringResource(R.string.sftp_downloaded)
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextSecondary,
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.ok)) }
+        },
+    )
+}
+
+/** "3 files running · 45 MB of 220 MB" — legible progress for a queued batch, where N
+ *  individual bars otherwise look like nothing is moving except the one at the front. */
+@Composable
+private fun AggregateSummary(live: List<Transfer>) {
+    val running = live.count { it.state == TransferState.RUNNING }
+    val transferredSum = live.sumOf { it.transferredBytes }
+    val totalSum = live.filter { it.totalBytes > 0 }.sumOf { it.totalBytes }
+    Text(
+        if (totalSum > 0) {
+            stringResource(R.string.sftp_aggregate_progress, live.size, running, FileSize.format(transferredSum), FileSize.format(totalSum))
+        } else {
+            stringResource(R.string.sftp_aggregate_progress_no_size, live.size, running)
+        },
+        style = MaterialTheme.typography.labelSmall,
+        color = TextSecondary,
+    )
 }
 
 @Composable
@@ -199,9 +287,26 @@ private fun Transfer.statusLine(): String = when (state) {
         ?: stringResource(R.string.xfer_unknown)
     TransferState.PAUSED -> stringResource(R.string.sftp_pause)
     TransferState.CANCELLED -> stringResource(R.string.sftp_cancel)
-    else -> if (totalBytes > 0) {
-        "${FileSize.format(transferredBytes)} / ${FileSize.format(totalBytes)}"
-    } else {
-        FileSize.format(transferredBytes)
+    else -> {
+        val bytes = if (totalBytes > 0) {
+            "${FileSize.format(transferredBytes)} / ${FileSize.format(totalBytes)}"
+        } else {
+            FileSize.format(transferredBytes)
+        }
+        val rate = if (state == TransferState.RUNNING && bytesPerSecond > 0f) {
+            " · ${FileSize.format(bytesPerSecond.toLong())}/s"
+        } else {
+            ""
+        }
+        val eta = etaSeconds?.let { " · ${stringResource(R.string.sftp_eta, formatDuration(it))}" } ?: ""
+        bytes + rate + eta
     }
+}
+
+/** "2:14" for two minutes fourteen, "0:34" under a minute. Deliberately not "2m 14s" —
+ *  this sits next to a byte count in a small label and a clock format reads faster. */
+private fun formatDuration(totalSeconds: Long): String {
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "%d:%02d".format(minutes, seconds)
 }

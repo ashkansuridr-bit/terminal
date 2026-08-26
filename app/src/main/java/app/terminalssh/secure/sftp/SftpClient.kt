@@ -84,6 +84,10 @@ class SftpClient(private val session: Session) : AutoCloseable {
     fun rename(from: String, to: String) =
         channel().rename(RemotePath.normalize(from), RemotePath.normalize(to))
 
+    /** The target of a symlink, or null when [remotePath] isn't one or it can't be read. */
+    fun readlink(remotePath: String): String? =
+        runCatching { channel().readlink(RemotePath.normalize(remotePath)) }.getOrNull()
+
     override fun close() {
         runCatching { channel?.disconnect() }
         channel = null
@@ -91,10 +95,20 @@ class SftpClient(private val session: Session) : AutoCloseable {
 
     private fun ChannelSftp.LsEntry.toRemoteEntry(parent: String): RemoteEntry {
         val attributes: SftpATTRS = attrs
+        val path = RemotePath.join(parent, filename)
+        // ls() reports lstat-style attributes: a symlink pointing at a directory would
+        // otherwise come back with isDir=false and be unopenable in the browser. A
+        // follow-symlink stat resolves what it actually points to; isSymlink stays true
+        // either way so the row still shows a link icon.
+        val isDir = if (attributes.isLink) {
+            runCatching { channel().stat(path).isDir }.getOrDefault(false)
+        } else {
+            attributes.isDir
+        }
         return RemoteEntry(
             name = filename,
-            path = RemotePath.join(parent, filename),
-            isDirectory = attributes.isDir,
+            path = path,
+            isDirectory = isDir,
             isSymlink = attributes.isLink,
             sizeBytes = attributes.size,
             modifiedEpochSeconds = attributes.mTime.toLong(),

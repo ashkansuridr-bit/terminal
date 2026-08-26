@@ -17,6 +17,12 @@ class TransferQueue(private val maxConcurrent: Int = DEFAULT_CONCURRENCY) {
     private val _transfers = MutableStateFlow<List<Transfer>>(emptyList())
     val transfers: StateFlow<List<Transfer>> = _transfers.asStateFlow()
 
+    /** Completed/cancelled transfers archived by [clearFinished], newest first, capped
+     *  at [MAX_HISTORY] — "did that file actually finish last night" without keeping
+     *  every transfer ever made for the life of the process. */
+    private val _history = MutableStateFlow<List<Transfer>>(emptyList())
+    val history: StateFlow<List<Transfer>> = _history.asStateFlow()
+
     val active: List<Transfer> get() = _transfers.value.filter { it.state == TransferState.RUNNING }
 
     /** Transfers still worth showing in a summary; completed ones fall out. */
@@ -36,16 +42,45 @@ class TransferQueue(private val maxConcurrent: Int = DEFAULT_CONCURRENCY) {
         return _transfers.value.firstOrNull { it.state == TransferState.QUEUED }
     }
 
-    fun markRunning(id: String) = update(id) { it.copy(state = TransferState.RUNNING, attempts = it.attempts + 1) }
+    fun markRunning(id: String) = update(id) {
+        // A fresh attempt starts a fresh rate estimate — carrying over a stale one from
+        // a previous, possibly much slower or faster, attempt would show a bogus ETA.
+        it.copy(state = TransferState.RUNNING, attempts = it.attempts + 1, lastProgressAt = 0L, bytesPerSecond = 0f)
+    }
 
-    fun markProgress(id: String, transferredBytes: Long, totalBytes: Long = Transfer.UNKNOWN_SIZE) =
-        update(id) {
-            it.copy(
-                // Never let a restarted attempt walk the counter backwards on screen.
-                transferredBytes = maxOf(it.transferredBytes, transferredBytes),
-                totalBytes = if (totalBytes > 0) totalBytes else it.totalBytes,
-            )
+    /**
+     * @param atMillis wall-clock time of this sample, threaded through as a parameter
+     *   (rather than read internally) so the rate calculation stays deterministic and
+     *   testable like the rest of this class.
+     */
+    fun markProgress(
+        id: String,
+        transferredBytes: Long,
+        totalBytes: Long = Transfer.UNKNOWN_SIZE,
+        atMillis: Long = System.currentTimeMillis(),
+    ) = update(id) { current ->
+        // Never let a restarted attempt walk the counter backwards on screen.
+        val newTransferred = maxOf(current.transferredBytes, transferredBytes)
+        val deltaBytes = newTransferred - current.transferredBytes
+        val hasPriorSample = current.lastProgressAt > 0L
+        val deltaMillis = (atMillis - current.lastProgressAt).coerceAtLeast(1L)
+        val instantaneous = if (hasPriorSample && deltaBytes > 0) {
+            deltaBytes * 1000f / deltaMillis
+        } else {
+            current.bytesPerSecond
         }
+        // Exponentially weighted toward the latest sample so the ETA settles quickly
+        // after a speed change but doesn't jitter between two callbacks a few ms apart.
+        val smoothed = if (current.bytesPerSecond <= 0f) instantaneous else {
+            current.bytesPerSecond * 0.7f + instantaneous * 0.3f
+        }
+        current.copy(
+            transferredBytes = newTransferred,
+            totalBytes = if (totalBytes > 0) totalBytes else current.totalBytes,
+            lastProgressAt = atMillis,
+            bytesPerSecond = smoothed,
+        )
+    }
 
     /**
      * Forcibly resets the byte counter to 0, unlike [markProgress] which only ever
@@ -54,14 +89,17 @@ class TransferQueue(private val maxConcurrent: Int = DEFAULT_CONCURRENCY) {
      * was previously recorded, so the transfer must restart from scratch instead of
      * resuming from a byte offset that can no longer be trusted.
      */
-    fun resetProgress(id: String) = update(id) { it.copy(transferredBytes = 0L) }
+    fun resetProgress(id: String) = update(id) {
+        it.copy(transferredBytes = 0L, lastProgressAt = 0L, bytesPerSecond = 0f)
+    }
 
-    fun markCompleted(id: String) = update(id) {
+    fun markCompleted(id: String, atMillis: Long = System.currentTimeMillis()) = update(id) {
         it.copy(
             state = TransferState.COMPLETED,
             errorKind = null,
             // A finished transfer shows a full bar even if the server never sent a size.
             transferredBytes = if (it.totalBytes > 0) it.totalBytes else it.transferredBytes,
+            finishedAt = atMillis,
         )
     }
 
@@ -73,8 +111,8 @@ class TransferQueue(private val maxConcurrent: Int = DEFAULT_CONCURRENCY) {
         if (it.canResume) it.copy(state = TransferState.QUEUED, errorKind = null) else it
     }
 
-    fun cancel(id: String) = update(id) {
-        if (it.canCancel) it.copy(state = TransferState.CANCELLED) else it
+    fun cancel(id: String, atMillis: Long = System.currentTimeMillis()) = update(id) {
+        if (it.canCancel) it.copy(state = TransferState.CANCELLED, finishedAt = atMillis) else it
     }
 
     /**
@@ -90,9 +128,13 @@ class TransferQueue(private val maxConcurrent: Int = DEFAULT_CONCURRENCY) {
         )
     }
 
-    /** Drops finished and cancelled entries from the list. */
+    /** Moves completed and cancelled entries out of the live list and into [history]. */
     fun clearFinished() {
-        _transfers.value = _transfers.value.filterNot { it.state.isTerminal }
+        val (finished, remaining) = _transfers.value.partition { it.state.isTerminal }
+        _transfers.value = remaining
+        if (finished.isNotEmpty()) {
+            _history.value = (finished.reversed() + _history.value).take(MAX_HISTORY)
+        }
     }
 
     /**
@@ -124,5 +166,8 @@ class TransferQueue(private val maxConcurrent: Int = DEFAULT_CONCURRENCY) {
          * progress bar useless.
          */
         const val DEFAULT_CONCURRENCY = 1
+
+        /** Oldest history entries fall off once this many are archived. */
+        const val MAX_HISTORY = 50
     }
 }
