@@ -492,10 +492,14 @@ private fun EntryRow(
                     imageVector = when {
                         entry.isSymlink -> Icons.Outlined.Link
                         entry.isDirectory -> Icons.Outlined.Folder
-                        else -> Icons.Outlined.Description
+                        else -> FileTypeIcons.forExtension(entry.name)
                     },
                     contentDescription = null,
-                    tint = if (entry.isDirectory) Turquoise else TextSecondary,
+                    tint = when {
+                        entry.isDirectory -> Turquoise
+                        entry.isSymlink -> TextSecondary.copy(alpha = 0.8f)
+                        else -> TextSecondary
+                    },
                     modifier = Modifier.size(24.dp),
                 )
             }

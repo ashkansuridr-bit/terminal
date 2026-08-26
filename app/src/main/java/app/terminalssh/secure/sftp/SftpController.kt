@@ -8,6 +8,7 @@ import java.io.FileOutputStream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +16,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Drives the browser and the transfer queue against one SSH session.
@@ -60,6 +62,12 @@ class SftpController(
 
     private var client: SftpClient? = null
     private var pumpJob: Job? = null
+
+    /**
+     * Per-transfer SftpClient instances for parallel transfers. Each concurrent
+     * transfer gets its own ChannelSftp channel so they don't block each other.
+     */
+    private val transferClients = ConcurrentHashMap<String, SftpClient>()
 
     /** Cancellation flags keyed by transfer id, read by the copy loops. */
     private val cancelled = mutableSetOf<String>()
@@ -327,25 +335,43 @@ class SftpController(
 
     fun clearFinished() = queue.clearFinished()
 
-    /** Starts the next transfer if the queue allows one; re-entrant and cheap. */
+    /**
+     * Starts the next transfer if the queue allows one; re-entrant and cheap.
+     * Adaptive concurrency: launches up to maxConcurrent transfers in parallel,
+     * each on its own SFTP channel for true parallel I/O.
+     */
     private fun pump() {
         if (pumpJob?.isActive == true) return
         pumpJob = scope.launch {
             while (isActive) {
+                queue.adaptConcurrency()
                 val next = queue.nextToStart() ?: break
                 queue.markRunning(next.id)
                 cancelled -= next.id
-                runTransfer(queue.transfers.value.first { it.id == next.id })
+                val transfer = queue.transfers.value.first { it.id == next.id }
+                // Launch each transfer as a separate coroutine for parallel execution
+                launch {
+                    runTransfer(transfer)
+                    transferClients.remove(transfer.id)?.close()
+                }
             }
+            // After all transfers finish, check again (new transfers may have been queued)
+            delay(50)
+            if (isActive) pump()
         }
     }
 
     private suspend fun runTransfer(transfer: Transfer) {
+        // Each concurrent transfer gets its own SFTP channel for true parallel I/O.
+        val transferClient = runCatching {
+            withContext(Dispatchers.IO) { session.openSftp() }
+        }.getOrNull()
+        if (transferClient != null) {
+            transferClients[transfer.id] = transferClient
+        }
+
         val result = runCatching {
-            // Resolve the client here rather than reaching for a field that is only
-            // populated once a listing has succeeded: a transfer queued before the first
-            // successful navigate would otherwise dereference null.
-            val sftp = client()
+            val sftp = transferClient ?: client()
             withContext(Dispatchers.IO) {
                 when (transfer.direction) {
                     TransferDirection.DOWNLOAD -> download(sftp, transfer)
@@ -353,6 +379,8 @@ class SftpController(
                 }
             }
         }
+        transferClient?.close()
+        transferClients.remove(transfer.id)
         when {
             transfer.id in cancelled -> {
                 // pause() and cancel() both add to `cancelled` — they're the same
@@ -442,6 +470,8 @@ class SftpController(
 
     fun close() {
         pumpJob?.cancel()
+        transferClients.values.forEach { runCatching { it.close() } }
+        transferClients.clear()
         runCatching { client?.close() }
         client = null
     }

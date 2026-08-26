@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * run at once — are unit-testable without a server. [SftpTransferWorker] does the I/O and
  * reports back through [update].
  */
-class TransferQueue(private val maxConcurrent: Int = DEFAULT_CONCURRENCY) {
+class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
 
     private val _transfers = MutableStateFlow<List<Transfer>>(emptyList())
     val transfers: StateFlow<List<Transfer>> = _transfers.asStateFlow()
@@ -22,6 +22,14 @@ class TransferQueue(private val maxConcurrent: Int = DEFAULT_CONCURRENCY) {
      *  every transfer ever made for the life of the process. */
     private val _history = MutableStateFlow<List<Transfer>>(emptyList())
     val history: StateFlow<List<Transfer>> = _history.asStateFlow()
+
+    /**
+     * Current concurrency limit. Adaptive mode adjusts this dynamically based on
+     * pending transfer sizes — 1 for a single large file, up to [MAX_CONCURRENCY]
+     * for a batch of small files where latency dominates.
+     */
+    var maxConcurrent: Int = maxConcurrent
+        private set
 
     val active: List<Transfer> get() = _transfers.value.filter { it.state == TransferState.RUNNING }
 
@@ -155,17 +163,44 @@ class TransferQueue(private val maxConcurrent: Int = DEFAULT_CONCURRENCY) {
         }
     }
 
+    /**
+     * Adaptively adjusts [maxConcurrent] based on queued transfers.
+     * - Single large file (>10MB): 1 stream (bandwidth is the bottleneck)
+     * - Multiple small files (<1MB each): up to [MAX_CONCURRENCY] (latency dominates)
+     * - Mixed: 2 streams as a compromise
+     */
+    fun adaptConcurrency() {
+        val queued = _transfers.value.filter { it.state == TransferState.QUEUED }
+        if (queued.isEmpty()) {
+            maxConcurrent = DEFAULT_CONCURRENCY
+            return
+        }
+        val allSmall = queued.all { it.totalBytes in 0 until SMALL_FILE_THRESHOLD }
+        val allLarge = queued.all { it.totalBytes >= LARGE_FILE_THRESHOLD }
+        maxConcurrent = when {
+            queued.size == 1 -> DEFAULT_CONCURRENCY
+            allSmall -> MAX_CONCURRENCY
+            allLarge -> DEFAULT_CONCURRENCY
+            else -> 2
+        }
+    }
+
     private inline fun update(id: String, change: (Transfer) -> Transfer) {
         _transfers.value = _transfers.value.map { if (it.id == id) change(it) else it }
     }
 
     companion object {
-        /**
-         * One at a time. Parallel transfers over a single SSH connection share the same
-         * TCP window, so they finish no sooner in aggregate and make each individual
-         * progress bar useless.
-         */
+        /** Default: one transfer at a time. Parallel transfers share TCP window. */
         const val DEFAULT_CONCURRENCY = 1
+
+        /** Maximum concurrent transfers for small-file batches. */
+        const val MAX_CONCURRENCY = 3
+
+        /** Files smaller than this (bytes) are considered "small" for concurrency decisions. */
+        const val SMALL_FILE_THRESHOLD = 1_000_000L // 1MB
+
+        /** Files larger than this (bytes) are considered "large" — single-stream. */
+        const val LARGE_FILE_THRESHOLD = 10_000_000L // 10MB
 
         /** Oldest history entries fall off once this many are archived. */
         const val MAX_HISTORY = 50
