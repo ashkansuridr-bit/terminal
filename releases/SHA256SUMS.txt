@@ -1,3 +1,3 @@
-886a95fda2569d690de76d5bf531e0c7525fc219a74749970b0a1f2391448ee4  terminal-ssh-v0.6.0-arm64.apk
-4dd098902b3cf11ae0f151eaaf90e3dd93d3d967408dc8cd5bc299c789fd1141  terminal-ssh-v0.6.0-armv7.apk
-c93381ff52d728ede35621a4da89dd24ff111dc36d3f8173ecf479f83053e74f  terminal-ssh-v0.6.0-universal.apk
+da6ebe28f5b7a2d8a03680b28cc2b2958c707006f8404d4fd5013631ab8a270d  terminal-ssh-v0.6.0-arm64.apk
+c6cf1ffa16f4d91f33367c15cb71125cc900af44e6b65825f3e24e8757c327b6  terminal-ssh-v0.6.0-armv7.apk
+825cef2ae1cf098e1ac7c573afa91715179cef9fa1731b50240acc9400799fbf  terminal-ssh-v0.6.0-universal.apk
