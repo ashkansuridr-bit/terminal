@@ -39,8 +39,8 @@ SFTP, encrypted local vault, and no account required — ever.
 
 | Build | مناسب برای | حجم | Download |
 | --- | --- | --- | --- |
-| **arm64-v8a** | اکثر گوشی‌های ۲۰۱۷ به بعد | ۶.۴ MB | [دانلود](releases/TerminalSSH-0.5.0-preview-arm64-v8a.apk) |
-| **armeabi-v7a** | گوشی‌های قدیمی‌تر ۳۲ بیتی | ۵.۶ MB | [دانلود](releases/TerminalSSH-0.5.0-preview-armeabi-v7a.apk) |
+| **arm64-v8a** | اکثر گوشی‌های ۲۰۱۷ به بعد | ۶.۴ MB | [دانلود](releases/TerminalSSH-0.5.1-preview-arm64-v8a.apk) |
+| **armeabi-v7a** | گوشی‌های قدیمی‌تر ۳۲ بیتی | ۵.۶ MB | [دانلود](releases/TerminalSSH-0.5.1-preview-armeabi-v7a.apk) |
 
 بعد از دانلود، درستی فایل را با [`releases/SHA256SUMS.txt`](releases/SHA256SUMS.txt) بررسی کنید:
 
