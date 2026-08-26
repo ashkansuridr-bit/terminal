@@ -292,4 +292,22 @@
     <string name="hosts_no_results_body">Aucun résultat pour «\u202f%1$s\u202f».</string>
     <string name="hosts_clear_search">Effacer la recherche</string>
     <string name="hosts_empty_hint">Vous avez déjà un fichier ssh config sur votre ordinateur\u2009? Importez-le en entier en une seule fois.</string>
+    <string name="ok">OK</string>
+    <string name="sftp_aggregate_progress">%1$d fichiers (%2$d actifs) · %3$s sur %4$s</string>
+    <string name="sftp_aggregate_progress_no_size">%1$d fichiers (%2$d actifs)</string>
+    <string name="sftp_copy_to">Copier vers…</string>
+    <string name="sftp_delete_selected_confirm_body">%1$d éléments seront définitivement supprimés.</string>
+    <string name="sftp_detail_modified">Dernière modification</string>
+    <string name="sftp_detail_path">Chemin</string>
+    <string name="sftp_detail_permissions">Permissions</string>
+    <string name="sftp_detail_size">Taille</string>
+    <string name="sftp_detail_target">Cible du lien</string>
+    <string name="sftp_download_selected">Télécharger la sélection</string>
+    <string name="sftp_eta">%1$s restant</string>
+    <string name="sftp_history">Historique</string>
+    <string name="sftp_move_here">Déplacer ici</string>
+    <string name="sftp_move_to">Déplacer vers…</string>
+    <string name="sftp_properties">Propriétés</string>
+    <string name="sftp_select">Sélectionner</string>
+    <string name="sftp_selected_count">%1$d sélectionnés</string>
 </resources>

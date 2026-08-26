@@ -299,4 +299,19 @@
     <string name="hosts_no_results_body">لا يوجد خادم يطابق «%1$s».</string>
     <string name="hosts_clear_search">مسح البحث</string>
     <string name="hosts_empty_hint">إذا كان لديك ملف ssh config على جهازك، يمكنك استيرادها دفعة واحدة.</string>
+    <string name="ok">موافق</string>
+    <string name="sftp_aggregate_progress">%1$d ملف (%2$d يعمل) · %3$s من %4$s</string>
+    <string name="sftp_aggregate_progress_no_size">%1$d ملف (%2$d يعمل)</string>
+    <string name="sftp_copy_to">نسخ إلى…</string>
+    <string name="sftp_detail_modified">آخر تعديل</string>
+    <string name="sftp_detail_path">المسار</string>
+    <string name="sftp_detail_permissions">الصلاحيات</string>
+    <string name="sftp_detail_size">الحجم</string>
+    <string name="sftp_detail_target">هدف الرابط</string>
+    <string name="sftp_download_selected">تحميل المحدد</string>
+    <string name="sftp_eta">%1$s متبقي</string>
+    <string name="sftp_history">السجل</string>
+    <string name="sftp_move_here">نقل إلى هنا</string>
+    <string name="sftp_move_to">نقل إلى…</string>
+    <string name="sftp_properties">الخصائص</string>
 </resources>

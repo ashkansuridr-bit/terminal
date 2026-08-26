@@ -295,4 +295,19 @@
     <string name="hosts_no_results_body">Ninguno coincide con \u201c%1$s\u201d.</string>
     <string name="hosts_clear_search">Limpiar búsqueda</string>
     <string name="hosts_empty_hint">¿Ya tienes un archivo ssh config en tu computadora? Importa el archivo completo de una vez.</string>
+    <string name="ok">Aceptar</string>
+    <string name="sftp_aggregate_progress">%1$d archivos (%2$d activos) · %3$s de %4$s</string>
+    <string name="sftp_aggregate_progress_no_size">%1$d archivos (%2$d activos)</string>
+    <string name="sftp_copy_to">Copiar a…</string>
+    <string name="sftp_detail_modified">Última modificación</string>
+    <string name="sftp_detail_path">Ruta</string>
+    <string name="sftp_detail_permissions">Permisos</string>
+    <string name="sftp_detail_size">Tamaño</string>
+    <string name="sftp_detail_target">Destino del enlace</string>
+    <string name="sftp_download_selected">Descargar seleccionados</string>
+    <string name="sftp_eta">%1$s restante</string>
+    <string name="sftp_history">Historial</string>
+    <string name="sftp_move_here">Mover aquí</string>
+    <string name="sftp_move_to">Mover a…</string>
+    <string name="sftp_properties">Propiedades</string>
 </resources>

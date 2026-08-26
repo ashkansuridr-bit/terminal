@@ -294,4 +294,22 @@
     <string name="hosts_no_results_body">Ничего не найдено для «%1$s».</string>
     <string name="hosts_clear_search">Очистить поиск</string>
     <string name="hosts_empty_hint">Уже есть SSH-конфиг на компьютере? Импортируйте весь файл за раз.</string>
+    <string name="ok">ОК</string>
+    <string name="sftp_aggregate_progress">%1$d файлов (%2$d активно) · %3$s из %4$s</string>
+    <string name="sftp_aggregate_progress_no_size">%1$d файлов (%2$d активно)</string>
+    <string name="sftp_copy_to">Копировать в…</string>
+    <string name="sftp_delete_selected_confirm_body">%1$d элементов будет удалено безвозвратно.</string>
+    <string name="sftp_detail_modified">Последнее изменение</string>
+    <string name="sftp_detail_path">Путь</string>
+    <string name="sftp_detail_permissions">Права доступа</string>
+    <string name="sftp_detail_size">Размер</string>
+    <string name="sftp_detail_target">Цель ссылки</string>
+    <string name="sftp_download_selected">Скачать выбранные</string>
+    <string name="sftp_eta">Осталось %1$s</string>
+    <string name="sftp_history">История</string>
+    <string name="sftp_move_here">Переместить сюда</string>
+    <string name="sftp_move_to">Переместить в…</string>
+    <string name="sftp_properties">Свойства</string>
+    <string name="sftp_select">Выбрать</string>
+    <string name="sftp_selected_count">Выбрано: %1$d</string>
 </resources>
