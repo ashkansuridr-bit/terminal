@@ -96,6 +96,8 @@ fun SftpBrowser(
     onMoveTo: (RemoteEntry, String) -> Unit,
     onCopyTo: (RemoteEntry, String) -> Unit,
     listDirectories: suspend (String) -> List<RemoteEntry>,
+    onChmod: (RemoteEntry, Int) -> Unit = { _, _ -> },
+    onChmodRecursive: (String, Int) -> Unit = { _, _ -> },
 ) {
     var newFolderPrompt by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<RemoteEntry?>(null) }
@@ -106,6 +108,7 @@ fun SftpBrowser(
     var selectionMode by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(setOf<String>()) }
     var deleteSelectedPrompt by remember { mutableStateOf(false) }
+    var chmodTarget by remember { mutableStateOf<RemoteEntry?>(null) }
 
     // A directory change invalidates any selection made in the previous one.
     LaunchedEffect(state.path) {
@@ -197,9 +200,10 @@ fun SftpBrowser(
                         onRenameRequest = { renameTarget = entry },
                         onDeleteRequest = { deleteTarget = entry },
                         onDetailsRequest = { detailsTarget = entry },
-                        onMoveRequest = { moveTarget = entry },
-                        onCopyRequest = { copyTarget = entry },
-                    )
+                    onMoveRequest = { moveTarget = entry },
+                    onCopyRequest = { copyTarget = entry },
+                    onChmodRequest = { chmodTarget = entry },
+                )
                 }
             }
         }
@@ -229,7 +233,17 @@ fun SftpBrowser(
         EntryDetailsDialog(
             entry = entry,
             fetchSymlinkTarget = fetchSymlinkTarget,
+            onChmodRequest = { chmodTarget = entry },
             onDismiss = { detailsTarget = null },
+        )
+    }
+
+    chmodTarget?.let { entry ->
+        ChmodDialog(
+            currentPermissions = entry.permissions,
+            fileName = entry.name,
+            onConfirm = { mode -> onChmod(entry, mode); chmodTarget = null },
+            onDismiss = { chmodTarget = null },
         )
     }
 
@@ -435,6 +449,7 @@ private fun EntryRow(
     onDetailsRequest: () -> Unit,
     onMoveRequest: () -> Unit,
     onCopyRequest: () -> Unit,
+    onChmodRequest: () -> Unit = {},
 ) {
     var pressed by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -522,6 +537,10 @@ private fun EntryRow(
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.delete)) },
                 onClick = { menuOpen = false; onDeleteRequest() },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.sftp_chmod)) },
+                onClick = { menuOpen = false; onChmodRequest() },
             )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.sftp_properties)) },

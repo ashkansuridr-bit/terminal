@@ -84,6 +84,20 @@ class SftpClient(private val session: Session) : AutoCloseable {
     fun rename(from: String, to: String) =
         channel().rename(RemotePath.normalize(from), RemotePath.normalize(to))
 
+    /** Changes POSIX mode bits (9-bit int, e.g. 0b110_100_100 = 0o644). */
+    fun chmod(remotePath: String, mode: Int) {
+        channel().chmod(mode, RemotePath.normalize(remotePath))
+    }
+
+    /**
+     * Owner and group as reported by the server in the long listing, or null when
+     * the server omits them or the longname line doesn't have that shape.
+     */
+    fun ownerGroup(remotePath: String): String? {
+        val attrs = runCatching { channel().stat(RemotePath.normalize(remotePath)) }.getOrNull() ?: return null
+        return PosixPermissions.ownerGroup(attrs.toString())
+    }
+
     /** The target of a symlink, or null when [remotePath] isn't one or it can't be read. */
     fun readlink(remotePath: String): String? =
         runCatching { channel().readlink(RemotePath.normalize(remotePath)) }.getOrNull()

@@ -314,4 +314,23 @@
     <string name="sftp_move_here">نقل إلى هنا</string>
     <string name="sftp_move_to">نقل إلى…</string>
     <string name="sftp_properties">الخصائص</string>
+    <string name="sftp_chmod">تغيير الصلاحيات</string>
+    <string name="sftp_chmod_title">تغيير صلاحيات %1$s</string>
+    <string name="sftp_recursive_folder_download">تنزيل المجلد</string>
+    <string name="sftp_recursive_folder_upload">رفع المجلد</string>
+    <string name="sftp_recursive_download_confirm">تنزيل المجلد "%1$s" (%2$d ملف)؟</string>
+    <string name="sftp_recursive_upload_confirm">رفع %1$d ملف إلى المجلد "%2$s"؟</string>
+    <string name="sftp_text_editor">محرر النصوص</string>
+    <string name="sftp_edit_file">تحرير الملف</string>
+    <string name="sftp_save_upload">حفظ ورفع</string>
+    <string name="sftp_preview">معاينة</string>
+    <string name="sftp_preview_image">معاينة الصورة</string>
+    <string name="sftp_preview_text">معاينة النص</string>
+    <string name="sftp_file_type_image">صورة</string>
+    <string name="sftp_file_type_video">فيديو</string>
+    <string name="sftp_file_type_audio">صوت</string>
+    <string name="sftp_file_type_archive">أرشيف</string>
+    <string name="sftp_file_type_code">كود</string>
+    <string name="sftp_file_type_document">مستند</string>
+    <string name="sftp_file_type_pdf">PDF</string>
 </resources>

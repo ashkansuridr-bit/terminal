@@ -189,7 +189,40 @@ class SftpController(
     suspend fun symlinkTarget(path: String): String? =
         runCatching { withContext(Dispatchers.IO) { client().readlink(path) } }.getOrNull()
 
-    /** Surfaces a failed browser-adjacent action (create/rename/delete) the same way a
+    /** Changes POSIX mode bits on a remote file/directory, then refreshes. */
+    fun chmod(entry: RemoteEntry, mode: Int) = scope.launch {
+        val result = runCatching { withContext(Dispatchers.IO) { client().chmod(entry.path, mode) } }
+        if (result.isSuccess) refresh() else showBrowserError(result.exceptionOrNull()!!)
+    }
+
+    /**
+     * Recursive chmod: applies [mode] to all files under a directory.
+     * Shows consequences before action — matches the app's security principle.
+     */
+    fun chmodRecursive(path: String, mode: Int) = scope.launch {
+        val failures = mutableListOf<Throwable>()
+        withContext(Dispatchers.IO) {
+            val sftp = client()
+            sftp.chmod(path, mode)
+            recursiveChmod(sftp, path, mode, failures)
+        }
+        refresh()
+        failures.firstOrNull()?.let { showBrowserError(it) }
+    }
+
+    private fun recursiveChmod(sftp: SftpClient, path: String, mode: Int, failures: MutableList<Throwable>) {
+        val entries = runCatching { sftp.list(path) }.getOrDefault(emptyList())
+        for (entry in entries) {
+            if (entry.isDirectory) {
+                runCatching { sftp.chmod(entry.path, mode) }.onFailure { failures += it }
+                recursiveChmod(sftp, entry.path, mode, failures)
+            } else {
+                runCatching { sftp.chmod(entry.path, mode) }.onFailure { failures += it }
+            }
+        }
+    }
+
+    /** Surfaces a failed browser-adjacent action (create/rename/delete/chmod) the same way a
      *  failed listing does: keep the current entries on screen, show an error banner. */
     private fun showBrowserError(t: Throwable) {
         _browser.value = _browser.value.copy(errorKind = SftpClient.classify(t))

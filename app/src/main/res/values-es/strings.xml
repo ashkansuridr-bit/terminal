@@ -310,4 +310,23 @@
     <string name="sftp_move_here">Mover aquí</string>
     <string name="sftp_move_to">Mover a…</string>
     <string name="sftp_properties">Propiedades</string>
+    <string name="sftp_chmod">Cambiar permisos</string>
+    <string name="sftp_chmod_title">Cambiar permisos de %1$s</string>
+    <string name="sftp_recursive_folder_download">Descargar carpeta</string>
+    <string name="sftp_recursive_folder_upload">Subir carpeta</string>
+    <string name="sftp_recursive_download_confirm">¿Descargar carpeta "%1$s" (%2$d archivos)?</string>
+    <string name="sftp_recursive_upload_confirm">¿Subir %1$d archivos a carpeta "%2$s"?</string>
+    <string name="sftp_text_editor">Editor de texto</string>
+    <string name="sftp_edit_file">Editar archivo</string>
+    <string name="sftp_save_upload">Guardar y subir</string>
+    <string name="sftp_preview">Vista previa</string>
+    <string name="sftp_preview_image">Vista previa de imagen</string>
+    <string name="sftp_preview_text">Vista previa de texto</string>
+    <string name="sftp_file_type_image">Imagen</string>
+    <string name="sftp_file_type_video">Video</string>
+    <string name="sftp_file_type_audio">Audio</string>
+    <string name="sftp_file_type_archive">Archivo</string>
+    <string name="sftp_file_type_code">Código</string>
+    <string name="sftp_file_type_document">Documento</string>
+    <string name="sftp_file_type_pdf">PDF</string>
 </resources>

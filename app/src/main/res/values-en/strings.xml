@@ -310,4 +310,23 @@
     <string name="hosts_no_results_body">Nothing matched \u201c%1$s\u201d.</string>
     <string name="hosts_clear_search">Clear search</string>
     <string name="hosts_empty_hint">Already have an ssh config on your computer? Import the whole file at once.</string>
+    <string name="sftp_chmod">Change Permissions</string>
+    <string name="sftp_chmod_title">Change permissions of %1$s</string>
+    <string name="sftp_recursive_folder_download">Download folder</string>
+    <string name="sftp_recursive_folder_upload">Upload folder</string>
+    <string name="sftp_recursive_download_confirm">Download folder "%1$s" (%2$d files)?</string>
+    <string name="sftp_recursive_upload_confirm">Upload %1$d files to folder "%2$s"?</string>
+    <string name="sftp_text_editor">Text Editor</string>
+    <string name="sftp_edit_file">Edit file</string>
+    <string name="sftp_save_upload">Save &amp; upload</string>
+    <string name="sftp_preview">Preview</string>
+    <string name="sftp_preview_image">Image preview</string>
+    <string name="sftp_preview_text">Text preview</string>
+    <string name="sftp_file_type_image">Image</string>
+    <string name="sftp_file_type_video">Video</string>
+    <string name="sftp_file_type_audio">Audio</string>
+    <string name="sftp_file_type_archive">Archive</string>
+    <string name="sftp_file_type_code">Code</string>
+    <string name="sftp_file_type_document">Document</string>
+    <string name="sftp_file_type_pdf">PDF</string>
 </resources>

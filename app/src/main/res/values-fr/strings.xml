@@ -310,4 +310,23 @@
     <string name="sftp_properties">Propriétés</string>
     <string name="sftp_select">Sélectionner</string>
     <string name="sftp_selected_count">%1$d sélectionnés</string>
+    <string name="sftp_chmod">Changer les permissions</string>
+    <string name="sftp_chmod_title">Changer les permissions de %1$s</string>
+    <string name="sftp_recursive_folder_download">Télécharger le dossier</string>
+    <string name="sftp_recursive_folder_upload">Téléverser le dossier</string>
+    <string name="sftp_recursive_download_confirm">Télécharger le dossier "%1$s" (%2$d fichiers) ?</string>
+    <string name="sftp_recursive_upload_confirm">Téléverser %1$d fichiers dans le dossier "%2$s" ?</string>
+    <string name="sftp_text_editor">Éditeur de texte</string>
+    <string name="sftp_edit_file">Éditer le fichier</string>
+    <string name="sftp_save_upload">Enregistrer et téléverser</string>
+    <string name="sftp_preview">Aperçu</string>
+    <string name="sftp_preview_image">Aperçu image</string>
+    <string name="sftp_preview_text">Aperçu texte</string>
+    <string name="sftp_file_type_image">Image</string>
+    <string name="sftp_file_type_video">Vidéo</string>
+    <string name="sftp_file_type_audio">Audio</string>
+    <string name="sftp_file_type_archive">Archive</string>
+    <string name="sftp_file_type_code">Code</string>
+    <string name="sftp_file_type_document">Document</string>
+    <string name="sftp_file_type_pdf">PDF</string>
 </resources>

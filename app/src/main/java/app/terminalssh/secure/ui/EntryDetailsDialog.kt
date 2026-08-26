@@ -3,6 +3,8 @@ package app.terminalssh.secure.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,6 +31,7 @@ import java.time.format.FormatStyle
 fun EntryDetailsDialog(
     entry: RemoteEntry,
     fetchSymlinkTarget: suspend (String) -> String?,
+    onChmodRequest: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     val target by produceState<String?>(initialValue = null, entry.path) {
@@ -48,6 +51,12 @@ fun EntryDetailsDialog(
                 DetailRow(stringResource(R.string.sftp_detail_permissions), entry.permissions)
                 if (entry.isSymlink) {
                     DetailRow(stringResource(R.string.sftp_detail_target), target ?: "…")
+                }
+                if (onChmodRequest != null) {
+                    Spacer(Modifier.height(4.dp))
+                    TextButton(onClick = { onDismiss(); onChmodRequest() }) {
+                        Text(stringResource(R.string.sftp_chmod))
+                    }
                 }
             }
         },

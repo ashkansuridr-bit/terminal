@@ -134,6 +134,8 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
             onMoveTo = sftp::moveTo,
             onCopyTo = sftp::copyTo,
             listDirectories = sftp::listDirectories,
+            onChmod = { entry, mode -> sftp.chmod(entry, mode) },
+            onChmodRecursive = { path, mode -> sftp.chmodRecursive(path, mode) },
         )
     }
 

@@ -310,4 +310,23 @@
     <string name="hosts_no_results_body">هیچ سروری با «%1$s» جور در نیامد.</string>
     <string name="hosts_clear_search">پاک کردن جستجو</string>
     <string name="hosts_empty_hint">اگر روی کامپیوترتان فایل ssh config دارید، همه‌شان را یکجا وارد کنید.</string>
+    <string name="sftp_chmod">تغییر مجوزها</string>
+    <string name="sftp_chmod_title">تغییر مجوزهای %1$s</string>
+    <string name="sftp_recursive_folder_download">دانلود پوشه</string>
+    <string name="sftp_recursive_folder_upload">آپلود پوشه</string>
+    <string name="sftp_recursive_download_confirm">آیا می‌خواهید پوشه «%1$s» (%2$d فایل) را دانلود کنید؟</string>
+    <string name="sftp_recursive_upload_confirm">آیا می‌خواهید %1$d فایل را به پوشه «%2$s» آپلود کنید؟</string>
+    <string name="sftp_text_editor">ویرایشگر متن</string>
+    <string name="sftp_edit_file">ویرایش فایل</string>
+    <string name="sftp_save_upload">ذخیره و آپلود</string>
+    <string name="sftp_preview">پیش‌نمایش</string>
+    <string name="sftp_preview_image">پیش‌نمایش تصویر</string>
+    <string name="sftp_preview_text">پیش‌نمایش متن</string>
+    <string name="sftp_file_type_image">تصویر</string>
+    <string name="sftp_file_type_video">ویدیو</string>
+    <string name="sftp_file_type_audio">صوت</string>
+    <string name="sftp_file_type_archive">آرشیو</string>
+    <string name="sftp_file_type_code">کد</string>
+    <string name="sftp_file_type_document">سند</string>
+    <string name="sftp_file_type_pdf">PDF</string>
 </resources>

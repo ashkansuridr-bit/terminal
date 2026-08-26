@@ -312,4 +312,23 @@
     <string name="sftp_properties">Свойства</string>
     <string name="sftp_select">Выбрать</string>
     <string name="sftp_selected_count">Выбрано: %1$d</string>
+    <string name="sftp_chmod">Изменить права</string>
+    <string name="sftp_chmod_title">Изменить права %1$s</string>
+    <string name="sftp_recursive_folder_download">Скачать папку</string>
+    <string name="sftp_recursive_folder_upload">Загрузить папку</string>
+    <string name="sftp_recursive_download_confirm">Скачать папку "%1$s" (%2$d файлов)?</string>
+    <string name="sftp_recursive_upload_confirm">Загрузить %1$d файлов в папку "%2$s"?</string>
+    <string name="sftp_text_editor">Текстовый редактор</string>
+    <string name="sftp_edit_file">Редактировать файл</string>
+    <string name="sftp_save_upload">Сохранить и загрузить</string>
+    <string name="sftp_preview">Предпросмотр</string>
+    <string name="sftp_preview_image">Просмотр изображения</string>
+    <string name="sftp_preview_text">Просмотр текста</string>
+    <string name="sftp_file_type_image">Изображение</string>
+    <string name="sftp_file_type_video">Видео</string>
+    <string name="sftp_file_type_audio">Аудио</string>
+    <string name="sftp_file_type_archive">Архив</string>
+    <string name="sftp_file_type_code">Код</string>
+    <string name="sftp_file_type_document">Документ</string>
+    <string name="sftp_file_type_pdf">PDF</string>
 </resources>
