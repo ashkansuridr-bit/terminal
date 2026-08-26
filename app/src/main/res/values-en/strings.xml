@@ -340,4 +340,23 @@
     <string name="sftp_compress_error">Failed to compress</string>
     <string name="notif_sessions_transfers">%1$d active sessions · %2$d active transfers</string>
     <string name="notif_transfers_active">%d active transfers</string>
+    <string name="sftp_sync">Sync</string>
+    <string name="sftp_sync_to_remote">Sync to server</string>
+    <string name="sftp_sync_title">Sync Preview</string>
+    <string name="sftp_sync_upload">Upload</string>
+    <string name="sftp_sync_delete">Delete from server</string>
+    <string name="sftp_sync_skip">Unchanged</string>
+    <string name="sftp_sync_summary">%1$d upload · %2$d delete · %3$d unchanged</string>
+    <string name="sftp_sync_execute">Sync now</string>
+    <string name="sftp_sync_delete_remote">Delete extra files from server</string>
+    <string name="sftp_sync_local_to_remote">Local → Server</string>
+    <string name="port_forwarding">Port forwarding</string>
+    <string name="port_forward_local">Local (L)</string>
+    <string name="port_forward_remote">Remote (R)</string>
+    <string name="port_forward_bind_port">Local bind port</string>
+    <string name="port_forward_host">Destination host</string>
+    <string name="port_forward_dest_port">Destination port</string>
+    <string name="port_forward_active">Active</string>
+    <string name="port_forward_add">Add port forward</string>
+    <string name="port_forward_type">Forward type</string>
 </resources>

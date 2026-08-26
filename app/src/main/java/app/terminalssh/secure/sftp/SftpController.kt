@@ -467,6 +467,91 @@ class SftpController(
         }
     }
 
+    // ---- one-way sync (#28/#29) ----
+
+    /** Describes one change in a sync plan. */
+    data class SyncAction(
+        val relativePath: String,
+        val kind: Kind,
+        val localSize: Long = 0L,
+        val remoteSize: Long = 0L,
+    ) {
+        enum class Kind { UPLOAD, DELETE_REMOTE, SKIP_IDENTICAL }
+    }
+
+    /**
+     * Computes a one-way sync plan: local → remote.
+     * Compares files by relative path and size (fast heuristic; mtime not available via SFTP universally).
+     */
+    suspend fun computeSyncPlan(localDir: java.io.File, remoteDir: String, deleteRemote: Boolean = false): List<SyncAction> {
+        return withContext(Dispatchers.IO) {
+            val sftp = client()
+            // Local files
+            val localFiles = localDir.walkTopDown().filter { it.isFile }.map { file ->
+                file.relativeTo(localDir).path to file.length()
+            }.toMap()
+            // Remote files
+            val remoteFiles = sftp.listRecursive(remoteDir).map { (remotePath, relative) ->
+                val size = runCatching { sftp.size(remotePath) }.getOrDefault(0L)
+                relative to size
+            }.toMap()
+
+            val actions = mutableListOf<SyncAction>()
+
+            // Files to upload: new or different size
+            for ((relPath, localSize) in localFiles) {
+                val remoteSize = remoteFiles[relPath]
+                if (remoteSize == null) {
+                    actions.add(SyncAction(relPath, SyncAction.Kind.UPLOAD, localSize, 0L))
+                } else if (remoteSize != localSize) {
+                    actions.add(SyncAction(relPath, SyncAction.Kind.UPLOAD, localSize, remoteSize))
+                } else {
+                    actions.add(SyncAction(relPath, SyncAction.Kind.SKIP_IDENTICAL, localSize, remoteSize))
+                }
+            }
+
+            // Files to delete on remote (remote has files not in local)
+            if (deleteRemote) {
+                for ((relPath, remoteSize) in remoteFiles) {
+                    if (relPath !in localFiles) {
+                        actions.add(SyncAction(relPath, SyncAction.Kind.DELETE_REMOTE, 0L, remoteSize))
+                    }
+                }
+            }
+
+            actions.sortedBy { it.relativePath }
+        }
+    }
+
+    /**
+     * Executes a sync plan: uploads new/changed files, deletes remote-only files.
+     */
+    suspend fun executeSyncPlan(localDir: java.io.File, remoteDir: String, actions: List<SyncAction>) {
+        withContext(Dispatchers.IO) {
+            val sftp = client()
+            for (action in actions) {
+                when (action.kind) {
+                    SyncAction.Kind.UPLOAD -> {
+                        val localFile = java.io.File(localDir, action.relativePath)
+                        if (!localFile.exists()) continue
+                        val remotePath = RemotePath.join(remoteDir, action.relativePath)
+                        // Ensure parent directory exists
+                        val parentDir = RemotePath.parent(remotePath)
+                        runCatching { sftp.makeDirectory(parentDir) }
+                        java.io.FileInputStream(localFile).use { inp ->
+                            sftp.upload(inp, remotePath, 0L) {}
+                        }
+                    }
+                    SyncAction.Kind.DELETE_REMOTE -> {
+                        val remotePath = RemotePath.join(remoteDir, action.relativePath)
+                        runCatching { sftp.delete(remotePath, false) }
+                    }
+                    SyncAction.Kind.SKIP_IDENTICAL -> { /* no-op */ }
+                }
+            }
+        }
+    }
+
     /** Surfaces a failed browser-adjacent action (create/rename/delete/chmod) the same way a
      *  failed listing does: keep the current entries on screen, show an error banner. */
     private fun showBrowserError(t: Throwable) {

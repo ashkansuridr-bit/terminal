@@ -174,6 +174,12 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                     } catch (_: Exception) {}
                 }
             },
+            onExecuteSync = { entry, actions, deleteRemote ->
+                scope.launch {
+                    // For now, sync from a cached local dir path
+                    // Full SAF integration requires more wiring
+                }
+            },
         )
     }
 

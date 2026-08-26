@@ -109,6 +109,9 @@ fun SftpBrowser(
     onUploadEditedText: ((String, String) -> Unit)? = null,
     onUploadEditedTextChecked: (suspend (String, String) -> Result<Boolean>)? = null,
     onCompressSelected: (List<RemoteEntry>) -> Unit = {},
+    onSyncToRemote: ((RemoteEntry) -> Unit)? = null,
+    onComputeSync: ((RemoteEntry) -> Unit)? = null,
+    onExecuteSync: ((RemoteEntry, List<SftpController.SyncAction>, Boolean) -> Unit)? = null,
 ) {
     var newFolderPrompt by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<RemoteEntry?>(null) }
@@ -119,6 +122,9 @@ fun SftpBrowser(
     var downloadFolderTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var editTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var previewTarget by remember { mutableStateOf<RemoteEntry?>(null) }
+    var syncTarget by remember { mutableStateOf<RemoteEntry?>(null) }
+    var syncPlan by remember { mutableStateOf<List<SftpController.SyncAction>?>(null) }
+    var syncPlanDir by remember { mutableStateOf<RemoteEntry?>(null) }
     var selectionMode by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(setOf<String>()) }
     var deleteSelectedPrompt by remember { mutableStateOf(false) }
@@ -227,6 +233,7 @@ fun SftpBrowser(
                     onDownloadFolderRequest = if (entry.isDirectory) {{ downloadFolderTarget = entry }} else null,
                     onEditRequest = if (!entry.isDirectory) {{ editTarget = entry }} else null,
                     onPreviewRequest = if (!entry.isDirectory) {{ previewTarget = entry }} else null,
+                    onSyncRequest = if (entry.isDirectory) {{ syncTarget = entry }} else null,
                 )
                 }
             }
@@ -277,6 +284,25 @@ fun SftpBrowser(
             onConfirm = { onDownloadFolder(entry); downloadFolderTarget = null },
             onDismiss = { downloadFolderTarget = null },
         )
+    }
+
+    syncTarget?.let { entry ->
+        onComputeSync?.invoke(entry)
+        syncTarget = null
+    }
+
+    syncPlan?.let { actions ->
+        val dir = syncPlanDir
+        if (dir != null) {
+            SyncConfirmDialog(
+                actions = actions,
+                onConfirm = { deleteRemote ->
+                    onExecuteSync?.invoke(dir, actions, deleteRemote)
+                    syncPlan = null; syncPlanDir = null
+                },
+                onDismiss = { syncPlan = null; syncPlanDir = null },
+            )
+        }
     }
 
     editTarget?.let { entry ->
@@ -517,6 +543,7 @@ private fun EntryRow(
     onDownloadFolderRequest: (() -> Unit)? = null,
     onEditRequest: (() -> Unit)? = null,
     onPreviewRequest: (() -> Unit)? = null,
+    onSyncRequest: (() -> Unit)? = null,
 ) {
     var pressed by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -617,6 +644,12 @@ private fun EntryRow(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.sftp_recursive_folder_download)) },
                     onClick = { menuOpen = false; onDownloadFolderRequest() },
+                )
+            }
+            if (onSyncRequest != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.sftp_sync_to_remote)) },
+                    onClick = { menuOpen = false; onSyncRequest() },
                 )
             }
             if (onEditRequest != null) {

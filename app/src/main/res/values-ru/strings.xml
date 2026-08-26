@@ -342,4 +342,23 @@
     <string name="sftp_compress_error">Ошибка сжатия</string>
     <string name="notif_sessions_transfers">%1$d активных сессий · %2$d активных передач</string>
     <string name="notif_transfers_active">%d активных передач</string>
+    <string name="sftp_sync">Синхронизация</string>
+    <string name="sftp_sync_to_remote">Синхронизировать с сервером</string>
+    <string name="sftp_sync_title">Предварительный просмотр</string>
+    <string name="sftp_sync_upload">Загрузка</string>
+    <string name="sftp_sync_delete">Удалить с сервера</string>
+    <string name="sftp_sync_skip">Без изменений</string>
+    <string name="sftp_sync_summary">%1$d загрузок · %2$d удалений · %3$d без изменений</string>
+    <string name="sftp_sync_execute">Синхронизировать</string>
+    <string name="sftp_sync_delete_remote">Удалить лишние файлы с сервера</string>
+    <string name="sftp_sync_local_to_remote">Локально → Сервер</string>
+    <string name="port_forwarding">Перенаправление портов</string>
+    <string name="port_forward_local">Локальное (L)</string>
+    <string name="port_forward_remote">Удалённое (R)</string>
+    <string name="port_forward_bind_port">Локальный порт</string>
+    <string name="port_forward_host">Хост назначения</string>
+    <string name="port_forward_dest_port">Порт назначения</string>
+    <string name="port_forward_active">Активно</string>
+    <string name="port_forward_add">Добавить перенаправление</string>
+    <string name="port_forward_type">Тип перенаправления</string>
 </resources>

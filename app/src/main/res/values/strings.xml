@@ -340,4 +340,23 @@
     <string name="sftp_compress_error">خطا در فشرده‌سازی</string>
     <string name="notif_sessions_transfers">%1$d اتصال فعال · %2$d انتقال فعال</string>
     <string name="notif_transfers_active">%d انتقال فعال</string>
+    <string name="sftp_sync">همگام‌سازی</string>
+    <string name="sftp_sync_to_remote">همگام‌سازی به سرور</string>
+    <string name="sftp_sync_title">پیش‌نمایش همگام‌سازی</string>
+    <string name="sftp_sync_upload">آپلود</string>
+    <string name="sftp_sync_delete">حذف از سرور</string>
+    <string name="sftp_sync_skip">بدون تغییر</string>
+    <string name="sftp_sync_summary">%1$d آپلود · %2$d حذف · %3$d بدون تغییر</string>
+    <string name="sftp_sync_execute">اجرا</string>
+    <string name="sftp_sync_delete_remote">حذف فایل‌های اضافی از سرور</string>
+    <string name="sftp_sync_local_to_remote">محلی ← سرور</string>
+    <string name="port_forwarding">ارسال پورت</string>
+    <string name="port_forward_local">ارسال محلی (L)</string>
+    <string name="port_forward_remote">ارسال راه دور (R)</string>
+    <string name="port_forward_bind_port">پورت محلی</string>
+    <string name="port_forward_host">میزبان مقصد</string>
+    <string name="port_forward_dest_port">پورت مقصد</string>
+    <string name="port_forward_active">فعال</string>
+    <string name="port_forward_add">افزودن ارسال پورت</string>
+    <string name="port_forward_type">نوع ارسال</string>
 </resources>

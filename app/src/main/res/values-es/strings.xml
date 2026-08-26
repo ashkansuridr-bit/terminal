@@ -340,4 +340,23 @@
     <string name="sftp_compress_error">Error al comprimir</string>
     <string name="notif_sessions_transfers">%1$d sesiones activas · %2$d transferencias activas</string>
     <string name="notif_transfers_active">%d transferencias activas</string>
+    <string name="sftp_sync">Sincronizar</string>
+    <string name="sftp_sync_to_remote">Sincronizar con el servidor</string>
+    <string name="sftp_sync_title">Vista previa de sincronización</string>
+    <string name="sftp_sync_upload">Subir</string>
+    <string name="sftp_sync_delete">Eliminar del servidor</string>
+    <string name="sftp_sync_skip">Sin cambios</string>
+    <string name="sftp_sync_summary">%1$d subir · %2$d eliminar · %3$d sin cambios</string>
+    <string name="sftp_sync_execute">Sincronizar ahora</string>
+    <string name="sftp_sync_delete_remote">Eliminar archivos extra del servidor</string>
+    <string name="sftp_sync_local_to_remote">Local → Servidor</string>
+    <string name="port_forwarding">Reenvío de puertos</string>
+    <string name="port_forward_local">Local (L)</string>
+    <string name="port_forward_remote">Remoto (R)</string>
+    <string name="port_forward_bind_port">Puerto local</string>
+    <string name="port_forward_host">Host destino</string>
+    <string name="port_forward_dest_port">Puerto destino</string>
+    <string name="port_forward_active">Activo</string>
+    <string name="port_forward_add">Agregar reenvío</string>
+    <string name="port_forward_type">Tipo de reenvío</string>
 </resources>

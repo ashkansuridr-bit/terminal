@@ -29,6 +29,27 @@ class JschSshClient(
         val output: OutputStream,
     ) : AutoCloseable {
         val alive: Boolean get() = session.isConnected && !channel.isClosed
+
+        /** Local port forwarding: binds [bindPort] on localhost, forwards to [host]:[port] via the tunnel. */
+        fun forwardLocal(bindPort: Int, host: String, port: Int) {
+            session.setPortForwardingL("127.0.0.1", bindPort, host, port)
+        }
+
+        /** Remote port forwarding: binds [bindPort] on the remote host, forwards to [host]:[port] locally. */
+        fun forwardRemote(bindPort: Int, host: String, port: Int) {
+            session.setPortForwardingR("127.0.0.1", bindPort, host, port)
+        }
+
+        /** Removes a local port forward. */
+        fun removeLocalForward(bindPort: Int) {
+            session.delPortForwardingL("127.0.0.1", bindPort)
+        }
+
+        /** Removes a remote port forward. */
+        fun removeRemoteForward(bindPort: Int) {
+            session.delPortForwardingR("127.0.0.1", bindPort)
+        }
+
         override fun close() {
             runCatching { output.close() }
             runCatching { input.close() }

@@ -247,6 +247,46 @@ class SshSession(
         is AuthMethod.PrivateKey -> true
     }
 
+    // ---- port forwarding ----
+
+    data class PortForward(
+        val bindPort: Int,
+        val host: String,
+        val port: Int,
+        val isLocal: Boolean,
+    )
+
+    private val _portForwards = MutableStateFlow<List<PortForward>>(emptyList())
+    val portForwards: StateFlow<List<PortForward>> = _portForwards.asStateFlow()
+
+    /** Creates a local port forward (L) on the [io] thread. */
+    fun addLocalForward(bindPort: Int, host: String, port: Int) {
+        val s = shell?.session ?: throw IllegalStateException("session is not connected")
+        s.setPortForwardingL("127.0.0.1", bindPort, host, port)
+        _portForwards.value = _portForwards.value + PortForward(bindPort, host, port, isLocal = true)
+    }
+
+    /** Creates a remote port forward (R) on the [io] thread. */
+    fun addRemoteForward(bindPort: Int, host: String, port: Int) {
+        val s = shell?.session ?: throw IllegalStateException("session is not connected")
+        s.setPortForwardingR("127.0.0.1", bindPort, host, port)
+        _portForwards.value = _portForwards.value + PortForward(bindPort, host, port, isLocal = false)
+    }
+
+    /** Removes a local port forward. */
+    fun removeLocalForward(bindPort: Int) {
+        val s = shell?.session ?: return
+        runCatching { s.delPortForwardingL("127.0.0.1", bindPort) }
+        _portForwards.value = _portForwards.value.filterNot { it.bindPort == bindPort && it.isLocal }
+    }
+
+    /** Removes a remote port forward. */
+    fun removeRemoteForward(bindPort: Int) {
+        val s = shell?.session ?: return
+        runCatching { s.delPortForwardingR("127.0.0.1", bindPort) }
+        _portForwards.value = _portForwards.value.filterNot { it.bindPort == bindPort && !it.isLocal }
+    }
+
     companion object {
         private const val INITIAL_ROWS = 24
         private const val INITIAL_COLS = 80

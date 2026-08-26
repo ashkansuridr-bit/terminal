@@ -114,6 +114,8 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     var snippetsOpen by remember(active.id) { mutableStateOf(false) }
     var agentSheetOpen by remember(active.id) { mutableStateOf(false) }
     var composeOpen by remember(active.id) { mutableStateOf(false) }
+    var portForwardOpen by remember(active.id) { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     // Hoisted above the bar so an unsent prompt survives the bar closing, a reconnect,
     // or a rotation. Losing a long prompt to a passing tunnel is the other half of the
     // problem this bar solves.
@@ -188,9 +190,30 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
             onSnippets = { snippetsOpen = true },
             onAgents = { agentSheetOpen = true },
             onCompose = { composeOpen = !composeOpen },
+            onPortForward = { portForwardOpen = true },
             composeActive = composeOpen,
         )
         PasteAndHostKeyDialogs(viewModel, active)
+        if (portForwardOpen) {
+            val forwards by active.portForwards.collectAsStateWithLifecycle()
+            PortForwardDialog(
+                existingForwards = forwards,
+                onAdd = { fwd ->
+                    scope.launch {
+                        try {
+                            if (fwd.isLocal) active.addLocalForward(fwd.bindPort, fwd.host, fwd.port)
+                            else active.addRemoteForward(fwd.bindPort, fwd.host, fwd.port)
+                        } catch (_: Exception) {}
+                    }
+                    portForwardOpen = false
+                },
+                onRemove = { fwd ->
+                    if (fwd.isLocal) active.removeLocalForward(fwd.bindPort)
+                    else active.removeRemoteForward(fwd.bindPort)
+                },
+                onDismiss = { portForwardOpen = false },
+            )
+        }
         if (agentSheetOpen) {
             AgentInstallSheet(
                 onDismiss = { agentSheetOpen = false },
@@ -366,6 +389,7 @@ private fun KeyToolbar(
     onSnippets: () -> Unit,
     onAgents: () -> Unit,
     onCompose: () -> Unit,
+    onPortForward: () -> Unit,
     composeActive: Boolean,
 ) {
     var ctrl by remember { mutableStateOf(false) }
@@ -408,6 +432,7 @@ private fun KeyToolbar(
             val primary: @Composable () -> Unit = {
                 ToolKey(stringResource(R.string.snippets_short)) { onSnippets() }
                 ToolKey(stringResource(R.string.agent_short)) { onAgents() }
+                ToolKey("⚡") { onPortForward() }
                 ToolKey(
                     stringResource(R.string.compose_short),
                     active = composeActive,

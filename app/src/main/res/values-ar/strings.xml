@@ -344,4 +344,23 @@
     <string name="sftp_compress_error">فشل الضغط</string>
     <string name="notif_sessions_transfers">%1$d جلسات نشطة · %2$d نقل نشط</string>
     <string name="notif_transfers_active">%d نقل نشط</string>
+    <string name="sftp_sync">مزامنة</string>
+    <string name="sftp_sync_to_remote">مزامنة مع الخادم</string>
+    <string name="sftp_sync_title">معاينة المزامنة</string>
+    <string name="sftp_sync_upload">رفع</string>
+    <string name="sftp_sync_delete">حذف من الخادم</string>
+    <string name="sftp_sync_skip">بدون تغيير</string>
+    <string name="sftp_sync_summary">%1$d رفع · %2$d حذف · %3$d بدون تغيير</string>
+    <string name="sftp_sync_execute">مزامنة الآن</string>
+    <string name="sftp_sync_delete_remote">حذف الملفات الإضافية من الخادم</string>
+    <string name="sftp_sync_local_to_remote">محلي → خادم</string>
+    <string name="port_forwarding">إعادة توجيه المنافذ</string>
+    <string name="port_forward_local">محلي (L)</string>
+    <string name="port_forward_remote">بعيد (R)</string>
+    <string name="port_forward_bind_port">منفذ محلي</string>
+    <string name="port_forward_host">المضيف الوجهة</string>
+    <string name="port_forward_dest_port">منفذ الوجهة</string>
+    <string name="port_forward_active">نشط</string>
+    <string name="port_forward_add">إضافة إعادة توجيه</string>
+    <string name="port_forward_type">نوع إعادة التوجيه</string>
 </resources>
