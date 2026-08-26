@@ -332,4 +332,5 @@
     <string name="sftp_file_type_document">Документ</string>
     <string name="sftp_file_type_pdf">PDF</string>
     <string name="download">Скачать</string>
+    <string name="loading">Загрузка...</string>
 </resources>

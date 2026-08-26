@@ -99,6 +99,10 @@ fun SftpBrowser(
     onChmod: (RemoteEntry, Int) -> Unit = { _, _ -> },
     onChmodRecursive: (String, Int) -> Unit = { _, _ -> },
     onDownloadFolder: (RemoteEntry) -> Unit = {},
+    onEditFile: (RemoteEntry) -> Unit = {},
+    onPreviewFile: (RemoteEntry) -> Unit = {},
+    fetchFileText: (suspend (String) -> Result<String>)? = null,
+    onUploadEditedText: ((String, String) -> Unit)? = null,
 ) {
     var newFolderPrompt by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<RemoteEntry?>(null) }
@@ -107,6 +111,8 @@ fun SftpBrowser(
     var moveTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var copyTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var downloadFolderTarget by remember { mutableStateOf<RemoteEntry?>(null) }
+    var editTarget by remember { mutableStateOf<RemoteEntry?>(null) }
+    var previewTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var selectionMode by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(setOf<String>()) }
     var deleteSelectedPrompt by remember { mutableStateOf(false) }
@@ -206,6 +212,8 @@ fun SftpBrowser(
                     onCopyRequest = { copyTarget = entry },
                     onChmodRequest = { chmodTarget = entry },
                     onDownloadFolderRequest = if (entry.isDirectory) {{ downloadFolderTarget = entry }} else null,
+                    onEditRequest = if (!entry.isDirectory) {{ editTarget = entry }} else null,
+                    onPreviewRequest = if (!entry.isDirectory) {{ previewTarget = entry }} else null,
                 )
                 }
             }
@@ -255,6 +263,23 @@ fun SftpBrowser(
             entry = entry,
             onConfirm = { onDownloadFolder(entry); downloadFolderTarget = null },
             onDismiss = { downloadFolderTarget = null },
+        )
+    }
+
+    editTarget?.let { entry ->
+        RemoteTextEditor(
+            entry = entry,
+            fetchFileText = fetchFileText,
+            onUpload = { text -> onUploadEditedText?.invoke(entry.path, text); editTarget = null },
+            onDismiss = { editTarget = null },
+        )
+    }
+
+    previewTarget?.let { entry ->
+        RemoteTextPreview(
+            entry = entry,
+            fetchFileText = fetchFileText,
+            onDismiss = { previewTarget = null },
         )
     }
 
@@ -462,6 +487,8 @@ private fun EntryRow(
     onCopyRequest: () -> Unit,
     onChmodRequest: () -> Unit = {},
     onDownloadFolderRequest: (() -> Unit)? = null,
+    onEditRequest: (() -> Unit)? = null,
+    onPreviewRequest: (() -> Unit)? = null,
 ) {
     var pressed by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -564,6 +591,18 @@ private fun EntryRow(
                     onClick = { menuOpen = false; onDownloadFolderRequest() },
                 )
             }
+            if (onEditRequest != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.sftp_edit_file)) },
+                    onClick = { menuOpen = false; onEditRequest() },
+                )
+            }
+            if (onPreviewRequest != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.sftp_preview)) },
+                    onClick = { menuOpen = false; onPreviewRequest() },
+                )
+            }
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.sftp_properties)) },
                 onClick = { menuOpen = false; onDetailsRequest() },
@@ -613,5 +652,62 @@ private fun DownloadFolderConfirmDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
+    )
+}
+
+@Composable
+private fun RemoteTextEditor(
+    entry: RemoteEntry,
+    fetchFileText: (suspend (String) -> Result<String>)?,
+    onUpload: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var loading by remember { mutableStateOf(true) }
+    var content by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(entry.path) {
+        loading = true
+        error = null
+        val result = fetchFileText?.invoke(entry.path)
+        if (result != null) {
+            result.onSuccess { text -> content = text; loading = false }
+                .onFailure { e -> error = e.message; loading = false }
+        } else {
+            loading = false
+        }
+    }
+
+    TextEditorDialog(
+        fileName = entry.name,
+        isLoading = loading,
+        content = content,
+        onContentChange = { content = it },
+        onSave = { onUpload(content) },
+        onDismiss = onDismiss,
+    )
+}
+
+@Composable
+private fun RemoteTextPreview(
+    entry: RemoteEntry,
+    fetchFileText: (suspend (String) -> Result<String>)?,
+    onDismiss: () -> Unit,
+) {
+    var loading by remember { mutableStateOf(true) }
+    var content by remember { mutableStateOf("") }
+
+    LaunchedEffect(entry.path) {
+        loading = true
+        val result = fetchFileText?.invoke(entry.path)
+        result?.onSuccess { text -> content = text }
+        loading = false
+    }
+
+    TextPreviewDialog(
+        fileName = entry.name,
+        isLoading = loading,
+        content = content,
+        onDismiss = onDismiss,
     )
 }

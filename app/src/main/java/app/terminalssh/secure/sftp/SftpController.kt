@@ -323,6 +323,16 @@ class SftpController(
         }
     }
 
+    /** Downloads a remote text file's content (for the in-app editor / preview). */
+    suspend fun downloadFileText(remotePath: String, maxBytes: Long = 512_000): Result<String> =
+        runCatching { withContext(Dispatchers.IO) { client().downloadText(remotePath, maxBytes) } }
+
+    /** Uploads text content back to a remote path (after editing). */
+    fun uploadFileText(remotePath: String, text: String) = scope.launch {
+        val result = runCatching { withContext(Dispatchers.IO) { client().uploadText(remotePath, text) } }
+        if (result.isSuccess) refresh() else showBrowserError(result.exceptionOrNull()!!)
+    }
+
     /** Changes POSIX mode bits on a remote file/directory, then refreshes. */
     fun chmod(entry: RemoteEntry, mode: Int) = scope.launch {
         val result = runCatching { withContext(Dispatchers.IO) { client().chmod(entry.path, mode) } }

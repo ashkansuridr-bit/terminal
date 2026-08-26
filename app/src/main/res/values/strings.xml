@@ -330,4 +330,5 @@
     <string name="sftp_file_type_document">سند</string>
     <string name="sftp_file_type_pdf">PDF</string>
     <string name="download">دانلود</string>
+    <string name="loading">در حال بارگذاری...</string>
 </resources>

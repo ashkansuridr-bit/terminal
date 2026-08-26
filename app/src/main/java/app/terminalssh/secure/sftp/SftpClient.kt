@@ -135,6 +135,29 @@ class SftpClient(private val session: Session) : AutoCloseable {
         return results
     }
 
+    /** Downloads a file's content as a UTF-8 string, capped at [maxBytes]. */
+    fun downloadText(remotePath: String, maxBytes: Long = 512_000): String {
+        val baos = java.io.ByteArrayOutputStream()
+        channel().get(RemotePath.normalize(remotePath)).use { stream ->
+            val buf = ByteArray(8192)
+            var remaining = maxBytes.toInt()
+            while (remaining > 0) {
+                val read = stream.read(buf, 0, minOf(buf.size, remaining))
+                if (read == -1) break
+                baos.write(buf, 0, read)
+                remaining -= read
+            }
+        }
+        return baos.toString(Charsets.UTF_8.name())
+    }
+
+    /** Uploads text content as UTF-8 to a remote path. */
+    fun uploadText(remotePath: String, text: String) {
+        val bytes = text.toByteArray(Charsets.UTF_8)
+        val monitor = ProgressMonitor(0L) { }
+        channel().put(bytes.inputStream(), RemotePath.normalize(remotePath), monitor, ChannelSftp.OVERWRITE)
+    }
+
     /** The target of a symlink, or null when [remotePath] isn't one or it can't be read. */
     fun readlink(remotePath: String): String? =
         runCatching { channel().readlink(RemotePath.normalize(remotePath)) }.getOrNull()

@@ -334,4 +334,5 @@
     <string name="sftp_file_type_document">مستند</string>
     <string name="sftp_file_type_pdf">PDF</string>
     <string name="download">تنزيل</string>
+    <string name="loading">جاري التحميل...</string>
 </resources>

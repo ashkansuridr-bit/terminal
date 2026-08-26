@@ -152,6 +152,14 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                 pendingFolderDownload = entry
                 folderDownloadTreeLauncher.launch(null)
             },
+            onEditFile = { entry ->
+                // Edit file: the dialog handles download/upload lifecycle
+            },
+            onPreviewFile = { entry ->
+                // Preview file: the dialog handles download lifecycle
+            },
+            fetchFileText = sftp::downloadFileText,
+            onUploadEditedText = { path, text -> sftp.uploadFileText(path, text) },
         )
     }
 
