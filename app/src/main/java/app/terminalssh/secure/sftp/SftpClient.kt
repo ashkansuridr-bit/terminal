@@ -65,6 +65,15 @@ class SftpClient(private val session: Session) : AutoCloseable {
         runCatching { channel().stat(RemotePath.normalize(remotePath)).size }
             .getOrDefault(Transfer.UNKNOWN_SIZE)
 
+    /**
+     * Whether [remotePath] currently exists on the server. A stat failure — including a
+     * genuine "not found" — reads as false; the caller only needs a yes/no for a
+     * pre-upload conflict check, not the reason.
+     */
+    fun exists(remotePath: String): Boolean =
+        runCatching { channel().stat(RemotePath.normalize(remotePath)); true }
+            .getOrDefault(false)
+
     fun delete(remotePath: String, isDirectory: Boolean) {
         val normalized = RemotePath.normalize(remotePath)
         if (isDirectory) channel().rmdir(normalized) else channel().rm(normalized)

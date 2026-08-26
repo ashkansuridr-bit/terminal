@@ -47,6 +47,15 @@ class TransferQueue(private val maxConcurrent: Int = DEFAULT_CONCURRENCY) {
             )
         }
 
+    /**
+     * Forcibly resets the byte counter to 0, unlike [markProgress] which only ever
+     * increases it. Needed when a resume's pre-flight consistency check finds the local
+     * staging file (download) or the remote file's size (upload) no longer matches what
+     * was previously recorded, so the transfer must restart from scratch instead of
+     * resuming from a byte offset that can no longer be trusted.
+     */
+    fun resetProgress(id: String) = update(id) { it.copy(transferredBytes = 0L) }
+
     fun markCompleted(id: String) = update(id) {
         it.copy(
             state = TransferState.COMPLETED,

@@ -188,6 +188,24 @@ class TransferQueueTest {
         assertEquals(listOf("b"), queue.pending.map { it.id })
     }
 
+    @Test fun resetProgressZeroesTheCounter() {
+        val queue = TransferQueue()
+        queue.enqueue(transfer("a"))
+        queue.markProgress("a", 500L)
+        queue.resetProgress("a")
+        assertEquals(0L, queue.byId("a").transferredBytes)
+    }
+
+    @Test fun resetProgressLeavesStateAndErrorAlone() {
+        val queue = TransferQueue()
+        queue.enqueue(transfer("a"))
+        queue.markRunning("a")
+        queue.fail("a", TransferErrorKind.CONNECTION_LOST)
+        queue.resetProgress("a")
+        assertEquals(TransferState.QUEUED, queue.byId("a").state)
+        assertEquals(TransferErrorKind.CONNECTION_LOST, queue.byId("a").errorKind)
+    }
+
     @Test fun retriableKindsAreExactlyTheTransientOnes() {
         assertTrue(TransferErrorKind.CONNECTION_LOST.isRetriable)
         listOf(

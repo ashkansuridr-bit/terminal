@@ -176,6 +176,11 @@
     <string name="sftp_cancel">لغو</string>
     <string name="sftp_clear_finished">پاک‌کردن تمام‌شده‌ها</string>
     <string name="sftp_downloaded">دانلود شد</string>
+    <string name="sftp_conflict_title">فایل از قبل وجود دارد</string>
+    <string name="sftp_conflict_body">فایلی با نام «%1$s» در این مسیر از قبل روی سرور وجود دارد. چه کاری انجام شود؟</string>
+    <string name="sftp_conflict_overwrite">جایگزینی</string>
+    <string name="sftp_conflict_rename">تغییر نام</string>
+    <string name="sftp_conflict_skip">رد شدن</string>
     <string name="xfer_connection_lost">اتصال قطع شد؛ دوباره تلاش می‌شود.</string>
     <string name="xfer_permission_denied">سرور اجازه دسترسی به این مسیر را نداد.</string>
     <string name="xfer_not_found">فایل یا پوشه پیدا نشد.</string>

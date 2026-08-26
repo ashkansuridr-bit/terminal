@@ -34,6 +34,7 @@ import app.terminalssh.secure.security.VaultAad
 import app.terminalssh.secure.security.VaultLimits
 import app.terminalssh.secure.service.HostShortcuts
 import app.terminalssh.secure.service.SshForegroundService
+import app.terminalssh.secure.sftp.SftpController
 import app.terminalssh.secure.storage.SshConfigExport
 import app.terminalssh.secure.storage.SshConfigImport
 import app.terminalssh.secure.ssh.KnownHostsVerifier
@@ -56,6 +57,25 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val sessions = container.sessions
     val settings = container.settings
     private val account = accountProvider(app)
+
+    // ---- sftp ----
+
+    // Assumes closeSession is the only teardown path for a session: if SessionRegistry's
+    // closeAll() is ever called directly, any controller cached here for that session
+    // would leak (its pump loop keeps running against a now-destroyed SshSession).
+    private val sftpControllers = mutableMapOf<String, SftpController>()
+
+    /**
+     * The SFTP controller for [session], created on first use and kept alive across tab
+     * switches — on [viewModelScope], not tied to the Files tab's composition — so a
+     * transfer keeps running while the user is on another tab. Torn down only when the
+     * session itself closes, in [closeSession].
+     */
+    fun sftpControllerFor(session: SshSession): SftpController =
+        sftpControllers.getOrPut(session.id) {
+            val application = getApplication<Application>()
+            SftpController(session, application.contentResolver, application.cacheDir, viewModelScope)
+        }
 
     /** False in market builds, which ship without any account integration. */
     val accountSupported: Boolean get() = account.isSupported
@@ -288,6 +308,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun knownHosts(): List<KnownHostsVerifier.KnownHost> = container.knownHosts.all()
 
     fun closeSession(id: String) {
+        sftpControllers.remove(id)?.close()
         sessions.close(id)
         SshForegroundService.sync(getApplication(), sessions.liveCount())
     }

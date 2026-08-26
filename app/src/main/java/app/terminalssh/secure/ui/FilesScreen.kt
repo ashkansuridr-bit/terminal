@@ -21,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,10 +30,6 @@ import app.terminalssh.secure.sftp.RemoteEntry
 import app.terminalssh.secure.sftp.SftpController
 import app.terminalssh.secure.ui.theme.TextSecondary
 import app.terminalssh.secure.vm.AppViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 
 /**
  * SFTP tab. Rides the currently selected terminal session rather than opening its own
@@ -50,24 +45,19 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
         return
     }
 
-    val context = LocalContext.current
-    // Tied to this session: switching sessions rebuilds the controller and its queue.
-    val controller = remember(session.id) {
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-        SftpController(session, context.contentResolver, scope) to scope
-    }
-    val sftp = controller.first
+    // Cached per session in the ViewModel, not tied to this composable: switching tabs
+    // must not tear the controller down mid-transfer. It's only closed when the session
+    // itself closes (AppViewModel.closeSession).
+    val sftp = remember(session.id) { viewModel.sftpControllerFor(session) }
 
     DisposableEffect(session.id) {
-        sftp.openHome()
-        onDispose {
-            sftp.close()
-            controller.second.cancel()
-        }
+        if (!sftp.hasOpened) sftp.openHome()
+        onDispose { }
     }
 
     val browser by sftp.browser.collectAsStateWithLifecycle()
     val transfers by sftp.queue.transfers.collectAsStateWithLifecycle()
+    val uploadConflict by sftp.uploadConflict.collectAsStateWithLifecycle()
     var pendingDownload by remember { mutableStateOf<RemoteEntry?>(null) }
 
     val saveLauncher = rememberLauncherForActivityResult(
@@ -105,6 +95,10 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
             },
             onUpload = { openLauncher.launch(arrayOf("*/*")) },
         )
+    }
+
+    uploadConflict?.let { conflict ->
+        UploadConflictDialog(conflict = conflict, onResolve = sftp::resolveConflict)
     }
 }
 

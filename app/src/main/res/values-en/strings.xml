@@ -176,6 +176,11 @@
     <string name="sftp_cancel">Cancel</string>
     <string name="sftp_clear_finished">Clear finished</string>
     <string name="sftp_downloaded">Downloaded</string>
+    <string name="sftp_conflict_title">File already exists</string>
+    <string name="sftp_conflict_body">A file named "%1$s" already exists at this location on the server. What should happen?</string>
+    <string name="sftp_conflict_overwrite">Overwrite</string>
+    <string name="sftp_conflict_rename">Rename</string>
+    <string name="sftp_conflict_skip">Skip</string>
     <string name="xfer_connection_lost">The connection dropped; retrying.</string>
     <string name="xfer_permission_denied">The server refused access to that path.</string>
     <string name="xfer_not_found">That file or folder no longer exists.</string>

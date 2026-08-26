@@ -90,4 +90,20 @@ object RemotePath {
             else -> cleaned
         }
     }
+
+    /**
+     * Splits `"archive.tar.gz"` into `("archive.tar", "gz")`. A name with no `.`, or one
+     * that only starts with a `.` (e.g. `.bashrc`), has no extension and is returned
+     * whole with an empty second element.
+     */
+    fun splitExtension(name: String): Pair<String, String> {
+        val cut = name.lastIndexOf('.')
+        return if (cut <= 0) name to "" else name.substring(0, cut) to name.substring(cut + 1)
+    }
+
+    /** `file.txt` + 1 -> `file (1).txt`; `README` (no extension) + 1 -> `README (1)`. */
+    fun withCollisionSuffix(name: String, n: Int): String {
+        val (stem, ext) = splitExtension(name)
+        return if (ext.isEmpty()) "$stem ($n)" else "$stem ($n).$ext"
+    }
 }
