@@ -111,6 +111,53 @@ class SftpController(
 
     fun refresh() = navigate(_browser.value.path)
 
+    /** Creates [name] as a new subdirectory of the current directory, then refreshes. */
+    fun createDirectory(name: String) = scope.launch {
+        val path = RemotePath.join(_browser.value.path, RemotePath.sanitizeDownloadName(name))
+        val result = runCatching { withContext(Dispatchers.IO) { client().makeDirectory(path) } }
+        if (result.isSuccess) refresh() else showBrowserError(result.exceptionOrNull()!!)
+    }
+
+    /** Renames [entry] to [newName] within its current directory, then refreshes. */
+    fun rename(entry: RemoteEntry, newName: String) = scope.launch {
+        val target = RemotePath.join(RemotePath.parent(entry.path), RemotePath.sanitizeDownloadName(newName))
+        val result = runCatching { withContext(Dispatchers.IO) { client().rename(entry.path, target) } }
+        if (result.isSuccess) refresh() else showBrowserError(result.exceptionOrNull()!!)
+    }
+
+    /** Deletes [entry] (file or directory) from the server, then refreshes. */
+    fun delete(entry: RemoteEntry) = scope.launch {
+        val result = runCatching {
+            withContext(Dispatchers.IO) { client().delete(entry.path, entry.isDirectory) }
+        }
+        if (result.isSuccess) refresh() else showBrowserError(result.exceptionOrNull()!!)
+    }
+
+    /**
+     * Deletes every entry in [entries] (files or directories), then refreshes once rather
+     * than once per item. Best-effort: one failure doesn't stop the rest from being
+     * attempted, and only the first failure is surfaced, since the refreshed listing
+     * itself shows exactly what actually got removed.
+     */
+    fun deleteAll(entries: List<RemoteEntry>) = scope.launch {
+        val failures = mutableListOf<Throwable>()
+        withContext(Dispatchers.IO) {
+            val sftp = client()
+            entries.forEach { entry ->
+                runCatching { sftp.delete(entry.path, entry.isDirectory) }
+                    .onFailure { failures += it }
+            }
+        }
+        refresh()
+        failures.firstOrNull()?.let { showBrowserError(it) }
+    }
+
+    /** Surfaces a failed browser-adjacent action (create/rename/delete) the same way a
+     *  failed listing does: keep the current entries on screen, show an error banner. */
+    private fun showBrowserError(t: Throwable) {
+        _browser.value = _browser.value.copy(errorKind = SftpClient.classify(t))
+    }
+
     // ---- transfers ----
 
     fun enqueueDownload(entry: RemoteEntry, destination: Uri) {

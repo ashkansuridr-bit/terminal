@@ -181,6 +181,12 @@
     <string name="sftp_conflict_overwrite">Overwrite</string>
     <string name="sftp_conflict_rename">Rename</string>
     <string name="sftp_conflict_skip">Skip</string>
+    <string name="sftp_new_folder_title">New folder</string>
+    <string name="sftp_delete_confirm_title">Delete this?</string>
+    <string name="sftp_delete_confirm_body">"%1$s" will be permanently deleted.</string>
+    <string name="sftp_select">Select</string>
+    <string name="sftp_selected_count">%1$d selected</string>
+    <string name="sftp_delete_selected_confirm_body">%1$d items will be permanently deleted.</string>
     <string name="xfer_connection_lost">The connection dropped; retrying.</string>
     <string name="xfer_permission_denied">The server refused access to that path.</string>
     <string name="xfer_not_found">That file or folder no longer exists.</string>

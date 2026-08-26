@@ -94,6 +94,10 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                 saveLauncher.launch(app.terminalssh.secure.sftp.RemotePath.sanitizeDownloadName(entry.name))
             },
             onUpload = { openLauncher.launch(arrayOf("*/*")) },
+            onCreateFolder = sftp::createDirectory,
+            onRename = sftp::rename,
+            onDelete = sftp::delete,
+            onBatchDelete = sftp::deleteAll,
         )
     }
 

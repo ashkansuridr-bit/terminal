@@ -181,6 +181,12 @@
     <string name="sftp_conflict_overwrite">جایگزینی</string>
     <string name="sftp_conflict_rename">تغییر نام</string>
     <string name="sftp_conflict_skip">رد شدن</string>
+    <string name="sftp_new_folder_title">پوشهٔ جدید</string>
+    <string name="sftp_delete_confirm_title">حذف شود؟</string>
+    <string name="sftp_delete_confirm_body">«%1$s» برای همیشه حذف می‌شود.</string>
+    <string name="sftp_select">انتخاب</string>
+    <string name="sftp_selected_count">%1$d مورد انتخاب شد</string>
+    <string name="sftp_delete_selected_confirm_body">%1$d مورد برای همیشه حذف می‌شود.</string>
     <string name="xfer_connection_lost">اتصال قطع شد؛ دوباره تلاش می‌شود.</string>
     <string name="xfer_permission_denied">سرور اجازه دسترسی به این مسیر را نداد.</string>
     <string name="xfer_not_found">فایل یا پوشه پیدا نشد.</string>
