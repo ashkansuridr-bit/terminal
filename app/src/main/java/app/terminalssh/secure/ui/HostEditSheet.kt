@@ -50,6 +50,12 @@ fun HostEditSheet(
     onSave: (HostProfile, CharArray?) -> Unit,
     onDelete: (HostProfile) -> Unit,
 ) {
+    // ProxyJump uses a separate SSH session whose credential cannot share the target
+    // session's password slot. Until independent jump-password prompting exists, only
+    // key-backed hosts are valid jump candidates.
+    val jumpHostCandidates = availableHosts.filter {
+        it.id != initial?.id && it.auth is AuthMethod.PrivateKey
+    }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var label by remember { mutableStateOf(initial?.label ?: "") }
     var host by remember { mutableStateOf(initial?.host ?: "") }
@@ -63,7 +69,9 @@ fun HostEditSheet(
     var reconnectAttempts by remember {
         mutableStateOf((initial?.maxReconnectAttempts ?: HostProfile.DEFAULT_RECONNECT_ATTEMPTS).toString())
     }
-    var jumpHostId by remember { mutableStateOf(initial?.jumpHostId ?: "") }
+    var jumpHostId by remember {
+        mutableStateOf(initial?.jumpHostId?.takeIf { id -> jumpHostCandidates.any { it.id == id } } ?: "")
+    }
     var error by remember { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
     val requiredFieldsError = stringResource(R.string.err_host_required)
@@ -124,7 +132,7 @@ fun HostEditSheet(
             EnvironmentPicker(environment) { environment = it }
 
             // Jump host picker: select another saved host to tunnel through.
-            val otherHosts = availableHosts.filter { it.id != initial?.id }
+            val otherHosts = jumpHostCandidates
             if (otherHosts.isNotEmpty()) {
                 var expanded by remember { mutableStateOf(false) }
                 val selectedJump = otherHosts.firstOrNull { it.id == jumpHostId }

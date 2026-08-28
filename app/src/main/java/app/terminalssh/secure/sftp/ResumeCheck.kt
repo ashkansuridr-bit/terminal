@@ -16,6 +16,23 @@ import java.io.InputStream
 fun canTrustResume(recordedBytes: Long, actualBytes: Long): Boolean = actualBytes == recordedBytes
 
 /**
+ * The remote half of the same question, for a resumed **download**.
+ *
+ * [canTrustResume] on a download only compares the recorded offset against the local
+ * staging file, which proves the bytes already on disk are intact — but says nothing
+ * about the file they came from. Resuming appends server bytes from [recordedTotalBytes]
+ * onward, so if the remote file was replaced between attempts the two halves belong to
+ * different files and the result is a silently corrupted download that still reports
+ * success.
+ *
+ * Fails closed on purpose: an unknown recorded size, or a stat that could not be read
+ * ([currentRemoteBytes] null), restarts the transfer instead of guessing. Re-downloading
+ * is cheap; handing the user a corrupted file is not.
+ */
+fun canTrustRemoteForResume(recordedTotalBytes: Long, currentRemoteBytes: Long?): Boolean =
+    recordedTotalBytes > 0L && currentRemoteBytes == recordedTotalBytes
+
+/**
  * [InputStream.skip] is not guaranteed to skip everything requested in one call, so this
  * loops until [count] bytes are skipped or the stream runs out. Stopping early (a local
  * file that shrank since [count] was recorded) is left for the subsequent read/upload to

@@ -147,6 +147,8 @@
     <string name="sftp_unbookmark">Quitar marcador</string>
     <string name="sftp_compute_size">Calcular tamaño de carpeta</string>
     <string name="sftp_search_hint">Buscar archivos…</string>
+    <string name="local_terminal">Terminal local</string>
+    <string name="local_terminal_welcome">Shell local para comandos simples no interactivos.\nLos comandos se ejecutan en el sandbox.\nSin root; usan los permisos de la app.</string>
     <string name="field_reconnect_attempts">Intentos de reconexión</string>
     <string name="err_reconnect_range">Los intentos de reconexión no pueden ser más de 10</string>
     <string name="env_none">Sin definir</string>

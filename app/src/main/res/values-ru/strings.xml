@@ -147,6 +147,8 @@
     <string name="sftp_unbookmark">Убрать закладку</string>
     <string name="sftp_compute_size">Рассчитать размер папки</string>
     <string name="sftp_search_hint">Поиск файлов…</string>
+    <string name="local_terminal">Локальный терминал</string>
+    <string name="local_terminal_welcome">Локальная оболочка для простых неинтерактивных команд.\nКоманды выполняются в sandbox приложения.\nБез root; с разрешениями приложения.</string>
     <string name="field_reconnect_attempts">Попытки переподключения</string>
     <string name="err_reconnect_range">Количество попыток переподключения не может превышать 10</string>
     <string name="env_none">Не задано</string>

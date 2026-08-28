@@ -100,6 +100,8 @@ class JschSshClient(
             ?.let { id -> hostStore.hosts().firstOrNull { it.id == id } }
         if (jumpProfile != null) {
             // Add the jump host's identity so JSch can authenticate to it.
+            // Key-based auth is required for ProxyJump — passwords are session-scoped
+            // and get overwritten by the target host's password.
             when (val jumpAuth = jumpProfile.auth) {
                 is AuthMethod.PrivateKey -> {
                     val key = requireNotNull(vault.get(jumpAuth.keyVaultRef, VaultAad.PRIVATE_KEY)) {
@@ -114,11 +116,9 @@ class JschSshClient(
                     }
                 }
                 is AuthMethod.Password -> {
-                    val pw = jumpProfile.auth.vaultRef.takeIf { it.isNotBlank() }
-                        ?.let { vault.get(it, VaultAad.PASSWORD) }
-                    if (pw != null) {
-                        try { session.setPassword(String(pw)) } finally { pw.fill(0) }
-                    }
+                    // Password auth for jump host is not supported with ProxyJump
+                    // because JSch passwords are session-scoped and get overwritten.
+                    // Use key-based auth for the jump host instead.
                 }
             }
             val jumpUser = jumpProfile.username

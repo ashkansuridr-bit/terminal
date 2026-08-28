@@ -147,6 +147,8 @@
     <string name="sftp_unbookmark">Supprimer le signet</string>
     <string name="sftp_compute_size">Calculer la taille du dossier</string>
     <string name="sftp_search_hint">Rechercher des fichiers…</string>
+    <string name="local_terminal">Terminal local</string>
+    <string name="local_terminal_welcome">Shell local pour les commandes simples non interactives.\nLes commandes s\u2019exécutent dans le sandbox.\nSans root ; elles utilisent les autorisations de l\u2019app.</string>
     <string name="field_reconnect_attempts">Tentatives de reconnexion</string>
     <string name="err_reconnect_range">Les tentatives de reconnexion ne peuvent pas dépasser 10</string>
     <string name="env_none">Non défini</string>

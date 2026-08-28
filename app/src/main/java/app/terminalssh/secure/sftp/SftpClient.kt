@@ -32,10 +32,9 @@ class SftpClient(private val session: Session) : AutoCloseable {
     /** The server's idea of where the user starts, usually their home directory. */
     fun home(): String = runCatching { channel().home }.getOrDefault(RemotePath.ROOT)
 
-    @Suppress("UNCHECKED_CAST")
     fun list(path: String): List<RemoteEntry> {
         val normalized = RemotePath.normalize(path)
-        val raw = channel().ls(normalized) as? java.util.Vector<ChannelSftp.LsEntry> ?: return emptyList()
+        val raw = channel().ls(normalized)
         return raw.asSequence()
             .map { entry -> entry.toRemoteEntry(normalized) }
             .filterNot { it.isNavigational }
@@ -65,10 +64,9 @@ class SftpClient(private val session: Session) : AutoCloseable {
         runCatching { channel().stat(RemotePath.normalize(remotePath)).size }
             .getOrDefault(Transfer.UNKNOWN_SIZE)
 
-    /** Modification time in epoch seconds, or 0 when unavailable. */
+    /** Modification time in epoch seconds. A failed stat must remain distinguishable. */
     fun mtime(remotePath: String): Long =
-        runCatching { channel().stat(RemotePath.normalize(remotePath)).mTime.toLong() }
-            .getOrDefault(0L)
+        channel().stat(RemotePath.normalize(remotePath)).mTime.toLong()
 
     /**
      * Whether [remotePath] currently exists on the server. A stat failure — including a

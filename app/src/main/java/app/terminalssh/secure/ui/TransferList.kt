@@ -136,11 +136,12 @@ fun TransferStrip(
 
 @Composable
 private fun TransferHistoryDialog(history: List<Transfer>, onDismiss: () -> Unit) {
+    val dateFormat = remember { java.text.SimpleDateFormat("MM/dd HH:mm", java.util.Locale.US) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.sftp_history)) },
         text = {
-            LazyColumn(modifier = Modifier.heightIn(max = 360.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            LazyColumn(modifier = Modifier.heightIn(max = 400.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(history, key = { it.id }) { transfer ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
@@ -152,12 +153,17 @@ private fun TransferHistoryDialog(history: List<Transfer>, onDismiss: () -> Unit
                         Spacer(Modifier.width(8.dp))
                         Column(Modifier.weight(1f)) {
                             Text(ltr(transfer.displayName), style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                            val status = when (transfer.state) {
+                                TransferState.CANCELLED -> stringResource(R.string.sftp_cancel)
+                                TransferState.COMPLETED -> stringResource(R.string.sftp_downloaded)
+                                else -> transfer.state.name
+                            }
+                            val sizeText = if (transfer.totalBytes > 0) " · ${FileSize.format(transfer.totalBytes)}" else ""
+                            val timeText = if (transfer.finishedAt > 0) {
+                                " · ${dateFormat.format(java.util.Date(transfer.finishedAt))}"
+                            } else ""
                             Text(
-                                if (transfer.state == TransferState.CANCELLED) {
-                                    stringResource(R.string.sftp_cancel)
-                                } else {
-                                    stringResource(R.string.sftp_downloaded)
-                                },
+                                "$status$sizeText$timeText",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = TextSecondary,
                             )

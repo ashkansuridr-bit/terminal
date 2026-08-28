@@ -27,6 +27,13 @@ class KnownHostsVerifierTest {
         assertEquals("host_key_changed", result.reason)
     }
 
+    @Test fun changedAlgorithmIsRejectedEvenWhenKeyBytesMatch() {
+        val known = KnownHostsVerifier.KnownHost("example.com", 22, "ecdsa-sha2-nistp256", key)
+        val result = verifier.verify("example.com", 22, "ssh-ed25519", key, known, HostKeyPolicy.STRICT)
+        assertIs<KnownHostsVerifier.Decision.Reject>(result)
+        assertEquals("host_key_algorithm_changed", result.reason)
+    }
+
     @Test fun sameKeyIsAccepted() {
         val known = KnownHostsVerifier.KnownHost("example.com", 22, "ssh-ed25519", key)
         assertEquals(KnownHostsVerifier.Decision.Accept, verifier.verify("example.com", 22, "ssh-ed25519", key, known, HostKeyPolicy.STRICT))

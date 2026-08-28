@@ -148,6 +148,8 @@
     <string name="sftp_unbookmark">Remove bookmark</string>
     <string name="sftp_compute_size">Calculate folder size</string>
     <string name="sftp_search_hint">Search files…</string>
+    <string name="local_terminal">Local Terminal</string>
+    <string name="local_terminal_welcome">Local phone shell for simple, non-interactive commands.\nCommands run in the app sandbox.\nNo root; commands use the app\'s permissions.</string>
     <string name="field_reconnect_attempts">Reconnect attempts</string>
     <string name="err_reconnect_range">Reconnect attempts cannot be more than 10</string>
     <string name="env_none">Unset</string>

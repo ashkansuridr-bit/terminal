@@ -109,7 +109,7 @@ fun SftpBrowser(
     fetchFileTextForEdit: (suspend (String) -> Result<Pair<String, Long>>)? = null,
     fetchFileBytes: (suspend (String) -> Result<ByteArray>)? = null,
     onUploadEditedText: ((String, String) -> Unit)? = null,
-    onUploadEditedTextChecked: (suspend (String, String) -> Result<Boolean>)? = null,
+    onUploadEditedTextChecked: (suspend (String) -> Result<Boolean>)? = null,
     onCompressSelected: (List<RemoteEntry>) -> Unit = {},
     onSyncToRemote: ((RemoteEntry) -> Unit)? = null,
     onComputeSync: ((RemoteEntry) -> Unit)? = null,
@@ -500,7 +500,7 @@ private fun PathBar(
     onUpload: () -> Unit,
     onNewFolder: () -> Unit,
     searchQuery: String = "",
-    onSearchQueryChange: (String) -> Unit = {},
+    onSearchQueryChange: (String) -> Unit,
     isBookmarked: Boolean = false,
     onToggleBookmark: (() -> Unit)? = null,
 ) {
@@ -559,22 +559,20 @@ private fun PathBar(
         }
     }
     // Search bar
-    if (onSearchQueryChange !== {}) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Outlined.Search, null, tint = TextSecondary, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(4.dp))
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChange,
-                placeholder = { Text(stringResource(R.string.sftp_search_hint), style = MaterialTheme.typography.labelSmall) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().height(40.dp),
-                textStyle = MaterialTheme.typography.labelMedium,
-            )
-        }
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Outlined.Search, null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(4.dp))
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChange,
+            placeholder = { Text(stringResource(R.string.sftp_search_hint), style = MaterialTheme.typography.labelSmall) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().height(40.dp),
+            textStyle = MaterialTheme.typography.labelMedium,
+        )
     }
 }
 
@@ -812,14 +810,14 @@ private fun RemoteTextEditor(
     fetchFileText: (suspend (String) -> Result<String>)?,
     fetchFileTextForEdit: (suspend (String) -> Result<Pair<String, Long>>)? = null,
     onUpload: (String) -> Unit,
-    onUploadChecked: (suspend (String, String) -> Result<Boolean>)? = null,
+    onUploadChecked: (suspend (String) -> Result<Boolean>)? = null,
     onDismiss: () -> Unit,
 ) {
     var loading by remember { mutableStateOf(true) }
     var content by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var concurrentEditWarning by remember { mutableStateOf(false) }
-    var hasConcurrentEdit by remember { mutableStateOf(false) }
+    val conflictCheckFailed = stringResource(R.string.xfer_unknown)
 
     LaunchedEffect(entry.path) {
         loading = true
@@ -861,11 +859,13 @@ private fun RemoteTextEditor(
             fileName = entry.name,
             isLoading = loading,
             content = content,
+            errorMessage = error,
             onContentChange = { content = it },
             onSave = {
                 if (onUploadChecked != null) {
                     scope.launch {
-                        onUploadChecked(entry.path, content)
+                        error = null
+                        onUploadChecked(entry.path)
                             .onSuccess { modifiedExternally ->
                                 if (modifiedExternally) {
                                     concurrentEditWarning = true
@@ -873,7 +873,7 @@ private fun RemoteTextEditor(
                                     onUpload(content)
                                 }
                             }
-                            .onFailure { onUpload(content) }
+                            .onFailure { failure -> error = failure.message ?: conflictCheckFailed }
                     }
                 } else {
                     onUpload(content)

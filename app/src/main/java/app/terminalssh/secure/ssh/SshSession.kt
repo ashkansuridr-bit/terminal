@@ -40,6 +40,8 @@ class SshSession(
     @Volatile private var pendingPassword: ByteArray? = null
     @Volatile private var autoReconnect = true
 
+    val terminalInput = TerminalInputController()
+
     val emulator: TerminalEmulator = TerminalEmulatorFactory.create(
         initialRows = INITIAL_ROWS,
         initialCols = INITIAL_COLS,
@@ -57,6 +59,7 @@ class SshSession(
 
     /** @param password only for hosts without a stored secret; zeroed once used. */
     fun connect(password: ByteArray? = null) {
+        terminalInput.clearTransients()
         pendingPassword?.fill(0)
         pendingPassword = password
         autoReconnect = true
@@ -67,6 +70,7 @@ class SshSession(
 
     private fun doConnect(gen: Long, attempt: Int) {
         if (gen != generation.get()) return
+        terminalInput.clearTransients()
         try {
             val dimensions = emulator.dimensions
             val opened = client.connect(
@@ -202,6 +206,22 @@ class SshSession(
 
     fun send(text: String) = send(text.encodeToByteArray())
 
+    fun pressTerminalKey(key: TerminalKey) {
+        emulator.dispatchKey(terminalInput.modifierMask(), key.vTermKey)
+        terminalInput.clearTransients()
+    }
+
+    fun typeToolbarCharacter(character: Char) {
+        emulator.dispatchCharacter(terminalInput.modifierMask(), character.code)
+        terminalInput.clearTransients()
+    }
+
+    fun pressControl(letter: Char) {
+        terminalInput.clearTransients()
+        val controlByte = letter.uppercaseChar().code - '@'.code
+        if (controlByte in 1..31) send(byteArrayOf(controlByte.toByte()))
+    }
+
     fun requestPaste() = onPasteRequest()
 
     /**
@@ -218,6 +238,7 @@ class SshSession(
 
     fun disconnect() {
         autoReconnect = false
+        terminalInput.clearTransients()
         generation.incrementAndGet()
         clearPendingHostKey()
         val open = shell
@@ -261,30 +282,36 @@ class SshSession(
 
     /** Creates a local port forward (L) on the [io] thread. */
     fun addLocalForward(bindPort: Int, host: String, port: Int) {
-        val s = shell?.session ?: throw IllegalStateException("session is not connected")
-        s.setPortForwardingL("127.0.0.1", bindPort, host, port)
-        _portForwards.value = _portForwards.value + PortForward(bindPort, host, port, isLocal = true)
+        io.execute {
+            val s = shell?.session ?: return@execute
+            s.setPortForwardingL("127.0.0.1", bindPort, host, port)
+            _portForwards.value = _portForwards.value + PortForward(bindPort, host, port, isLocal = true)
+        }
     }
 
     /** Creates a remote port forward (R) on the [io] thread. */
     fun addRemoteForward(bindPort: Int, host: String, port: Int) {
-        val s = shell?.session ?: throw IllegalStateException("session is not connected")
-        s.setPortForwardingR("127.0.0.1", bindPort, host, port)
-        _portForwards.value = _portForwards.value + PortForward(bindPort, host, port, isLocal = false)
+        io.execute {
+            val s = shell?.session ?: return@execute
+            s.setPortForwardingR("127.0.0.1", bindPort, host, port)
+            _portForwards.value = _portForwards.value + PortForward(bindPort, host, port, isLocal = false)
+        }
     }
 
     /** Removes a local port forward. */
     fun removeLocalForward(bindPort: Int) {
-        val s = shell?.session ?: return
-        runCatching { s.delPortForwardingL("127.0.0.1", bindPort) }
-        _portForwards.value = _portForwards.value.filterNot { it.bindPort == bindPort && it.isLocal }
+        io.execute {
+            shell?.session?.let { runCatching { it.delPortForwardingL("127.0.0.1", bindPort) } }
+            _portForwards.value = _portForwards.value.filterNot { it.bindPort == bindPort && it.isLocal }
+        }
     }
 
     /** Removes a remote port forward. */
     fun removeRemoteForward(bindPort: Int) {
-        val s = shell?.session ?: return
-        runCatching { s.delPortForwardingR("127.0.0.1", bindPort) }
-        _portForwards.value = _portForwards.value.filterNot { it.bindPort == bindPort && !it.isLocal }
+        io.execute {
+            shell?.session?.let { runCatching { it.delPortForwardingR("127.0.0.1", bindPort) } }
+            _portForwards.value = _portForwards.value.filterNot { it.bindPort == bindPort && !it.isLocal }
+        }
     }
 
     companion object {

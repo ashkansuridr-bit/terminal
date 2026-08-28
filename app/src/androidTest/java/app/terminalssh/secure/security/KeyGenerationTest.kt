@@ -2,6 +2,9 @@ package app.terminalssh.secure.security
 
 import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.jcraft.jsch.JSch
+import com.jcraft.jsch.KeyPair
+import java.nio.ByteBuffer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -36,6 +39,16 @@ class KeyGenerationTest {
                     key.publicKey.endsWith("instrumentation-test"),
                 )
                 assertEquals(algorithm, key.algorithm)
+
+                // Generation is useful only if JSch can load the exact private bytes that
+                // are persisted in the vault and later supplied to SSH authentication.
+                val jsch = JSch()
+                try {
+                    jsch.addIdentity("generated-${algorithm.label}", key.privateKey, null, null)
+                    assertEquals(1, jsch.identityRepository.identities.size)
+                } finally {
+                    jsch.removeAllIdentity()
+                }
             } finally {
                 key.wipe()
             }
@@ -78,6 +91,32 @@ class KeyGenerationTest {
             assertFalse("format gate returned nothing", format.isBlank())
         } finally {
             key.wipe()
+        }
+    }
+
+    @Test fun advertisedEd25519CanSignAndVerifyAfterVaultRoundTrip() {
+        if (KeyAlgorithm.ED25519 !in KeyAlgorithm.supported()) return
+
+        val generated = KeyGeneration.generate(KeyAlgorithm.ED25519, "signing-test")
+        var loaded: KeyPair? = null
+        try {
+            loaded = KeyPair.load(JSch(), generated.privateKey, null)
+            val message = "terminal-ssh-ed25519-proof".encodeToByteArray()
+            assertEquals("ssh-ed25519", loaded.keyTypeString)
+            val signatureBlob = checkNotNull(loaded.getSignature(message))
+            val signaturePacket = ByteBuffer.wrap(signatureBlob)
+            val algorithm = ByteArray(signaturePacket.int).also(signaturePacket::get)
+            assertEquals("ssh-ed25519", algorithm.toString(Charsets.UTF_8))
+            val signature = ByteArray(signaturePacket.int).also(signaturePacket::get)
+            assertEquals(64, signature.size)
+            assertFalse("signature packet had trailing bytes", signaturePacket.hasRemaining())
+
+            val verifier = checkNotNull(loaded.verifier)
+            verifier.update(message)
+            assertTrue("reloaded Ed25519 key could not verify its own signature", verifier.verify(signatureBlob))
+        } finally {
+            loaded?.dispose()
+            generated.wipe()
         }
     }
 

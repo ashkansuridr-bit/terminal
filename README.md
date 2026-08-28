@@ -17,17 +17,13 @@
 
 <br>
 
-**۶.۴ مگابایت.** رقبا ده‌ها مگابایت‌اند.
+**حدود ۱۷ مگابایت** (APK ریلیز ساخته‌شده، بدون تفکیک ABI). رقبا ده‌ها مگابایت‌اند.
 بدون حساب کاربری، بدون تبلیغ، بدون Google Play Services.
 
 <br>
 
-<a href="releases/TerminalSSH-0.5.1-preview-arm64-v8a.apk">
-<img src="https://img.shields.io/badge/⬇_دانلود_ARM64-6.4_MB-3DDC84?style=for-the-badge&logo=android" alt="Download ARM64">
-</a>
-&nbsp;
-<a href="releases/TerminalSSH-0.5.1-preview-armeabi-v7a.apk">
-<img src="https://img.shields.io/badge/⬇_دانلود_ARMv7-5.6_MB-3DDC84?style=for-the-badge&logo=android" alt="Download ARMv7">
+<a href="https://github.com/ashkansuri/terminal-ssh/releases">
+<img src="https://img.shields.io/badge/⬇_دانلود_آخرین_نسخه-0.6.1-3DDC84?style=for-the-badge&logo=android" alt="Download">
 </a>
 
 </div>
@@ -74,20 +70,29 @@
 
 ### نسخهٔ آزمایشی — نصب مستقیم
 
-| Build | مناسب برای | حجم | Download |
-| --- | --- | --- | --- |
-| **arm64-v8a** | اکثر گوشی‌های ۲۰۱۷ به بعد | ۶.۴ MB | [دانلود](releases/TerminalSSH-0.5.1-preview-arm64-v8a.apk) |
-| **armeabi-v7a** | گوشی‌های قدیمی‌تر ۳۲ بیتی | ۵.۶ MB | [دانلود](releases/TerminalSSH-0.5.1-preview-armeabi-v7a.apk) |
+فایل‌های نسخهٔ ۰.۶.۱ به [صفحهٔ Releases](https://github.com/ashkansuri/terminal-ssh/releases)
+پیوست شده‌اند، نه به مخزن. پوشهٔ `releases/` فقط بایگانی نسخه‌های قدیمی است.
+
+### وضعیت امضا — صادقانه
+
+**تا امروز هیچ نسخهٔ امضاشدهٔ تولیدی منتشر نشده است.** کلید اصلی انتشار (production
+keystore) در دسترس نیست، بنابراین:
+
+| فایل | شناسه | امضا |
+| --- | --- | --- |
+| APK ریلیز | `app.terminalssh.secure` | **بدون امضا** — قابل نصب مستقیم نیست |
+| APK دیباگ | `app.terminalssh.secure.debug` | کلید دیباگ اندروید — فقط برای تست |
+| AAB بازار | `app.terminalssh.secure` | **بدون امضا** |
+
+انتشار در کافه‌بازار به AAB به‌همراه فایل `.bin` تولیدشده با `bundlesigner` و کلید
+اصلی نیاز دارد (v2 روشن، v3 خاموش). تا زمانی که آن کلید در دسترس نباشد، هیچ فایلی
+را «آمادهٔ بازار» نمی‌نامیم.
 
 ### تأیید صحت فایل
 
 ```sh
-sha256sum -c releases/SHA256SUMS.txt --ignore-missing
+sha256sum -c SHA256SUMS.txt --ignore-missing
 ```
-
-> **این بیلد با کلید آزمایشی امضا شده و شناسهٔ جداگانه‌ای دارد**
-> (`app.terminalssh.secure.preview`). یعنی کنار نسخهٔ رسمی نصب می‌شود و هرگز جلوی
-> به‌روزرسانی به نسخهٔ امضاشدهٔ بازار را نمی‌گیرد.
 
 ---
 

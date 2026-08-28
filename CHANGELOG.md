@@ -1,5 +1,56 @@
 # Changelog
 
+## 0.6.1 — Ed25519 that actually works, and transfers that do not corrupt
+
+No signed production release exists for this version. See README for signing state.
+
+### Fixed
+
+- **Ed25519 key generation crashed on every device.** JSch ships its Ed25519 support
+  in a multi-release jar; Android's D8 never unpacks `META-INF/versions/`, so
+  `JavaVersion.getVersion()` returned a hardcoded `8` and JSch routed EdDSA to its
+  Bouncy Castle backend — which was not a dependency, because JSch's POM declares
+  none. The result was a `NoClassDefFoundError` behind a `JSchException`. Adding
+  `bcprov-jdk18on:1.85` fixes generation *and* `ssh-ed25519` signing and host-key
+  verification, which had been silently dropped from every negotiation. Generated
+  Ed25519 keys are now written as OpenSSH v1, since JSch has no legacy PEM
+  serializer for EdDSA.
+- **Resumed downloads could silently corrupt the file.** The resume check compared
+  the recorded offset against the local staging file only. If the remote file was
+  replaced between attempts, its tail was appended to the old file's head and the
+  result was reported as a successful download. The remote is now re-checked, and
+  fails closed on an unreadable stat or unknown size.
+- **The transfer queue could stall permanently.** The pump loop ended by recursing
+  into `pump()` from inside its own coroutine, where its own guard saw the job
+  still active and returned immediately — so the re-check never ran. Retry backoffs
+  and concurrency-limit increases both landed in that dead window.
+- **Two pump loops could start the same transfer.** `pump()` is called from UI
+  callbacks that are not thread-confined, and `nextToStart()` reports a transfer
+  without claiming it. Two racing callers could both take the same one — for an
+  upload, two writers on one remote path.
+- **SFTP channel could leak or be used after close.** The client field was written
+  under a lock but read and cleared without one, and was not `@Volatile`.
+- **Modifier keys were unreachable on a phone-sized screen.** Ctrl/Alt/Shift/Esc/Tab
+  now come before secondary toolbar actions.
+
+### Changed
+
+- Per-ABI APK splits are opt-in (`-Pterminal.perAbiApks=true`); the default build
+  produces the single resource package an AAB requires.
+- Release signing uses v2 on / v3 off, as Cafe Bazaar's bundle-signer requires.
+- All six translations (fa/en/ar/es/fr/ru) ship. A `resourceConfigurations` filter
+  had been stripping four of them from every APK despite the six-language claim.
+- Instrumentation can run against the R8-minified build with
+  `-Pterminal.testBuildType=preview`; the default remains debug.
+
+### Known limitations
+
+- **Local Terminal is non-interactive.** It runs commands and shows output; it is
+  not a PTY and does not support interactive programs.
+- No signed production APK, and no Bazaar `.bin` — the production keystore is
+  unavailable.
+
+
 ## 0.5.1 — a host list you can read at a glance
 
 ### Changed

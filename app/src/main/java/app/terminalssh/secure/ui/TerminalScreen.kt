@@ -3,6 +3,7 @@ package app.terminalssh.secure.ui
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -47,6 +48,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,6 +72,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.terminalssh.secure.R
 import app.terminalssh.secure.ssh.SshSession
 import app.terminalssh.secure.ssh.SshSessionState
+import app.terminalssh.secure.ssh.TerminalKey
+import app.terminalssh.secure.ssh.TerminalModifier
 import app.terminalssh.secure.ui.theme.Stroke
 import app.terminalssh.secure.ui.theme.TextSecondary
 import app.terminalssh.secure.ui.theme.Turquoise
@@ -83,6 +87,13 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     val sessions by viewModel.sessions.sessions.collectAsStateWithLifecycle()
     val activeId by viewModel.sessions.activeId.collectAsStateWithLifecycle()
     val active = sessions.firstOrNull { it.id == activeId }
+    var localTerminalOpen by rememberSaveable { mutableStateOf(false) }
+
+    if (active == null && localTerminalOpen) {
+        BackHandler { localTerminalOpen = false }
+        LocalTerminalScreen(onClose = { localTerminalOpen = false })
+        return
+    }
 
     if (active == null) {
         Column(
@@ -107,6 +118,16 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                     .clickable(onClick = onGoToHosts)
                     .padding(horizontal = 24.dp, vertical = 12.dp),
             )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(R.string.local_terminal),
+                color = Turquoise,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .clickable { localTerminalOpen = true }
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
+            )
         }
         return
     }
@@ -124,6 +145,19 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     val keyboardController = LocalSoftwareKeyboardController.current
     val rootView = LocalView.current
     val keyboardScope = rememberCoroutineScope()
+
+    DisposableEffect(active.id) {
+        onDispose { active.terminalInput.clearTransients() }
+    }
+
+    val focusTerminal = {
+        keyboardScope.launch {
+            terminalFocusRequester.requestFocus()
+            withFrameNanos { }
+            rootView.findTerminalInputView()?.requestFocus()
+        }
+        Unit
+    }
 
     val showKeyboard = {
         keyboardScope.launch {
@@ -168,6 +202,7 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                 keyboardEnabled = true,
                 showSoftKeyboard = true,
                 focusRequester = terminalFocusRequester,
+                modifierManager = active.terminalInput,
                 onPasteRequest = { active.requestPaste() },
             )
         }
@@ -192,6 +227,7 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
             onCompose = { composeOpen = !composeOpen },
             onPortForward = { portForwardOpen = true },
             composeActive = composeOpen,
+            onTerminalFocus = focusTerminal,
         )
         PasteAndHostKeyDialogs(viewModel, active)
         if (portForwardOpen) {
@@ -380,7 +416,7 @@ private fun StatusBar(session: SshSession) {
 
 /**
  * The single most important mobile-SSH affordance: keys a soft keyboard does not have.
- * Ctrl and Alt latch for exactly one following keystroke, like a real terminal.
+ * Ctrl, Alt, and Shift latch for exactly one following keystroke, like a real terminal.
  */
 @Composable
 private fun KeyToolbar(
@@ -391,23 +427,19 @@ private fun KeyToolbar(
     onCompose: () -> Unit,
     onPortForward: () -> Unit,
     composeActive: Boolean,
+    onTerminalFocus: () -> Unit,
 ) {
-    var ctrl by remember { mutableStateOf(false) }
-    var alt by remember { mutableStateOf(false) }
+    val modifiers by session.terminalInput.modifiers.collectAsStateWithLifecycle()
 
-    fun sendText(text: String) {
-        when {
-            ctrl && text.length == 1 -> {
-                val code = text.uppercase()[0].code - 64
-                if (code in 1..31) session.send(byteArrayOf(code.toByte()))
-                ctrl = false
-            }
-            alt && text.length == 1 -> {
-                session.send(byteArrayOf(0x1B) + text.encodeToByteArray())
-                alt = false
-            }
-            else -> session.send(text)
-        }
+    fun press(key: TerminalKey) {
+        session.pressTerminalKey(key)
+        onTerminalFocus()
+    }
+
+    fun type(text: String) {
+        check(text.length == 1)
+        session.typeToolbarCharacter(text.single())
+        onTerminalFocus()
     }
 
     // Keys are ordered by how often they are actually reached for, because on a narrow
@@ -430,6 +462,17 @@ private fun KeyToolbar(
             )
 
             val primary: @Composable () -> Unit = {
+                ToolKey("Ctrl", active = modifiers.ctrl, toggle = true) {
+                    session.terminalInput.toggle(TerminalModifier.CTRL); onTerminalFocus()
+                }
+                ToolKey("Alt", active = modifiers.alt, toggle = true) {
+                    session.terminalInput.toggle(TerminalModifier.ALT); onTerminalFocus()
+                }
+                ToolKey("Shift", active = modifiers.shift, toggle = true) {
+                    session.terminalInput.toggle(TerminalModifier.SHIFT); onTerminalFocus()
+                }
+                ToolKey("Esc") { press(TerminalKey.ESCAPE) }
+                ToolKey("Tab") { press(TerminalKey.TAB) }
                 ToolKey(stringResource(R.string.snippets_short)) { onSnippets() }
                 ToolKey(stringResource(R.string.agent_short)) { onAgents() }
                 ToolKey("⚡") { onPortForward() }
@@ -438,34 +481,30 @@ private fun KeyToolbar(
                     active = composeActive,
                     toggle = true,
                 ) { onCompose() }
-                ToolKey("Esc") { session.send(byteArrayOf(0x1B)) }
-                ToolKey("Tab") { session.send(byteArrayOf(0x09)) }
-                ToolKey("Ctrl", active = ctrl, toggle = true) { ctrl = !ctrl; alt = false }
-                ToolKey("Alt", active = alt, toggle = true) { alt = !alt; ctrl = false }
                 ToolKey("^C", contentDescription = stringResource(R.string.terminal_key_interrupt)) {
-                    session.send(byteArrayOf(0x03)); ctrl = false
+                    session.pressControl('C'); onTerminalFocus()
                 }
                 ToolKey("^D", contentDescription = stringResource(R.string.terminal_key_eof)) {
-                    session.send(byteArrayOf(0x04)); ctrl = false
+                    session.pressControl('D'); onTerminalFocus()
                 }
                 ToolKey("^L", contentDescription = stringResource(R.string.terminal_key_clear)) {
-                    session.send(byteArrayOf(0x0C)); ctrl = false
+                    session.pressControl('L'); onTerminalFocus()
                 }
-                ToolKey("↑", contentDescription = stringResource(R.string.terminal_key_up)) { session.send("\u001B[A") }
-                ToolKey("↓", contentDescription = stringResource(R.string.terminal_key_down)) { session.send("\u001B[B") }
-                ToolKey("←", contentDescription = stringResource(R.string.terminal_key_left)) { session.send("\u001B[D") }
-                ToolKey("→", contentDescription = stringResource(R.string.terminal_key_right)) { session.send("\u001B[C") }
+                ToolKey("↑", contentDescription = stringResource(R.string.terminal_key_up)) { press(TerminalKey.UP) }
+                ToolKey("↓", contentDescription = stringResource(R.string.terminal_key_down)) { press(TerminalKey.DOWN) }
+                ToolKey("←", contentDescription = stringResource(R.string.terminal_key_left)) { press(TerminalKey.LEFT) }
+                ToolKey("→", contentDescription = stringResource(R.string.terminal_key_right)) { press(TerminalKey.RIGHT) }
             }
 
             val secondary: @Composable () -> Unit = {
-                ToolKey("|") { sendText("|") }
-                ToolKey("/") { sendText("/") }
-                ToolKey("-") { sendText("-") }
-                ToolKey("~") { sendText("~") }
-                ToolKey("Home") { session.send("\u001B[H") }
-                ToolKey("End") { session.send("\u001B[F") }
-                ToolKey("PgUp") { session.send("\u001B[5~") }
-                ToolKey("PgDn") { session.send("\u001B[6~") }
+                ToolKey("|") { type("|") }
+                ToolKey("/") { type("/") }
+                ToolKey("-") { type("-") }
+                ToolKey("~") { type("~") }
+                ToolKey("Home") { press(TerminalKey.HOME) }
+                ToolKey("End") { press(TerminalKey.END) }
+                ToolKey("PgUp") { press(TerminalKey.PAGE_UP) }
+                ToolKey("PgDn") { press(TerminalKey.PAGE_DOWN) }
             }
 
             if (twoRows) {

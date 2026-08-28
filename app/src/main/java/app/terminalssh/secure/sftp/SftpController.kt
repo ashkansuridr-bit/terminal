@@ -62,16 +62,36 @@ class SftpController(
     private val _uploadConflict = MutableStateFlow<UploadConflict?>(null)
     val uploadConflict: StateFlow<UploadConflict?> = _uploadConflict.asStateFlow()
 
+    // Written under `pumpLock`-independent monitor `this`; @Volatile so the close path
+    // below (a different thread) cannot observe a stale reference and leak the channel.
+    @Volatile
     private var client: SftpClient? = null
+    private val pumpLock = Any()
     private var pumpJob: Job? = null
 
     /** Auto-persist queue whenever it changes so pending transfers survive process death. */
     private val persistJob = scope.launch {
         queue.transfers.collect {
-            if (it.any { t -> !t.state.isTerminal }) {
-                queue.persist(persistFile)
-            } else {
-                queue.clearPersisted(persistFile)
+            withContext(Dispatchers.IO) {
+                if (it.any { t -> !t.state.isTerminal }) {
+                    queue.persist(persistFile)
+                } else {
+                    queue.clearPersisted(persistFile)
+                }
+            }
+        }
+    }
+
+    /** Persist transfer history to disk. */
+    private val historyFile = java.io.File(cacheDir, "transfer_history.json")
+
+    init {
+        queue.loadHistory(historyFile)
+        scope.launch {
+            queue.history.collect {
+                withContext(Dispatchers.IO) {
+                    queue.persistHistory(historyFile)
+                }
             }
         }
     }
@@ -82,8 +102,8 @@ class SftpController(
      */
     private val transferClients = ConcurrentHashMap<String, SftpClient>()
 
-    /** Cancellation flags keyed by transfer id, read by the copy loops. */
-    private val cancelled = mutableSetOf<String>()
+    /** Thread-safe cancellation flags keyed by transfer id. */
+    private val cancelled = java.util.Collections.synchronizedSet(mutableSetOf<String>())
 
     /**
      * True once [openHome] has been called for this controller's lifetime. Lets the UI
@@ -94,10 +114,12 @@ class SftpController(
         private set
 
     private suspend fun client(): SftpClient = withContext(Dispatchers.IO) {
-        client?.let { return@withContext it }
-        val opened = session.openSftp() ?: throw IllegalStateException("session is not connected")
-        client = opened
-        opened
+        synchronized(this@SftpController) {
+            client?.let { return@withContext it }
+            val opened = session.openSftp() ?: throw IllegalStateException("session is not connected")
+            client = opened
+            opened
+        }
     }
 
     fun openHome() {
@@ -369,19 +391,13 @@ class SftpController(
         }
     }
 
-    /**
-     * Uploads text content back to a remote path (after editing).
-     * If the mtime changed since download, the user is warned about a possible
-     * concurrent edit (#37) — returns true when the file was modified externally.
-     */
-    suspend fun uploadFileTextChecked(remotePath: String, text: String): Result<Boolean> {
+    /** Returns true when the remote file changed since this editor loaded it. */
+    suspend fun checkFileTextConflict(remotePath: String): Result<Boolean> {
         return runCatching {
             withContext(Dispatchers.IO) {
                 val currentMtime = client().mtime(remotePath)
-                val savedMtime = editMtimes.remove(remotePath)
-                val modifiedExternally = savedMtime != null && currentMtime != savedMtime
-                client().uploadText(remotePath, text)
-                modifiedExternally
+                val savedMtime = editMtimes[remotePath]
+                savedMtime != null && currentMtime != savedMtime
             }
         }
     }
@@ -389,7 +405,12 @@ class SftpController(
     /** Uploads text content back to a remote path (after editing). */
     fun uploadFileText(remotePath: String, text: String) = scope.launch {
         val result = runCatching { withContext(Dispatchers.IO) { client().uploadText(remotePath, text) } }
-        if (result.isSuccess) refresh() else showBrowserError(result.exceptionOrNull()!!)
+        if (result.isSuccess) {
+            editMtimes.remove(remotePath)
+            refresh()
+        } else {
+            showBrowserError(result.exceptionOrNull()!!)
+        }
     }
 
     /** Changes POSIX mode bits on a remote file/directory, then refreshes. */
@@ -707,23 +728,35 @@ class SftpController(
      * each on its own SFTP channel for true parallel I/O.
      */
     private fun pump() {
-        if (pumpJob?.isActive == true) return
-        pumpJob = scope.launch {
-            while (isActive) {
-                queue.adaptConcurrency()
-                val next = queue.nextToStart() ?: break
-                queue.markRunning(next.id)
-                cancelled -= next.id
-                val transfer = queue.transfers.value.first { it.id == next.id }
-                // Launch each transfer as a separate coroutine for parallel execution
-                launch {
-                    runTransfer(transfer)
-                    transferClients.remove(transfer.id)?.close()
+        // Guarded because pump() is called from UI callbacks (enqueue/retry/resume) that
+        // are not confined to one thread. Two callers racing the isActive check would each
+        // launch a pump loop, and both could take the same transfer from nextToStart()
+        // before either marked it RUNNING — two uploads writing one remote path.
+        synchronized(pumpLock) {
+            if (pumpJob?.isActive == true) return
+            pumpJob = scope.launch {
+                while (isActive) {
+                    queue.adaptConcurrency()
+                    val next = queue.nextToStart()
+                    if (next == null) {
+                        // Nothing eligible right now. Re-check once after a beat instead of
+                        // recursing into pump(): this job is still active here, so pump()'s
+                        // own guard returned immediately and the queue stalled until some
+                        // external call happened to restart it. Retry backoffs expiring and
+                        // adaptConcurrency() raising the limit both land in this window.
+                        delay(PUMP_IDLE_RECHECK_MS)
+                        if (queue.nextToStart() == null) break else continue
+                    }
+                    queue.markRunning(next.id)
+                    cancelled -= next.id
+                    val transfer = queue.transfers.value.first { it.id == next.id }
+                    // Launch each transfer as a separate coroutine for parallel execution
+                    launch {
+                        runTransfer(transfer)
+                        transferClients.remove(transfer.id)?.close()
+                    }
                 }
             }
-            // After all transfers finish, check again (new transfers may have been queued)
-            delay(50)
-            if (isActive) pump()
         }
     }
 
@@ -773,7 +806,14 @@ class SftpController(
         // trusted, so restart this transfer from zero rather than risk corrupting the
         // resumed copy.
         val actualStagedBytes = if (staging.exists()) staging.length() else 0L
-        val resumeFrom = if (canTrustResume(transfer.transferredBytes, actualStagedBytes)) {
+        // The staging file matching the recorded offset only proves the local half is
+        // intact; it says nothing about the file those bytes came from. Re-stat the
+        // remote too, or a file replaced between attempts gets its tail appended to the
+        // old file's head and the user receives a corrupted download reported as success.
+        val currentRemoteBytes = runCatching { sftp.size(transfer.remotePath) }.getOrNull()
+        val resumeFrom = if (canTrustRemoteForResume(transfer.totalBytes, currentRemoteBytes) &&
+            canTrustResume(transfer.transferredBytes, actualStagedBytes)
+        ) {
             transfer.transferredBytes
         } else {
             0L
@@ -840,11 +880,16 @@ class SftpController(
         queue.persist(persistFile)
         transferClients.values.forEach { runCatching { it.close() } }
         transferClients.clear()
-        runCatching { client?.close() }
-        client = null
+        // Same monitor client() opens under: without it, close() can null the field while
+        // client() is mid-open, leaking that channel, or hand back a channel just closed.
+        synchronized(this) {
+            runCatching { client?.close() }
+            client = null
+        }
     }
 
     private companion object {
         const val MAX_RENAME_ATTEMPTS = 500
+        const val PUMP_IDLE_RECHECK_MS = 50L
     }
 }

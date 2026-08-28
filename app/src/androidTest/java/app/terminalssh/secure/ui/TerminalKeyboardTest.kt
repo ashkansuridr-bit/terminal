@@ -119,7 +119,7 @@ class TerminalKeyboardTest {
         app.sessions.add(idleSession(id = "first-session", title = firstTitle))
         app.sessions.add(idleSession(id = "second-session", title = secondTitle))
 
-        ActivityScenario.launch(MainActivity::class.java).use {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             val terminalTab = instrumentation.targetContext.getString(R.string.tab_terminal)
             val firstClose = instrumentation.targetContext.getString(R.string.close_session, firstTitle)
             val secondClose = instrumentation.targetContext.getString(R.string.close_session, secondTitle)
@@ -218,24 +218,43 @@ class TerminalKeyboardTest {
     fun modifierKeysExposeAndUpdateToggleState() {
         app.sessions.add(idleSession(id = "modifier-semantics", title = "Modifier test"))
 
-        ActivityScenario.launch(MainActivity::class.java).use {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             val terminalTab = instrumentation.targetContext.getString(R.string.tab_terminal)
             assertTrue(device.wait(Until.hasObject(By.text(terminalTab)), UI_TIMEOUT_MS))
             device.findObject(By.text(terminalTab)).click()
 
-            val ctrl = device.wait(Until.findObject(By.text("Ctrl")), UI_TIMEOUT_MS)
-            val alt = device.wait(Until.findObject(By.text("Alt")), UI_TIMEOUT_MS)
+            // Essential terminal modifiers are deliberately first in the phone viewport.
+            assertTrue("Ctrl must be visible without scrolling", device.hasObject(By.text("Ctrl")))
+            assertTrue(device.hasObject(By.text("Alt")))
+            assertTrue(device.hasObject(By.text("Shift")))
+
+            val ctrl = device.findObject(By.text("Ctrl"))
+            val alt = device.findObject(By.text("Alt"))
+            val shift = device.findObject(By.text("Shift"))
             assertTrue(ctrl.isCheckable)
             assertFalse(ctrl.isChecked)
             assertTrue(alt.isCheckable)
             assertFalse(alt.isChecked)
+            assertTrue(shift.isCheckable)
+            assertFalse(shift.isChecked)
 
             ctrl.click()
             assertTrue(device.wait(Until.findObject(By.text("Ctrl")), UI_TIMEOUT_MS).isChecked)
 
             alt.click()
-            assertFalse(device.wait(Until.findObject(By.text("Ctrl")), UI_TIMEOUT_MS).isChecked)
+            assertTrue(device.wait(Until.findObject(By.text("Ctrl")), UI_TIMEOUT_MS).isChecked)
             assertTrue(device.wait(Until.findObject(By.text("Alt")), UI_TIMEOUT_MS).isChecked)
+
+            shift.click()
+            assertTrue(device.wait(Until.findObject(By.text("Ctrl")), UI_TIMEOUT_MS).isChecked)
+            assertTrue(device.wait(Until.findObject(By.text("Alt")), UI_TIMEOUT_MS).isChecked)
+            assertTrue(device.wait(Until.findObject(By.text("Shift")), UI_TIMEOUT_MS).isChecked)
+
+            device.findObject(By.text("Tab")).click()
+            assertFalse(device.wait(Until.findObject(By.text("Ctrl")), UI_TIMEOUT_MS).isChecked)
+            assertFalse(device.wait(Until.findObject(By.text("Alt")), UI_TIMEOUT_MS).isChecked)
+            assertFalse(device.wait(Until.findObject(By.text("Shift")), UI_TIMEOUT_MS).isChecked)
+            assertTrue(focusedViewSummary(scenario), waitForFocusedTextEditor(scenario))
         }
     }
 

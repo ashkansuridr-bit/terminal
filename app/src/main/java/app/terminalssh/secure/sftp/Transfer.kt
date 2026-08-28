@@ -58,6 +58,10 @@ data class Transfer(
     val bytesPerSecond: Float = 0f,
     /** Wall-clock time this transfer reached a terminal state; 0 while still live. */
     val finishedAt: Long = 0L,
+    /** Wall-clock time this transfer was first enqueued. */
+    val enqueuedAt: Long = System.currentTimeMillis(),
+    /** Wall-clock time this transfer first started running (0 if never started). */
+    val startedAt: Long = 0L,
 ) {
     /** 0f..1f, or null when the server did not report a size. */
     val progress: Float?

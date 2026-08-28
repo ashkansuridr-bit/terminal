@@ -293,4 +293,38 @@ class TransferQueueTest {
             TransferErrorKind.UNKNOWN,
         ).forEach { assertTrue(!it.isRetriable, "$it must not auto-retry") }
     }
+
+    // ---- why SftpController must serialize its pump loop (regression pin) ----
+
+    @Test fun nextToStartDoesNotReserveSoTwoPumpLoopsWouldTakeTheSameTransfer() {
+        // nextToStart() is a pure read: it reports the first QUEUED transfer but does not
+        // claim it. Only markRunning() closes the window. Two pump loops racing between
+        // those two calls would both start the same transfer — for an upload that means
+        // two writers on one remote path. SftpController therefore creates its pump job
+        // under a lock; this test pins the queue-side invariant that makes that necessary.
+        val queue = TransferQueue(maxConcurrent = 2)
+        queue.enqueue(transfer("a"))
+
+        val firstCaller = queue.nextToStart()
+        val secondCaller = queue.nextToStart()
+        assertEquals("a", firstCaller?.id)
+        assertEquals(firstCaller?.id, secondCaller?.id, "unreserved read must be treated as unsafe by callers")
+
+        queue.markRunning("a")
+        assertNull(queue.nextToStart(), "marking RUNNING is what actually claims the transfer")
+    }
+
+    @Test fun aTransferBecomingEligibleLaterIsStillOfferedByTheQueue() {
+        // The pump loop used to stop after one drain and recurse into pump(), which could
+        // never restart it. This is the queue-side half of that fix: work that becomes
+        // eligible after the first drain must still be reported by nextToStart().
+        val queue = TransferQueue(maxConcurrent = 1)
+        queue.enqueue(transfer("a"))
+        queue.enqueue(transfer("b"))
+        queue.markRunning("a")
+        assertNull(queue.nextToStart(), "b is blocked only by the concurrency limit")
+
+        queue.markCompleted("a")
+        assertEquals("b", queue.nextToStart()?.id, "b must become eligible once a finishes")
+    }
 }

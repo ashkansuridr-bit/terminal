@@ -10,6 +10,15 @@ val ksAlias = providers.environmentVariable("TERMINAL_KEY_ALIAS").orNull
 val ksKeyPass = providers.environmentVariable("TERMINAL_KEY_PASSWORD").orNull
 val signingReady = listOf(ksPath, ksPass, ksAlias, ksKeyPass).all { !it.isNullOrBlank() }
 val googleWebClientId = providers.environmentVariable("GOOGLE_WEB_CLIENT_ID").orNull ?: ""
+val buildPerAbiApks = providers.gradleProperty("terminal.perAbiApks")
+    .map(String::toBoolean)
+    .orElse(false)
+
+// Instrumentation runs against `debug` by default. Point it at the minified build with
+// -Pterminal.testBuildType=preview to prove the R8-shrunk app behaves like the debug one;
+// nothing about the normal debug androidTest workflow changes when the property is absent.
+val testBuildTypeName = providers.gradleProperty("terminal.testBuildType").orElse("debug").get()
+val testingMinifiedBuild = testBuildTypeName != "debug"
 
 android {
     namespace = "app.terminalssh.secure"
@@ -19,11 +28,12 @@ android {
         applicationId = "app.terminalssh.secure"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.5.1"
-        resourceConfigurations += listOf("fa", "en")
+        versionCode = 9
+        versionName = "0.6.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    testBuildType = testBuildTypeName
 
     // Iranian markets ship to devices that often have no Google Play Services at all,
     // so the optional account integration is a build-time choice, not a runtime one.
@@ -50,7 +60,8 @@ android {
                 keyPassword = ksKeyPass
                 enableV1Signing = true
                 enableV2Signing = true
-                enableV3Signing = true
+                // Cafe Bazaar's bundle-signer workflow requires v2 on and v3 off.
+                enableV3Signing = false
                 enableV4Signing = true
             }
         }
@@ -78,6 +89,9 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Only while this build is the instrumentation target: androidTest addresses the
+            // app under test by its original class names, which R8 would otherwise rename.
+            if (testingMinifiedBuild) proguardFiles("proguard-rules-androidtest.pro")
             applicationIdSuffix = ".preview"
             versionNameSuffix = "-preview"
             signingConfig = signingConfigs.getByName("debug")
@@ -92,10 +106,11 @@ android {
         }
     }
 
-    // Iranian markets accept APK only. Per-ABI splits cut ~28MB down to ~9MB each.
+    // App bundles must have one resource package. Keep APK splitting opt-in so the normal
+    // Bazaar bundle path is valid; pass -Pterminal.perAbiApks=true for direct APK distribution.
     splits {
         abi {
-            isEnable = true
+            isEnable = buildPerAbiApks.get()
             reset()
             include("armeabi-v7a", "arm64-v8a", "x86_64")
             isUniversalApk = true
@@ -122,7 +137,7 @@ kotlin {
     }
 }
 
-// Give every split a distinct versionCode so markets accept them side by side.
+// Give opt-in APK splits distinct version codes while keeping the bundle at the declared code.
 androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->
@@ -133,13 +148,19 @@ androidComponents {
                 "x86_64" -> 3
                 else -> 0
             }
-            output.versionCode.set((android.defaultConfig.versionCode ?: 1) * 10 + offset)
+            if (buildPerAbiApks.get()) {
+                output.versionCode.set((android.defaultConfig.versionCode ?: 1) * 10 + offset)
+            }
         }
     }
 }
 
 dependencies {
     implementation("com.github.mwiede:jsch:2.28.6")
+    // Android loads JSch's Java 8 implementation, which delegates Ed25519 key generation
+    // and signing to these lightweight BC APIs. This must be a runtime dependency: without
+    // it the UI advertises Ed25519 on API 33+ but generation fails with NoClassDefFoundError.
+    implementation("org.bouncycastle:bcprov-jdk18on:1.85")
     implementation("org.connectbot:termlib:0.1.0")
 
     implementation(platform("androidx.compose:compose-bom:2024.09.03"))

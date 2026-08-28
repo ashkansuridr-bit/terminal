@@ -148,6 +148,8 @@
     <string name="sftp_unbookmark">حذف نشانک</string>
     <string name="sftp_compute_size">محاسبه اندازه پوشه</string>
     <string name="sftp_search_hint">جستجو در فایل‌ها…</string>
+    <string name="local_terminal">ترمینال محلی</string>
+    <string name="local_terminal_welcome">پوسته محلی گوشی برای دستورهای ساده و غیرتعاملی.\nدستورات در sandbox اپلیکیشن اجرا می‌شوند.\nبدون روت؛ دستورات با مجوزهای اپ اجرا می‌شوند.</string>
     <string name="field_reconnect_attempts">تعداد تلاش برای اتصال مجدد</string>
     <string name="err_reconnect_range">تعداد تلاش اتصال مجدد نمی‌تواند بیشتر از ۱۰ باشد</string>
     <string name="env_none">بدون دسته</string>

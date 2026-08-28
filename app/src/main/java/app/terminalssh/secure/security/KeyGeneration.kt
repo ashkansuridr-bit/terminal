@@ -15,9 +15,10 @@ import java.io.ByteArrayOutputStream
  */
 enum class KeyAlgorithm(val jschType: Int, val label: String) {
     /**
-     * Preferred where available. JSch's Ed25519 generator lives in the jar's
-     * `META-INF/versions/15/` tree, which Android's D8 does not unpack, and the platform
-     * itself only gained EdDSA in API 33 — so this is not offered below that.
+     * Preferred where available. Android loads JSch's Java 8 implementation rather than
+     * the jar's `META-INF/versions/15/` implementation, so the app bundles Bouncy Castle
+     * for JSch's Ed25519 generation and signing fallback. The API 33 boundary remains until
+     * older supported Android versions have matching device-level regression evidence.
      */
     ED25519(KeyPair.ED25519, "ed25519"),
 
@@ -72,7 +73,13 @@ object KeyGeneration {
         try {
             val privateOut = ByteArrayOutputStream()
             val publicOut = ByteArrayOutputStream()
-            pair.writePrivateKey(privateOut)
+            // JSch's EdDSA implementation intentionally has no legacy PEM serializer.
+            // OpenSSH v1 is the native, reloadable format for Ed25519 keys.
+            if (algorithm == KeyAlgorithm.ED25519) {
+                pair.writeOpenSSHv1PrivateKey(privateOut, null)
+            } else {
+                pair.writePrivateKey(privateOut)
+            }
             pair.writePublicKey(publicOut, comment)
             return GeneratedKey(
                 privateKey = privateOut.toByteArray(),

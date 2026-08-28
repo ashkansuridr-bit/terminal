@@ -40,6 +40,7 @@ fun TextEditorDialog(
     fileName: String,
     isLoading: Boolean,
     content: String,
+    errorMessage: String? = null,
     isReadOnly: Boolean = false,
     onContentChange: (String) -> Unit = {},
     onSave: () -> Unit = {},
@@ -66,6 +67,14 @@ fun TextEditorDialog(
                         color = app.terminalssh.secure.ui.theme.TextSecondary,
                     )
                     Spacer(Modifier.height(8.dp))
+                    if (errorMessage != null) {
+                        Text(
+                            errorMessage,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
                     SelectionContainer {
                         OutlinedTextField(
                             value = content,

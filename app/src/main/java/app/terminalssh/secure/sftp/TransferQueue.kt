@@ -3,6 +3,7 @@ package app.terminalssh.secure.sftp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -54,9 +55,13 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
     }
 
     fun markRunning(id: String) = update(id) {
-        // A fresh attempt starts a fresh rate estimate — carrying over a stale one from
-        // a previous, possibly much slower or faster, attempt would show a bogus ETA.
-        it.copy(state = TransferState.RUNNING, attempts = it.attempts + 1, lastProgressAt = 0L, bytesPerSecond = 0f)
+        it.copy(
+            state = TransferState.RUNNING,
+            attempts = it.attempts + 1,
+            lastProgressAt = 0L,
+            bytesPerSecond = 0f,
+            startedAt = if (it.startedAt == 0L) System.currentTimeMillis() else it.startedAt,
+        )
     }
 
     /**
@@ -148,6 +153,51 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
         }
     }
 
+    /** Persists history entries so they survive process death. */
+    fun persistHistory(historyFile: File) {
+        val arr = JSONArray()
+        _history.value.forEach { t ->
+            arr.put(JSONObject().apply {
+                put("id", t.id)
+                put("direction", t.direction.name)
+                put("remotePath", t.remotePath)
+                put("displayName", t.displayName)
+                put("totalBytes", t.totalBytes)
+                put("transferredBytes", t.transferredBytes)
+                put("state", t.state.name)
+                put("finishedAt", t.finishedAt)
+                put("enqueuedAt", t.enqueuedAt)
+                put("startedAt", t.startedAt)
+            })
+        }
+        runCatching { historyFile.writeText(arr.toString()) }
+    }
+
+    fun loadHistory(historyFile: File) {
+        runCatching {
+            if (!historyFile.exists()) return
+            val arr = JSONArray(historyFile.readText())
+            val entries = mutableListOf<Transfer>()
+            for (i in 0 until arr.length()) {
+                val obj = runCatching { arr.getJSONObject(i) }.getOrNull() ?: continue
+                entries.add(Transfer(
+                    id = obj.optString("id", ""),
+                    direction = runCatching { TransferDirection.valueOf(obj.getString("direction")) }.getOrDefault(TransferDirection.DOWNLOAD),
+                    remotePath = obj.optString("remotePath", ""),
+                    localUri = "",
+                    displayName = obj.optString("displayName", ""),
+                    totalBytes = obj.optLong("totalBytes", Transfer.UNKNOWN_SIZE),
+                    transferredBytes = obj.optLong("transferredBytes", 0L),
+                    state = runCatching { TransferState.valueOf(obj.getString("state")) }.getOrDefault(TransferState.COMPLETED),
+                    finishedAt = obj.optLong("finishedAt", 0L),
+                    enqueuedAt = obj.optLong("enqueuedAt", 0L),
+                    startedAt = obj.optLong("startedAt", 0L),
+                ))
+            }
+            _history.value = entries.filter { it.id.isNotBlank() }
+        }
+    }
+
     /**
      * Called when the SSH session drops: every in-flight transfer becomes retriable
      * rather than being silently abandoned.
@@ -188,8 +238,8 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
         }
     }
 
-    private inline fun update(id: String, change: (Transfer) -> Transfer) {
-        _transfers.value = _transfers.value.map { if (it.id == id) change(it) else it }
+    private inline fun update(id: String, crossinline change: (Transfer) -> Transfer) {
+        _transfers.update { list -> list.map { if (it.id == id) change(it) else it } }
     }
 
     companion object {
@@ -220,16 +270,16 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
                 val arr = JSONArray(json)
                 val transfers = mutableListOf<Transfer>()
                 for (i in 0 until arr.length()) {
-                    val obj = arr.getJSONObject(i)
+                    val obj = runCatching { arr.getJSONObject(i) }.getOrNull() ?: continue
                     transfers.add(Transfer(
-                        id = obj.getString("id"),
-                        direction = TransferDirection.valueOf(obj.getString("direction")),
-                        remotePath = obj.getString("remotePath"),
-                        localUri = obj.getString("localUri"),
-                        displayName = obj.getString("displayName"),
+                        id = obj.optString("id", ""),
+                        direction = runCatching { TransferDirection.valueOf(obj.getString("direction")) }.getOrDefault(TransferDirection.DOWNLOAD),
+                        remotePath = obj.optString("remotePath", ""),
+                        localUri = obj.optString("localUri", ""),
+                        displayName = obj.optString("displayName", ""),
                         totalBytes = obj.optLong("totalBytes", Transfer.UNKNOWN_SIZE),
                         transferredBytes = obj.optLong("transferredBytes", 0L),
-                        state = TransferState.valueOf(obj.getString("state")),
+                        state = runCatching { TransferState.valueOf(obj.getString("state")) }.getOrDefault(TransferState.QUEUED),
                         attempts = obj.optInt("attempts", 0),
                     ))
                 }
