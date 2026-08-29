@@ -8,6 +8,11 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ScrollState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -334,7 +339,7 @@ private fun SessionTabs(
     Row(
         Modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
+            .horizontalScroll(rememberStartAlignedScrollState())
             .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -546,7 +551,7 @@ private fun KeyToolbar(
                 }
             } else {
                 Row(
-                    Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                    Modifier.weight(1f).horizontalScroll(rememberStartAlignedScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     primary()
@@ -555,6 +560,34 @@ private fun KeyToolbar(
             }
         }
     }
+}
+
+/**
+ * A horizontal scroll state that starts at the layout's own start edge.
+ *
+ * `horizontalScroll` always begins at offset 0, which is the **left** edge. Under RTL the
+ * left edge is the *end* of the content, so a Persian user opened the terminal to a
+ * toolbar already scrolled past its own first keys: Ctrl, Alt and Shift sat off-screen to
+ * the right and could not be reached without scrolling backwards, which nothing on screen
+ * suggested was possible.
+ *
+ * Aligned once, on the first layout that reports a scrollable width. Re-aligning on every
+ * later measurement would yank the row out from under anyone who had scrolled it — and,
+ * because the row keeps measuring as it settles, would also move a key after the user had
+ * already reached for it.
+ */
+@Composable
+private fun rememberStartAlignedScrollState(): ScrollState {
+    val state = rememberScrollState()
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    var aligned by remember { mutableStateOf(false) }
+    LaunchedEffect(isRtl, state.maxValue) {
+        if (isRtl && !aligned && state.maxValue > 0) {
+            aligned = true
+            state.scrollTo(state.maxValue)
+        }
+    }
+    return state
 }
 
 @Composable
