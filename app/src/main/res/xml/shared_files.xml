@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Only the one cache subdirectory that share staging writes into. Not cache-path root,
+    and never files-path: the SFTP staging files and the transfer queue live under those,
+    and a share grant must not be able to reach either.
+-->
+<paths>
+    <cache-path name="shared" path="shared/" />
+</paths>

@@ -249,6 +249,12 @@
     <string name="settings_exported">تنظیمات ذخیره شد</string>
     <string name="settings_imported">%1$d تنظیم اعمال شد</string>
     <string name="settings_import_failed">وارد کردن تنظیمات انجام نشد</string>
+    <string name="settings_import_preview_title">پیش‌نمایش وارد کردن</string>
+    <string name="settings_import_preview_summary">%1$d تغییر، %2$d مقدار نامعتبر، %3$d کلید ناشناخته</string>
+    <string name="settings_import_invalid_keys">مقدارهای نامعتبر: %1$s</string>
+    <string name="settings_import_unknown_keys">کلیدهای ناشناخته: %1$s</string>
+    <string name="settings_import_apply">اعمال تغییرات معتبر</string>
+    <string name="settings_import_stale">تنظیمات تغییر کرده است؛ فایل را دوباره انتخاب کنید</string>
     <string name="settings_no_results">تنظیمی با این عبارت پیدا نشد</string>
     <string name="settings_group_appearance">ظاهر</string>
     <string name="settings_group_terminal">ترمینال</string>
@@ -271,6 +277,10 @@
     <string name="settings_palette_catppuccin">Catppuccin</string>
     <string name="settings_palette_tokyo_night">Tokyo Night</string>
     <string name="settings_export_failed">خروجی گرفتن تنظیمات انجام نشد</string>
+    <string name="settings_transfer_limit">محدودیت سرعت انتقال</string>
+    <string name="settings_transfer_limit_summary">صفر یعنی بدون محدودیت؛ کیلوبایت بر ثانیه</string>
+    <string name="settings_transfers_wifi_only">انتقال فقط با Wi-Fi</string>
+    <string name="settings_transfers_wifi_only_summary">روی دیتای موبایل، انتقال‌ها منتظر می‌مانند</string>
     <string name="agent_install_title">نصب عامل کدنویسی</string>
     <string name="agent_install_body">اسکریپت روی همین سرور اجرا می‌شود. قبل از اجرا کاملش را ببینید؛ چیزی پنهانی اجرا نمی‌شود.</string>
     <string name="agent_which">کدام عامل</string>
@@ -367,4 +377,9 @@
     <string name="port_forward_active">فعال</string>
     <string name="port_forward_add">افزودن ارسال پورت</string>
     <string name="port_forward_type">نوع ارسال</string>
+    <string name="sftp_recursive_download_counting">در حال شمردن فایل‌های پوشهٔ «%1$s»…</string>
+    <string name="sftp_recursive_download_confirm_unknown">آیا می‌خواهید پوشهٔ «%1$s» را دانلود کنید؟ تعداد فایل‌ها مشخص نشد.</string>
+    <string name="xfer_integrity_mismatch">فایل منتقل‌شده با نسخهٔ اصلی یکی نیست؛ انتقال ناقص یا خراب بوده است.</string>
+    <string name="xfer_not_enough_remote_space">فضای کافی روی سرور نیست.</string>
+    <string name="notif_cancel_transfers">لغو انتقال‌ها</string>
 </resources>

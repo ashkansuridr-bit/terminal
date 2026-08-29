@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,10 +37,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.terminalssh.secure.R
 import app.terminalssh.secure.settings.SettingGroup
+import app.terminalssh.secure.settings.SettingSpec
 import app.terminalssh.secure.settings.SettingsRegistry
 import app.terminalssh.secure.settings.SettingsStore
 import app.terminalssh.secure.ui.theme.TextSecondary
 import app.terminalssh.secure.ui.theme.Turquoise
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * The whole settings list, generated from the schema.
@@ -49,7 +52,10 @@ import app.terminalssh.secure.ui.theme.Turquoise
  */
 @Composable
 @Suppress("LocalContextGetResourceValueCall")
-fun SettingsCatalog(store: SettingsStore, onChanged: () -> Unit) {
+fun SettingsCatalog(
+    store: SettingsStore,
+    isVisible: (SettingSpec<*>) -> Boolean = { true },
+) {
     val context = LocalContext.current
     // Search matches against localized text, which a plain composable stringResource call
     // cannot provide inside a lambda. Reading LocalConfiguration is what makes this recompose
@@ -59,6 +65,7 @@ fun SettingsCatalog(store: SettingsStore, onChanged: () -> Unit) {
 
     var query by remember { mutableStateOf("") }
     var advanced by remember { mutableStateOf(false) }
+    val revision by store.revision.collectAsStateWithLifecycle()
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(
@@ -99,7 +106,7 @@ fun SettingsCatalog(store: SettingsStore, onChanged: () -> Unit) {
         }
 
         if (query.isNotBlank()) {
-            val hits = SettingsRegistry.search(query, resolve)
+            val hits = SettingsRegistry.search(query, resolve).filter(isVisible)
             if (hits.isEmpty()) {
                 Text(
                     stringResource(R.string.settings_no_results),
@@ -109,14 +116,18 @@ fun SettingsCatalog(store: SettingsStore, onChanged: () -> Unit) {
                 )
             } else {
                 hits.forEach { spec ->
-                    SettingRow(spec, store, optionLabel = { optionLabel(it, context) }, onChanged = onChanged)
+                    key(revision, spec.key) {
+                        SettingRow(spec, store, optionLabel = { optionLabel(it, context) })
+                    }
                 }
             }
             return@Column
         }
 
         SettingGroup.entries.forEach { group ->
-            val specs = SettingsRegistry.byGroup(group).filter { advanced || !it.advanced }
+            val specs = SettingsRegistry.visibleByGroup(group)
+                .filter(isVisible)
+                .filter { advanced || !it.advanced }
             if (specs.isEmpty()) return@forEach
 
             Spacer(Modifier.height(8.dp))
@@ -127,7 +138,9 @@ fun SettingsCatalog(store: SettingsStore, onChanged: () -> Unit) {
                 color = Turquoise,
             )
             specs.forEach { spec ->
-                SettingRow(spec, store, optionLabel = { optionLabel(it, context) }, onChanged = onChanged)
+                key(revision, spec.key) {
+                    SettingRow(spec, store, optionLabel = { optionLabel(it, context) })
+                }
             }
         }
     }

@@ -6,6 +6,12 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
+    <!--
+        Normal permission, no runtime prompt. Read only to answer "is this connection
+        metered?" for the Wi-Fi-only transfer setting; the app never inspects traffic.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:name=".TerminalApp"
         android:allowBackup="false"
@@ -48,5 +54,40 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Keeps user-initiated SSH terminal sessions connected while the app is backgrounded" />
         </service>
-    </application>
+
+        <!--
+            Exposes live SSH sessions in Android's file picker so any app can open and
+            save files straight off the server.
+
+            exported=true is required — the system's DocumentsUI is a different process —
+            but the gate is android.permission.MANAGE_DOCUMENTS, a signature-level
+            permission only the platform holds. No third-party app can bind to it, and
+            only sessions the user has already connected appear as roots.
+        -->
+        <provider
+            android:name=".sftp.SftpDocumentsProvider"
+            android:authorities="app.terminalssh.secure.documents"
+            android:exported="true"
+            android:grantUriPermissions="true"
+            android:permission="android.permission.MANAGE_DOCUMENTS">
+            <intent-filter>
+                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+            </intent-filter>
+        </provider>
+
+        <!--
+            Hands a staged copy of a remote file to another app for "open with" / "share".
+            Not exported: access is only ever the one-shot read grant attached to the
+            intent, which Android revokes when the receiving activity finishes.
+        -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.shared"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/shared_files" />
+        </provider>
+</application>
 </manifest>

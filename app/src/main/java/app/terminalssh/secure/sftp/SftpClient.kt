@@ -1,5 +1,6 @@
 package app.terminalssh.secure.sftp
 
+import com.jcraft.jsch.ChannelExec
 import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.Session
 import com.jcraft.jsch.SftpATTRS
@@ -109,17 +110,30 @@ class SftpClient(private val session: Session) : AutoCloseable {
     fun listRecursive(remotePath: String): List<Pair<String, String>> {
         val normalized = RemotePath.normalize(remotePath)
         val results = mutableListOf<Pair<String, String>>()
-        walkRecursive(normalized, "", results)
+        val guard = TraversalGuard()
+        guard.enter(normalized, 0)
+        walkRecursive(normalized, "", results, guard, 1)
         return results
     }
 
-    private fun walkRecursive(remotePath: String, relativePath: String, results: MutableList<Pair<String, String>>) {
+    private fun walkRecursive(
+        remotePath: String,
+        relativePath: String,
+        results: MutableList<Pair<String, String>>,
+        guard: TraversalGuard,
+        depth: Int,
+    ) {
         val entries = list(remotePath)
         for (entry in entries) {
             val childRelative = if (relativePath.isEmpty()) entry.name else "$relativePath/${entry.name}"
-            if (entry.isDirectory) {
-                walkRecursive(entry.path, childRelative, results)
-            } else {
+            if (guard.canDescend(entry)) {
+                // enter() is what breaks a cycle: a directory already walked in this
+                // traversal, or one past the depth/entry budget, is not descended again.
+                if (guard.enter(entry.path, depth)) {
+                    walkRecursive(entry.path, childRelative, results, guard, depth + 1)
+                }
+            } else if (!entry.isDirectory) {
+                if (!guard.countFile()) return
                 results.add(entry.path to childRelative)
             }
         }
@@ -170,14 +184,75 @@ class SftpClient(private val session: Session) : AutoCloseable {
      * Directories themselves contribute 0; only files count. For non-directory entries
      * this returns the file's own size. (#45)
      */
+    /**
+     * Runs [command] over its own exec channel and returns stdout, or null if the server
+     * does not allow exec, the channel fails, or it takes longer than [timeoutMs].
+     *
+     * Null is a first-class answer here. A server with exec disabled is a normal,
+     * supported configuration — checksum verification and the free-space check both
+     * degrade to "not verified" rather than blocking the transfer.
+     */
+    fun exec(command: String, timeoutMs: Int = EXEC_TIMEOUT_MS): String? {
+        var channel: ChannelExec? = null
+        return try {
+            channel = session.openChannel("exec") as ChannelExec
+            channel.setCommand(command)
+            channel.setErrStream(null)
+            val stdout = channel.inputStream
+            channel.connect(CONNECT_TIMEOUT_MS)
+
+            val out = java.io.ByteArrayOutputStream()
+            val buf = ByteArray(4096)
+            val deadline = System.currentTimeMillis() + timeoutMs
+            while (System.currentTimeMillis() < deadline) {
+                while (stdout.available() > 0) {
+                    val read = stdout.read(buf)
+                    if (read < 0) break
+                    if (out.size() + read > EXEC_MAX_OUTPUT) return out.toString(Charsets.UTF_8.name())
+                    out.write(buf, 0, read)
+                }
+                if (channel.isClosed) break
+                Thread.sleep(20)
+            }
+            out.toString(Charsets.UTF_8.name())
+        } catch (_: Exception) {
+            null
+        } finally {
+            runCatching { channel?.disconnect() }
+        }
+    }
+
+    /** SHA-256 of a remote file as the server computes it, or null if it cannot. */
+    fun remoteSha256(remotePath: String): String? =
+        exec(RemoteCommands.checksumCommand(RemotePath.normalize(remotePath)))
+            ?.let { RemoteCommands.parseChecksum(it) }
+
+    /** Bytes writable on the volume holding [remoteDir], or null if it cannot be read. */
+    fun freeSpaceBytes(remoteDir: String): Long? =
+        exec(RemoteCommands.freeSpaceCommand(RemotePath.normalize(remoteDir)))
+            ?.let { RemoteCommands.parseAvailableBytes(it) }
+
     fun recursiveSize(remotePath: String): Long {
         val normalized = RemotePath.normalize(remotePath)
         val stat = runCatching { channel().stat(normalized) }.getOrNull()
         if (stat != null && !stat.isDir) return stat.size
+        val guard = TraversalGuard()
+        guard.enter(normalized, 0)
+        return recursiveSize(normalized, guard, 1)
+    }
+
+    private fun recursiveSize(remotePath: String, guard: TraversalGuard, depth: Int): Long {
         var total = 0L
-        val entries = list(normalized)
+        val entries = list(remotePath)
         for (entry in entries) {
-            total += if (entry.isDirectory) recursiveSize(entry.path) else entry.sizeBytes
+            total += if (guard.canDescend(entry)) {
+                if (guard.enter(entry.path, depth)) recursiveSize(entry.path, guard, depth + 1) else 0L
+            } else if (entry.isDirectory) {
+                0L // a symlinked directory: counted as the link itself, never descended
+            } else {
+                if (!guard.countFile()) return total
+                entry.sizeBytes
+            }
         }
         return total
     }
@@ -232,10 +307,17 @@ class SftpClient(private val session: Session) : AutoCloseable {
     }
 
     companion object {
+        private const val EXEC_TIMEOUT_MS = 15_000
+        private const val EXEC_MAX_OUTPUT = 64 * 1024
         private const val CONNECT_TIMEOUT_MS = 15_000
 
         /** Maps an SFTP failure onto something the transfer list can explain. */
         fun classify(t: Throwable): TransferErrorKind = when {
+            // A revoked SAF grant surfaces as SecurityException from the ContentResolver.
+            // It is a local problem, not a server one, and retrying cannot fix it.
+            t is SecurityException -> TransferErrorKind.LOCAL_UNAVAILABLE
+            t is LocalUriUnavailableException -> TransferErrorKind.LOCAL_UNAVAILABLE
+            t is NotEnoughRemoteSpaceException -> TransferErrorKind.NOT_ENOUGH_REMOTE_SPACE
             t is SftpException -> when (t.id) {
                 ChannelSftp.SSH_FX_NO_SUCH_FILE -> TransferErrorKind.NOT_FOUND
                 ChannelSftp.SSH_FX_PERMISSION_DENIED -> TransferErrorKind.PERMISSION_DENIED

@@ -43,6 +43,39 @@ class SettingsRegistryTest {
         assertEquals("paste_confirm", SettingsRegistry.confirmMultilinePaste.key)
         assertEquals("keepalive", SettingsRegistry.keepAlive.key)
         assertEquals("clipboard_clear_seconds", SettingsRegistry.clipboardClearSeconds.key)
+        assertEquals("xfer_limit_kbps", SettingsRegistry.transferLimitKbPerSecond.key)
+        assertEquals("xfer_wifi_only", SettingsRegistry.transfersWifiOnly.key)
+    }
+
+    @Test fun recoverableSettingsIncludeTransferPreferences() {
+        assertTrue(SettingsRegistry.transferLimitKbPerSecond in SettingsRegistry.all)
+        assertTrue(SettingsRegistry.transfersWifiOnly in SettingsRegistry.all)
+        assertEquals(0, SettingsRegistry.transferLimitKbPerSecond.default)
+        assertEquals(100_000, SettingsRegistry.transferLimitKbPerSecond.max)
+        assertEquals(false, SettingsRegistry.transfersWifiOnly.default)
+    }
+
+    @Test fun visibleSettingsAreExactlyTheSettingsWithRuntimeConsumers() {
+        assertEquals(
+            listOf(
+                SettingsRegistry.theme,
+                SettingsRegistry.fontSize,
+                SettingsRegistry.terminalType,
+                SettingsRegistry.hapticKeys,
+                SettingsRegistry.keepScreenOn,
+                SettingsRegistry.keepAlive,
+                SettingsRegistry.confirmMultilinePaste,
+                SettingsRegistry.biometricLock,
+                SettingsRegistry.clipboardClearSeconds,
+                // Redacts secret-shaped terminal output; consumed by SshSession.maskChunk.
+                SettingsRegistry.maskSecretsInOutput,
+                SettingsRegistry.transferLimitKbPerSecond,
+                // Holds the SFTP queue on metered networks; consumed by
+                // SftpController.mayStartTransfers via AppViewModel.onUnmeteredNetwork.
+                SettingsRegistry.transfersWifiOnly,
+            ),
+            SettingsRegistry.visible,
+        )
     }
 
     @Test fun blankQueryReturnsNothingRatherThanEverything() {
@@ -79,8 +112,8 @@ class SettingsRegistryTest {
 
     @Test fun defaultViewIsShortEnoughToScan() {
         // The whole point of advanced mode: the default list stays scannable.
-        val basic = SettingsRegistry.all.count { !it.advanced }
+        val basic = SettingsRegistry.visible.count { !it.advanced }
         assertTrue(basic <= 14, "$basic non-advanced settings is too many for the default view")
-        assertTrue(SettingsRegistry.all.any { it.advanced }, "advanced mode hides nothing")
+        assertTrue(SettingsRegistry.visible.any { it.advanced }, "advanced mode hides nothing")
     }
 }

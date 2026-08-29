@@ -231,6 +231,12 @@
     <string name="settings_exported">Paramètres enregistrés</string>
     <string name="settings_imported">%1$d paramètre(s) appliqué(s)</string>
     <string name="settings_import_failed">Impossible d\u2019importer ces paramètres</string>
+    <string name="settings_import_preview_title">Aperçu de l’importation</string>
+    <string name="settings_import_preview_summary">%1$d modifications, %2$d valeurs invalides, %3$d clés inconnues</string>
+    <string name="settings_import_invalid_keys">Valeurs invalides : %1$s</string>
+    <string name="settings_import_unknown_keys">Clés inconnues : %1$s</string>
+    <string name="settings_import_apply">Appliquer les modifications valides</string>
+    <string name="settings_import_stale">Les paramètres ont changé ; sélectionnez à nouveau le fichier</string>
     <string name="settings_no_results">Aucun paramètre ne correspond à cette recherche</string>
     <string name="settings_group_appearance">Apparence</string>
     <string name="settings_group_terminal">Terminal</string>
@@ -253,6 +259,10 @@
     <string name="settings_palette_catppuccin">Catppuccin</string>
     <string name="settings_palette_tokyo_night">Tokyo Night</string>
     <string name="settings_export_failed">Impossible d\u2019exporter les paramètres</string>
+    <string name="settings_transfer_limit">Limite de vitesse de transfert</string>
+    <string name="settings_transfer_limit_summary">Zéro signifie illimité ; kilo-octets par seconde</string>
+    <string name="settings_transfers_wifi_only">Transfert uniquement en Wi-Fi</string>
+    <string name="settings_transfers_wifi_only_summary">Les transferts attendent pendant l’utilisation des données mobiles</string>
     <string name="agent_install_title">Installer un agent de code</string>
     <string name="agent_install_body">Ceci s\u2019exécute sur le serveur connecté. Lisez-le avant de l\u2019exécuter\u202f; rien n\u2019est lancé sans que vous l\u2019ayez vu.</string>
     <string name="agent_which">Quel agent</string>
@@ -367,4 +377,9 @@
     <string name="port_forward_active">Actif</string>
     <string name="port_forward_add">Ajouter un renvoi</string>
     <string name="port_forward_type">Type de renvoi</string>
+    <string name="sftp_recursive_download_counting">Comptage des fichiers dans « %1$s »…</string>
+    <string name="sftp_recursive_download_confirm_unknown">Télécharger le dossier « %1$s » ? Le nombre de fichiers n\'a pas pu être déterminé.</string>
+    <string name="xfer_integrity_mismatch">Le fichier transféré ne correspond pas à l\'original ; il est arrivé incomplet ou corrompu.</string>
+    <string name="xfer_not_enough_remote_space">Espace insuffisant sur le serveur.</string>
+    <string name="notif_cancel_transfers">Annuler les transferts</string>
 </resources>

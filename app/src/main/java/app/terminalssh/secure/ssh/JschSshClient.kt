@@ -32,6 +32,11 @@ class JschSshClient(
     ) : AutoCloseable {
         val alive: Boolean get() = session.isConnected && !channel.isClosed
 
+        fun setKeepAlive(enabled: Boolean) {
+            session.serverAliveInterval = if (enabled) KEEPALIVE_MS else 0
+            session.serverAliveCountMax = if (enabled) KEEPALIVE_RETRIES else 0
+        }
+
         /** Local port forwarding: binds [bindPort] on localhost, forwards to [host]:[port] via the tunnel. */
         fun forwardLocal(bindPort: Int, host: String, port: Int) {
             session.setPortForwardingL("127.0.0.1", bindPort, host, port)
@@ -70,6 +75,7 @@ class JschSshClient(
         rows: Int,
         passwordOverride: ByteArray? = null,
         keepAlive: Boolean = true,
+        terminalType: String = DEFAULT_PTY_TYPE,
     ): Shell {
         val jsch = JSch()
         val captured = AtomicReference<PresentedHostKey?>()
@@ -185,7 +191,7 @@ class JschSshClient(
         try {
             channel = session.openChannel("shell") as ChannelShell
             channel.setPty(true)
-            channel.setPtyType(PTY_TYPE, columns, rows, 0, 0)
+            channel.setPtyType(terminalType, columns, rows, 0, 0)
             val input = channel.inputStream
             val output = channel.outputStream
             channel.connect(CONNECT_TIMEOUT_MS)
@@ -250,6 +256,6 @@ class JschSshClient(
         private const val CONNECT_TIMEOUT_MS = 15_000
         private const val KEEPALIVE_MS = 30_000
         private const val KEEPALIVE_RETRIES = 3
-        private const val PTY_TYPE = "xterm-256color"
+        private const val DEFAULT_PTY_TYPE = "xterm-256color"
     }
 }

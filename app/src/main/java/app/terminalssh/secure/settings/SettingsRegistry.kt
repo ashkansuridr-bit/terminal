@@ -69,6 +69,11 @@ object SettingsRegistry {
         key = "terminal_type",
         default = "xterm-256color",
         maxLength = 40,
+        accepts = { value ->
+            value.isNotEmpty() && value.all {
+                it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' || it in "._+-"
+            }
+        },
         titleRes = R.string.settings_terminal_type,
         summaryRes = R.string.settings_terminal_type_summary,
         group = SettingGroup.TERMINAL,
@@ -181,6 +186,28 @@ object SettingsRegistry {
         advanced = true,
     )
 
+    // ---- transfers ----
+
+    val transferLimitKbPerSecond = IntSetting(
+        key = "xfer_limit_kbps",
+        default = 0,
+        min = 0,
+        max = 100_000,
+        step = 100,
+        titleRes = R.string.settings_transfer_limit,
+        summaryRes = R.string.settings_transfer_limit_summary,
+        group = SettingGroup.BEHAVIOR,
+    )
+
+    val transfersWifiOnly = BoolSetting(
+        key = "xfer_wifi_only",
+        default = false,
+        titleRes = R.string.settings_transfers_wifi_only,
+        summaryRes = R.string.settings_transfers_wifi_only_summary,
+        group = SettingGroup.BEHAVIOR,
+        advanced = true,
+    )
+
     /** Every spec, in display order within each group. */
     val all: List<SettingSpec<*>> = listOf(
         theme, fontSize, fontFamily, lineHeight, cursorStyle, cursorBlink,
@@ -188,6 +215,23 @@ object SettingsRegistry {
         keepAlive, confirmMultilinePaste, confirmCloseRunning, reopenLastSession,
         idleDisconnectMinutes, meteredKeepAlive,
         biometricLock, clipboardClearSeconds, maskSecretsInOutput, warnWeakAlgorithms,
+        transferLimitKbPerSecond, transfersWifiOnly,
+    )
+
+    /** Settings exposed by the current UI because each has a verified runtime consumer. */
+    val visible: List<SettingSpec<*>> = listOf(
+        theme,
+        fontSize,
+        terminalType,
+        hapticKeys,
+        keepScreenOn,
+        keepAlive,
+        confirmMultilinePaste,
+        biometricLock,
+        clipboardClearSeconds,
+        maskSecretsInOutput,
+        transferLimitKbPerSecond,
+        transfersWifiOnly,
     )
 
     init {
@@ -196,6 +240,8 @@ object SettingsRegistry {
     }
 
     fun byGroup(group: SettingGroup): List<SettingSpec<*>> = all.filter { it.group == group }
+
+    fun visibleByGroup(group: SettingGroup): List<SettingSpec<*>> = visible.filter { it.group == group }
 
     fun byKey(key: String): SettingSpec<*>? = all.firstOrNull { it.key == key }
 
@@ -207,7 +253,7 @@ object SettingsRegistry {
      */
     fun search(query: String, resolve: (Int) -> String): List<SettingSpec<*>> {
         if (query.isBlank()) return emptyList()
-        return all
+        return visible
             .map { spec ->
                 val titleScore = FuzzyMatch.score(query, resolve(spec.titleRes))
                 val summaryScore = spec.summaryRes

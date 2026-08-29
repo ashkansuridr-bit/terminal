@@ -1,7 +1,6 @@
 package app.terminalssh.secure.ui
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -115,8 +114,9 @@ fun ImagePreviewDialog(
     imageBytes: ByteArray?,
     onDismiss: () -> Unit,
 ) {
+    // Sampled decode: a modest file can still be a huge bitmap. See BoundedImage.
     val bitmap = remember(imageBytes) {
-        imageBytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+        imageBytes?.let { app.terminalssh.secure.sftp.BoundedImage.decodeSampled(it) }
     }
     AlertDialog(
         onDismissRequest = onDismiss,

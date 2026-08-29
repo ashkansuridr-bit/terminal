@@ -13,6 +13,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -34,13 +37,57 @@ class SftpController(
     private val contentResolver: ContentResolver,
     private val cacheDir: File,
     private val scope: CoroutineScope,
+    /**
+     * Bytes per second ceiling, re-read per transfer so a settings change takes effect on
+     * the next file rather than needing a restart. 0 means unlimited.
+     */
+    private val rateLimitBytesPerSecond: () -> Long = { 0L },
+    /**
+     * Whether the queue may start work right now. False holds everything QUEUED — used by
+     * the Wi-Fi-only setting, so a large upload cannot quietly spend a mobile data plan.
+     * Queued transfers resume on their own once this goes true again.
+     */
+    private val mayStartTransfers: () -> Boolean = { true },
 ) {
     data class BrowserState(
         val path: String = RemotePath.ROOT,
+        /** Already sorted and filtered for display; [rawEntries] is what the server sent. */
         val entries: List<RemoteEntry> = emptyList(),
         val loading: Boolean = false,
         val errorKind: TransferErrorKind? = null,
+        val rawEntries: List<RemoteEntry> = emptyList(),
+        val sortMode: EntrySort.Mode = EntrySort.Mode.NAME,
+        val sortDescending: Boolean = false,
+        val showHidden: Boolean = false,
+    ) {
+        /** How many entries the hidden-files toggle is currently keeping out of sight. */
+        val hiddenCount: Int get() = if (showHidden) 0 else rawEntries.count { EntrySort.isHidden(it) }
+    }
+
+    /** Re-sorts and re-filters what is already loaded. No network call. */
+    private fun BrowserState.withView(
+        mode: EntrySort.Mode = sortMode,
+        descending: Boolean = sortDescending,
+        hidden: Boolean = showHidden,
+    ): BrowserState = copy(
+        entries = EntrySort.apply(rawEntries, mode, descending, hidden),
+        sortMode = mode,
+        sortDescending = descending,
+        showHidden = hidden,
     )
+
+    /** Changes the order; re-selecting the same column flips direction. */
+    fun setSortMode(mode: EntrySort.Mode) {
+        _browser.value = _browser.value.let {
+            it.withView(mode = mode, descending = if (it.sortMode == mode) !it.sortDescending else false)
+        }
+    }
+
+    fun setShowHidden(show: Boolean) {
+        _browser.value = _browser.value.withView(hidden = show)
+    }
+
+    fun toggleShowHidden() = setShowHidden(!_browser.value.showHidden)
 
     /** A queued upload whose remote target already exists, awaiting the user's decision. */
     data class UploadConflict(
@@ -139,7 +186,17 @@ class SftpController(
             }
             _browser.value = result.fold(
                 onSuccess = { entries ->
-                    BrowserState(path = RemotePath.normalize(path), entries = entries, loading = false)
+                    // Carry the user's sort and hidden-files choice across navigation;
+                    // resetting them on every directory change would make both useless.
+                    val previous = _browser.value
+                    BrowserState(
+                        path = RemotePath.normalize(path),
+                        loading = false,
+                        rawEntries = entries,
+                        sortMode = previous.sortMode,
+                        sortDescending = previous.sortDescending,
+                        showHidden = previous.showHidden,
+                    ).let { it.copy(entries = EntrySort.apply(entries, it.sortMode, it.sortDescending, it.showHidden)) }
                 },
                 onFailure = { failure ->
                     // Keep the previous listing on screen rather than blanking it; an
@@ -358,13 +415,22 @@ class SftpController(
         }
     }
 
-    /** Downloads a remote file as raw bytes (for image preview, etc.). */
-    suspend fun downloadFileBytes(remotePath: String): Result<ByteArray> =
+    /**
+     * Downloads a remote file as raw bytes, refusing anything past [maxBytes].
+     *
+     * The limit is enforced on the stream, not on the stat size the server reports:
+     * stat-then-read is a race, and a server can always send more than it advertised.
+     */
+    suspend fun downloadFileBytes(
+        remotePath: String,
+        maxBytes: Long = BoundedImage.MAX_PREVIEW_BYTES,
+    ): Result<ByteArray> =
         runCatching {
             withContext(Dispatchers.IO) {
                 val sftp = client()
                 val baos = java.io.ByteArrayOutputStream()
-                sftp.download(remotePath, baos, 0L) {}
+                val limited = LimitedOutputStream(baos, maxBytes)
+                sftp.download(remotePath, limited, 0L) {}
                 baos.toByteArray()
             }
         }
@@ -377,27 +443,52 @@ class SftpController(
      * Records the mtime of a file when the user starts editing it. Used by
      * [uploadFileText] to detect concurrent edits (#37).
      */
-    private val editMtimes = ConcurrentHashMap<String, Long>()
+    private val editFingerprints = ConcurrentHashMap<String, EditFingerprint>()
 
     /** Downloads text AND records the mtime for concurrent-edit detection. */
     suspend fun downloadFileTextForEdit(remotePath: String, maxBytes: Long = 512_000): Result<Pair<String, Long>> {
         return runCatching {
             withContext(Dispatchers.IO) {
-                val text = client().downloadText(remotePath, maxBytes)
-                val mtime = client().mtime(remotePath)
-                editMtimes[remotePath] = mtime
+                val sftp = client()
+                val text = sftp.downloadText(remotePath, maxBytes)
+                val mtime = sftp.mtime(remotePath)
+                // Hash what we actually opened. mtime and size are only the fast path;
+                // this is what catches an edit that preserved both.
+                editFingerprints[remotePath] = EditFingerprint(
+                    mtimeEpochSeconds = mtime,
+                    sizeBytes = sftp.size(remotePath),
+                    sha256 = EditConflict.sha256(text),
+                )
                 text to mtime
             }
         }
     }
 
     /** Returns true when the remote file changed since this editor loaded it. */
-    suspend fun checkFileTextConflict(remotePath: String): Result<Boolean> {
+    suspend fun checkFileTextConflict(remotePath: String, maxBytes: Long = 512_000): Result<Boolean> {
         return runCatching {
             withContext(Dispatchers.IO) {
-                val currentMtime = client().mtime(remotePath)
-                val savedMtime = editMtimes[remotePath]
-                savedMtime != null && currentMtime != savedMtime
+                val saved = editFingerprints[remotePath]
+                    ?: error("no fingerprint recorded for $remotePath")
+                val sftp = client()
+                val currentMtime = sftp.mtime(remotePath)
+                val currentSize = sftp.size(remotePath)
+
+                // Only pay for a re-read when stat cannot already prove a change. When it
+                // can, we are done; when it cannot, the hash is the only thing that
+                // separates "identical" from "same length, different bytes".
+                val currentSha = if (EditConflict.statProvesChange(saved, currentMtime, currentSize)) {
+                    null
+                } else {
+                    runCatching { EditConflict.sha256(sftp.downloadText(remotePath, maxBytes)) }.getOrNull()
+                }
+
+                when (EditConflict.verdict(saved, currentMtime, currentSize, currentSha)) {
+                    ConflictVerdict.UNCHANGED -> false
+                    ConflictVerdict.CHANGED -> true
+                    // Unreadable remote is not permission to overwrite it.
+                    ConflictVerdict.UNKNOWN -> error("cannot verify remote state for $remotePath")
+                }
             }
         }
     }
@@ -406,7 +497,7 @@ class SftpController(
     fun uploadFileText(remotePath: String, text: String) = scope.launch {
         val result = runCatching { withContext(Dispatchers.IO) { client().uploadText(remotePath, text) } }
         if (result.isSuccess) {
-            editMtimes.remove(remotePath)
+            editFingerprints.remove(remotePath)
             refresh()
         } else {
             showBrowserError(result.exceptionOrNull()!!)
@@ -644,16 +735,44 @@ class SftpController(
      * queuing anything; a real conflict is surfaced via [uploadConflict] for the UI to
      * resolve rather than silently overwriting.
      */
+    /**
+     * A decision the user asked to apply to every remaining collision in this batch.
+     *
+     * Queueing a hundred files used to mean answering the same dialog a hundred times,
+     * and the answer is almost always the same for the whole batch. Cleared by
+     * [clearConflictPolicy] so a later, unrelated upload asks again rather than silently
+     * inheriting a choice made minutes ago.
+     */
+    private val standingConflictPolicy = java.util.concurrent.atomic.AtomicReference<ConflictResolution?>(null)
+
+    fun setConflictPolicy(resolution: ConflictResolution?) = standingConflictPolicy.set(resolution)
+
+    fun clearConflictPolicy() = standingConflictPolicy.set(null)
+
     fun enqueueUpload(source: Uri, displayName: String, remoteDirectory: String) {
         scope.launch {
             val remotePath = RemotePath.join(remoteDirectory, RemotePath.sanitizeDownloadName(displayName))
             val collides = runCatching {
                 withContext(Dispatchers.IO) { client().exists(remotePath) }
             }.getOrDefault(false)
-            if (collides) {
-                _uploadConflict.value = UploadConflict(source, displayName, remoteDirectory, remotePath)
-            } else {
+            if (!collides) {
                 enqueueUploadNow(source, displayName, remotePath)
+                return@launch
+            }
+            when (standingConflictPolicy.get()) {
+                null, ConflictResolution.CANCEL ->
+                    _uploadConflict.value = UploadConflict(source, displayName, remoteDirectory, remotePath)
+                ConflictResolution.OVERWRITE ->
+                    enqueueUploadNow(source, displayName, remotePath)
+                ConflictResolution.SKIP -> Unit
+                ConflictResolution.RENAME -> {
+                    val renamed = nonCollidingName(remoteDirectory, displayName)
+                    enqueueUploadNow(
+                        source,
+                        renamed,
+                        RemotePath.join(remoteDirectory, RemotePath.sanitizeDownloadName(renamed)),
+                    )
+                }
             }
         }
     }
@@ -672,9 +791,14 @@ class SftpController(
     }
 
     /** Resolves a pending [uploadConflict]; a no-op if there isn't one. */
-    fun resolveConflict(resolution: ConflictResolution) {
+    /**
+     * @param applyToAll remembers [resolution] for the rest of this batch, so a large
+     *   queue is answered once instead of per file.
+     */
+    fun resolveConflict(resolution: ConflictResolution, applyToAll: Boolean = false) {
         val conflict = _uploadConflict.value ?: return
         _uploadConflict.value = null
+        if (applyToAll) standingConflictPolicy.set(resolution)
         when (resolution) {
             ConflictResolution.OVERWRITE ->
                 enqueueUploadNow(conflict.source, conflict.displayName, conflict.remotePath)
@@ -737,7 +861,9 @@ class SftpController(
             pumpJob = scope.launch {
                 while (isActive) {
                     queue.adaptConcurrency()
-                    val next = queue.nextToStart()
+                    // Holding rather than failing: the user asked to wait for Wi-Fi, not
+                    // to lose the queue.
+                    val next = if (mayStartTransfers()) queue.nextToStart() else null
                     if (next == null) {
                         // Nothing eligible right now. Re-check once after a beat instead of
                         // recursing into pump(): this job is still active here, so pump()'s
@@ -778,6 +904,17 @@ class SftpController(
                 }
             }
         }
+        // Verify before the channel is closed. Doing it after left verifyIntegrity
+        // holding a closed client, so every check silently degraded to UNVERIFIED and
+        // the feature never actually ran.
+        val integrity = if (result.isSuccess && transfer.id !in cancelled) {
+            runCatching {
+                withContext(Dispatchers.IO) { verifyIntegrity(transferClient, transfer) }
+            }.getOrDefault(IntegrityResult.UNVERIFIED)
+        } else {
+            IntegrityResult.UNVERIFIED
+        }
+
         transferClient?.close()
         transferClients.remove(transfer.id)
         when {
@@ -791,14 +928,391 @@ class SftpController(
                     stagingFile(transfer).delete()
                 }
             }
-            result.isSuccess -> queue.markCompleted(transfer.id)
+            result.isSuccess -> {
+                if (integrity == IntegrityResult.MISMATCH) {
+                    queue.fail(transfer.id, TransferErrorKind.INTEGRITY_MISMATCH)
+                } else {
+                    queue.markCompleted(transfer.id)
+                }
+            }
             else -> queue.fail(transfer.id, SftpClient.classify(result.exceptionOrNull()!!))
         }
     }
 
+    // ---- Phase 3: second pane (24) ----
+
+    private val _secondPane = MutableStateFlow<BrowserState?>(null)
+
+    /**
+     * An optional second directory view on the same session.
+     *
+     * Moving a file between two distant paths meant navigating there, remembering, coming
+     * back. Two panes make it one drag. Null means the pane is closed, which is also the
+     * signal the UI uses to fall back to the single-pane layout on a phone.
+     */
+    val secondPane: StateFlow<BrowserState?> = _secondPane.asStateFlow()
+
+    fun openSecondPane(path: String = _browser.value.path) {
+        _secondPane.value = BrowserState(path = RemotePath.normalize(path), loading = true)
+        navigateSecondPane(path)
+    }
+
+    fun closeSecondPane() {
+        _secondPane.value = null
+    }
+
+    fun navigateSecondPane(path: String) {
+        scope.launch {
+            val current = _secondPane.value ?: return@launch
+            _secondPane.value = current.copy(loading = true, errorKind = null)
+            val result = runCatching { withContext(Dispatchers.IO) { client().list(path) } }
+            _secondPane.value = result.fold(
+                onSuccess = { entries ->
+                    val previous = _secondPane.value ?: current
+                    BrowserState(
+                        path = RemotePath.normalize(path),
+                        loading = false,
+                        rawEntries = entries,
+                        sortMode = previous.sortMode,
+                        sortDescending = previous.sortDescending,
+                        showHidden = previous.showHidden,
+                    ).let { it.copy(entries = EntrySort.apply(entries, it.sortMode, it.sortDescending, it.showHidden)) }
+                },
+                onFailure = { failure ->
+                    (_secondPane.value ?: current).copy(loading = false, errorKind = SftpClient.classify(failure))
+                },
+            )
+        }
+    }
+
+    /** Copies from whichever pane holds [entry] into the other one, on this session. */
+    suspend fun copyBetweenPanes(entry: RemoteEntry, toSecondPane: Boolean): Result<String> = runCatching {
+        val destination = if (toSecondPane) {
+            _secondPane.value?.path ?: error("the second pane is not open")
+        } else {
+            _browser.value.path
+        }
+        withContext(Dispatchers.IO) {
+            val sftp = client()
+            val name = nonCollidingName(destination, entry.name)
+            val target = RemotePath.join(destination, RemotePath.sanitizeDownloadName(name))
+            // cp -a on the server: never round-trips the bytes through the phone.
+            sftp.exec(RemoteOps.duplicateCommand(entry.path, target)) ?: error("the server did not allow copy")
+            target
+        }
+    }.onSuccess {
+        refresh()
+        _secondPane.value?.let { navigateSecondPane(it.path) }
+    }
+
+    // ---- Phase 3: browsing, recovery and previews (22-30) ----
+
+    /**
+     * Recoverable delete: moves into the trash instead of unlinking.
+     *
+     * Falls back to a real delete only when the entry is already inside the trash —
+     * emptying it has to actually remove things.
+     */
+    suspend fun trash(entry: RemoteEntry): Result<String> = runCatching {
+        withContext(Dispatchers.IO) {
+            val sftp = client()
+            val home = sftp.home()
+            if (RemoteTrash.isInTrash(entry.path, home)) {
+                sftp.delete(entry.path, entry.isDirectory)
+                return@withContext entry.path
+            }
+            val dir = RemoteTrash.trashDir(home)
+            if (!sftp.exists(dir)) sftp.makeDirectory(dir)
+            val target = RemoteTrash.trashedPath(home, entry.path, System.currentTimeMillis())
+            sftp.rename(entry.path, target)
+            target
+        }
+    }.onSuccess { refresh() }
+
+    /** Everything currently recoverable, newest first. */
+    suspend fun listTrash(): Result<List<Pair<RemoteEntry, String>>> = runCatching {
+        withContext(Dispatchers.IO) {
+            val sftp = client()
+            val dir = RemoteTrash.trashDir(sftp.home())
+            if (!sftp.exists(dir)) return@withContext emptyList()
+            sftp.list(dir)
+                .mapNotNull { e -> RemoteTrash.parseTrashedName(e.name)?.let { (stamp, name) -> Triple(e, name, stamp) } }
+                .sortedByDescending { it.third }
+                .map { it.first to it.second }
+        }
+    }
+
+    /** Puts a trashed entry back, into [destinationDir] or the current directory. */
+    suspend fun restoreFromTrash(entry: RemoteEntry, destinationDir: String? = null): Result<String> = runCatching {
+        withContext(Dispatchers.IO) {
+            val sftp = client()
+            val original = RemoteTrash.parseTrashedName(entry.name)?.second
+                ?: error("not a trashed entry")
+            val dir = destinationDir ?: _browser.value.path
+            val target = RemotePath.join(dir, nonCollidingName(dir, original))
+            sftp.rename(entry.path, target)
+            target
+        }
+    }.onSuccess { refresh() }
+
+    /**
+     * First [maxBytes] of a file without downloading the rest (#28).
+     *
+     * Opening a one-gigabyte log used to mean transferring all of it. This reads a window
+     * and decodes it with the file's own charset, so a non-UTF-8 config is readable too.
+     */
+    suspend fun previewHead(path: String, maxBytes: Long = PREVIEW_WINDOW): Result<String> = runCatching {
+        withContext(Dispatchers.IO) {
+            val out = java.io.ByteArrayOutputStream()
+            runCatching {
+                client().download(path, LimitedOutputStream(out, maxBytes), 0L) {}
+            }.exceptionOrNull()?.let { if (it !is TransferTooLargeException) throw it }
+            val bytes = out.toByteArray()
+            TextEncoding.decode(bytes, TextEncoding.detect(bytes))
+        }
+    }
+
+    /** Last [maxBytes] of a file, for the end of a long log. */
+    suspend fun previewTail(path: String, maxBytes: Long = PREVIEW_WINDOW): Result<String> = runCatching {
+        withContext(Dispatchers.IO) {
+            val sftp = client()
+            val size = sftp.size(path)
+            val from = if (size > maxBytes) size - maxBytes else 0L
+            val out = java.io.ByteArrayOutputStream()
+            runCatching {
+                sftp.download(path, LimitedOutputStream(out, maxBytes), from) {}
+            }.exceptionOrNull()?.let { if (it !is TransferTooLargeException) throw it }
+            val bytes = out.toByteArray()
+            TextEncoding.decode(bytes, TextEncoding.detect(bytes))
+        }
+    }
+
+    /**
+     * Copies straight from another server to this one (#25), without staging the whole
+     * file on the phone.
+     *
+     * A pipe rather than a temp file: a 4 GB database dump moved between two servers
+     * should not need 4 GB of free space on a handset, and the phone is only the relay.
+     */
+    suspend fun copyFromRemote(
+        sourceController: SftpController,
+        sourceEntry: RemoteEntry,
+        destinationDir: String,
+    ): Result<String> = runCatching {
+        require(!sourceEntry.isDirectory) { "only files can be copied between servers" }
+        withContext(Dispatchers.IO) {
+            val source = sourceController.client()
+            val destination = client()
+            val name = nonCollidingName(destinationDir, sourceEntry.name)
+            val target = RemotePath.join(destinationDir, RemotePath.sanitizeDownloadName(name))
+
+            val pipeIn = java.io.PipedInputStream(PIPE_BUFFER)
+            val pipeOut = java.io.PipedOutputStream(pipeIn)
+            val pump = kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    pipeOut.use { out -> source.download(sourceEntry.path, out, 0L) {} }
+                } catch (_: Exception) {
+                    runCatching { pipeOut.close() }
+                }
+            }
+            try {
+                pipeIn.use { input -> destination.upload(input, target, 0L) {} }
+            } finally {
+                pump.cancel()
+            }
+            target
+        }
+    }.onSuccess { refresh() }
+
+    /**
+     * Downloads [entry] into the share staging directory and returns the local copy, so
+     * the UI can hand it to another app (#30). Bounded: a share is a convenience, not a
+     * reason to fill the cache with a database dump.
+     */
+    suspend fun stageForShare(entry: RemoteEntry, cacheRoot: File): Result<File> = runCatching {
+        require(!entry.isDirectory) { "a directory cannot be shared as a file" }
+        withContext(Dispatchers.IO) {
+            val dir = File(cacheRoot, "shared").apply { mkdirs() }
+            val target = File(dir, RemotePath.sanitizeDownloadName(entry.name))
+            java.io.FileOutputStream(target).use { out ->
+                client().download(entry.path, LimitedOutputStream(out, MAX_SHARE_BYTES), 0L) {}
+            }
+            target
+        }
+    }
+
+    // ---- Phase 2: server-side operations (13-21) ----
+
+    /**
+     * Result of a shell operation. [output] is whatever the command printed; a null
+     * result means the server would not run it at all, which callers must surface rather
+     * than treat as success — "exec is disabled" and "the command did nothing" look
+     * identical otherwise.
+     */
+    suspend fun runRemote(command: String): Result<String> = runCatching {
+        withContext(Dispatchers.IO) {
+            client().exec(command) ?: error("the server did not allow this command")
+        }
+    }
+
+    /** Last lines of a remote file, for the follow view. */
+    suspend fun tailFile(path: String, lines: Int = 200): Result<String> =
+        runRemote(RemoteOps.tailCommand(path, lines))
+
+    /**
+     * Lines appended since [fromOffset], plus the new offset to poll from next time.
+     * Returns an empty string when nothing was appended.
+     */
+    suspend fun tailSince(path: String, fromOffset: Long): Result<Pair<String, Long>> = runCatching {
+        withContext(Dispatchers.IO) {
+            val sftp = client()
+            val size = sftp.size(path)
+            // A file that shrank was rotated: start over rather than reading from an
+            // offset that now points into the middle of a different file.
+            val from = if (size in 0 until fromOffset) 0L else fromOffset
+            if (size <= from) return@withContext "" to from
+            val text = sftp.exec(RemoteOps.tailSinceCommand(path, from)) ?: error("exec unavailable")
+            text to size
+        }
+    }
+
+    /** Recursive fixed-string search under [dir]. */
+    suspend fun searchInFiles(
+        dir: String,
+        needle: String,
+        ignoreCase: Boolean = true,
+    ): Result<List<RemoteOps.SearchHit>> = runCatching {
+        require(needle.isNotBlank()) { "empty search" }
+        withContext(Dispatchers.IO) {
+            val out = client().exec(RemoteOps.grepCommand(dir, needle, ignoreCase))
+                ?: error("the server did not allow search")
+            RemoteOps.parseGrepOutput(out)
+        }
+    }
+
+    /** Runs [template] against every selected path, stopping at the first failure. */
+    suspend fun runOnSelection(template: String, entries: List<RemoteEntry>): Result<String> {
+        val command = RemoteOps.buildSelectionCommand(template, entries.map { it.path })
+            ?: return Result.failure(IllegalArgumentException("nothing to run"))
+        return runRemote(command).onSuccess { refresh() }
+    }
+
+    /** Unpacks an archive on the server, next to itself unless [destDir] says otherwise. */
+    suspend fun extractArchive(entry: RemoteEntry, destDir: String? = null): Result<String> {
+        val target = destDir ?: RemotePath.parentOf(entry.path)
+        val command = RemoteOps.extractCommand(entry.path, target)
+            ?: return Result.failure(IllegalArgumentException("not a supported archive"))
+        return runRemote(command).onSuccess { refresh() }
+    }
+
+    fun canExtract(entry: RemoteEntry): Boolean = !entry.isDirectory && RemoteOps.isExtractable(entry.name)
+
+    /** Changes owner, and group when given. */
+    suspend fun chown(
+        entry: RemoteEntry,
+        owner: String,
+        group: String? = null,
+        recursive: Boolean = false,
+    ): Result<String> {
+        val command = RemoteOps.chownCommand(entry.path, owner, group, recursive)
+            ?: return Result.failure(IllegalArgumentException("invalid user or group name"))
+        return runRemote(command).onSuccess { refresh() }
+    }
+
+    suspend fun createSymlink(targetPath: String, linkPath: String): Result<String> =
+        runRemote(RemoteOps.symlinkCommand(targetPath, linkPath)).onSuccess { refresh() }
+
+    suspend fun createHardLink(targetPath: String, linkPath: String): Result<String> =
+        runRemote(RemoteOps.hardLinkCommand(targetPath, linkPath)).onSuccess { refresh() }
+
+    suspend fun createEmptyFile(path: String): Result<String> =
+        runRemote(RemoteOps.touchCommand(path)).onSuccess { refresh() }
+
+    suspend fun duplicate(entry: RemoteEntry): Result<String> {
+        val copyName = nonCollidingName(RemotePath.parentOf(entry.path), entry.name)
+        val destination = RemotePath.join(RemotePath.parentOf(entry.path), copyName)
+        return runRemote(RemoteOps.duplicateCommand(entry.path, destination)).onSuccess { refresh() }
+    }
+
+    /** Diffs the remote file against [newText] so a save can be reviewed before it lands. */
+    suspend fun diffAgainstRemote(
+        remotePath: String,
+        newText: String,
+        maxBytes: Long = 512_000,
+    ): Result<TextDiff.Result> = runCatching {
+        withContext(Dispatchers.IO) {
+            TextDiff.diff(client().downloadText(remotePath, maxBytes), newText)
+        }
+    }
+
+    /**
+     * Applies a rename plan. Stops at the first failure and reports how far it got, so a
+     * partially applied batch is visible rather than silently mixed.
+     */
+    suspend fun applyBatchRename(directory: String, plan: BatchRename.Plan): Result<Int> = runCatching {
+        withContext(Dispatchers.IO) {
+            val sftp = client()
+            var done = 0
+            for (change in plan.applicable) {
+                sftp.rename(
+                    RemotePath.join(directory, change.from),
+                    RemotePath.join(directory, change.to),
+                )
+                done++
+            }
+            done
+        }
+    }.onSuccess { refresh() }
+
     private fun stagingFile(transfer: Transfer): File = File(cacheDir, "sftp-download-${transfer.id}")
 
-    private fun download(sftp: SftpClient, transfer: Transfer) {
+    enum class IntegrityResult { MATCH, MISMATCH, UNVERIFIED }
+
+    /**
+     * Compares what the server has against what this device has, using the server's own
+     * sha256 and a local hash of the same bytes.
+     *
+     * [IntegrityResult.UNVERIFIED] is not a failure. Servers that disable `exec`, and
+     * files too large to be worth hashing twice, both land here; the transfer stands.
+     * Only a hash that actually disagrees fails the transfer, because that is the one
+     * case where reporting success would be a lie.
+     */
+    private fun verifyIntegrity(sftp: SftpClient?, transfer: Transfer): IntegrityResult {
+        val client = sftp ?: return IntegrityResult.UNVERIFIED
+        val size = transfer.totalBytes
+        if (size <= 0L || size > MAX_VERIFY_BYTES) return IntegrityResult.UNVERIFIED
+
+        val remote = client.remoteSha256(transfer.remotePath) ?: return IntegrityResult.UNVERIFIED
+        val local = when (transfer.direction) {
+            TransferDirection.DOWNLOAD -> {
+                val staged = stagingFile(transfer)
+                // On the success path the staging file is already copied out and deleted,
+                // so a download is verified from the destination the user actually got.
+                if (staged.exists()) sha256Of(staged.inputStream())
+                else runCatching {
+                    contentResolver.openInputStream(Uri.parse(transfer.localUri))?.use { sha256Of(it) }
+                }.getOrNull()
+            }
+            TransferDirection.UPLOAD -> runCatching {
+                contentResolver.openInputStream(Uri.parse(transfer.localUri))?.use { sha256Of(it) }
+            }.getOrNull()
+        } ?: return IntegrityResult.UNVERIFIED
+
+        return if (local.equals(remote, ignoreCase = true)) IntegrityResult.MATCH else IntegrityResult.MISMATCH
+    }
+
+    private fun sha256Of(stream: java.io.InputStream): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        val buf = ByteArray(64 * 1024)
+        while (true) {
+            val read = stream.read(buf)
+            if (read <= 0) break
+            digest.update(buf, 0, read)
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
+    private suspend fun download(sftp: SftpClient, transfer: Transfer) {
         val staging = stagingFile(transfer)
         // Pre-resume consistency check: trust transfer.transferredBytes only if the
         // staging file on disk actually holds that many bytes already. A mismatch (no
@@ -823,28 +1337,115 @@ class SftpController(
             staging.delete()
         }
 
-        FileOutputStream(staging, resumeFrom > 0L).use { sink ->
+        // A fresh, large download is worth splitting across channels; a resumed one is
+        // not, because the ranges were planned against the original offsets.
+        val plan = if (resumeFrom == 0L) MultipartPlan.planFor(transfer.totalBytes) else emptyList()
+        if (plan.size > 1 && MultipartPlan.covers(plan, transfer.totalBytes)) {
+            downloadMultipart(transfer, staging, plan)
+        } else {
+            downloadSingleStream(sftp, transfer, staging, resumeFrom)
+        }
+        deliverStagedDownload(transfer, staging)
+    }
+
+    /**
+     * Downloads [plan]'s ranges concurrently, each on its own channel, into one
+     * pre-sized file.
+     *
+     * Every part writes at its own absolute offset through its own RandomAccessFile
+     * handle, so the parts never contend and a partial failure leaves a file that is
+     * simply incomplete rather than interleaved. Any part failing fails the whole
+     * transfer: a file assembled from some new ranges and some missing ones is exactly
+     * the silent corruption the resume guard exists to prevent.
+     */
+    private suspend fun downloadMultipart(transfer: Transfer, staging: File, plan: List<ByteRange>) {
+        staging.delete()
+        java.io.RandomAccessFile(staging, "rw").use { it.setLength(transfer.totalBytes) }
+
+        // One shared counter, advanced by each part's delta. Reporting
+        // "completed parts + my own bytes" made every running part report only its own
+        // progress, and markProgress takes the max — so a four-way split showed roughly
+        // a quarter of the real figure until parts began finishing.
+        val done = java.util.concurrent.atomic.AtomicLong(0L)
+        coroutineScope {
+            plan.map { range ->
+                async(Dispatchers.IO) {
+                    val channel = session.openSftp() ?: throw IllegalStateException("session is not connected")
+                    try {
+                        java.io.RandomAccessFile(staging, "rw").use { raf ->
+                            raf.seek(range.start)
+                            val limiter = RateLimiter(rateLimitBytesPerSecond())
+                            val sink = RangeOutputStream(raf, range.length)
+                            val throttled = if (limiter.unlimited) sink else ThrottledOutputStream(sink, limiter)
+                            var reported = 0L
+                            runCatching {
+                                channel.download(transfer.remotePath, throttled, resumeFrom = range.start) { _ ->
+                                    if (transfer.id in cancelled) throw InterruptedTransfer()
+                                    val delta = sink.written - reported
+                                    if (delta > 0) {
+                                        reported = sink.written
+                                        queue.markProgress(transfer.id, done.addAndGet(delta))
+                                    }
+                                }
+                            }.exceptionOrNull()?.let { failure ->
+                                // The range filling up is how a range download ends: JSch
+                                // has no "read n bytes" call, so the stream stops it.
+                                if (failure !is RangeCompleteException) throw failure
+                            }
+                            if (sink.written != range.length) {
+                                throw java.io.IOException(
+                                    "part ${range.index} got ${sink.written} of ${range.length} bytes",
+                                )
+                            }
+                            // Settle any bytes the progress callback did not see.
+                            val unreported = sink.written - reported
+                            if (unreported > 0) queue.markProgress(transfer.id, done.addAndGet(unreported))
+                        }
+                    } finally {
+                        runCatching { channel.close() }
+                    }
+                }
+            }.awaitAll()
+        }
+    }
+
+    private fun downloadSingleStream(sftp: SftpClient, transfer: Transfer, staging: File, resumeFrom: Long) {
+        val limiter = RateLimiter(rateLimitBytesPerSecond())
+        FileOutputStream(staging, resumeFrom > 0L).use { rawSink ->
+            val sink = if (limiter.unlimited) rawSink else ThrottledOutputStream(rawSink, limiter)
             sftp.download(transfer.remotePath, sink, resumeFrom = resumeFrom) { total ->
                 if (transfer.id in cancelled) throw InterruptedTransfer()
                 queue.markProgress(transfer.id, total)
             }
         }
+    }
 
-        // Success: copy the completed staging file to the user's chosen SAF destination,
-        // then clean up. Cleanup only happens here and on a genuine cancel (see
-        // runTransfer) — a paused or failed transfer keeps its staging file so a later
-        // resume/retry can reuse the bytes already on disk.
+    /**
+     * Copies the completed staging file to the user's chosen SAF destination, then cleans
+     * up. Cleanup only happens here and on a genuine cancel (see runTransfer) — a paused
+     * or failed transfer keeps its staging file so a later resume/retry can reuse the
+     * bytes already on disk.
+     */
+    private fun deliverStagedDownload(transfer: Transfer, staging: File) {
         val uri = Uri.parse(transfer.localUri)
+        // A queue restored after process death can hold a URI whose grant is gone. Say so
+        // in terms the queue understands instead of letting SecurityException escape.
+        if (!SafPermissions.isAccessible(contentResolver, uri)) {
+            throw LocalUriUnavailableException(transfer.localUri)
+        }
         val sink = contentResolver.openOutputStream(uri, "wt")
-            ?: throw IllegalStateException("cannot open destination")
+            ?: throw LocalUriUnavailableException(transfer.localUri)
         sink.use { out -> staging.inputStream().use { it.copyTo(out) } }
         staging.delete()
     }
 
     private fun upload(sftp: SftpClient, transfer: Transfer) {
         val uri = Uri.parse(transfer.localUri)
+        if (!SafPermissions.isAccessible(contentResolver, uri)) {
+            throw LocalUriUnavailableException(transfer.localUri)
+        }
         val source = contentResolver.openInputStream(uri)
-            ?: throw IllegalStateException("cannot open source")
+            ?: throw LocalUriUnavailableException(transfer.localUri)
         source.use { input ->
             // Pre-resume consistency check: trust transfer.transferredBytes only if the
             // remote file's current size still matches it. A mismatch (the file changed
@@ -858,8 +1459,20 @@ class SftpController(
             }
             if (resumeFrom == 0L && transfer.transferredBytes != 0L) queue.resetProgress(transfer.id)
 
+            // Ask the server whether this fits before sending gigabytes at a full disk.
+            // A server that will not answer df is not a reason to refuse the upload.
+            val outstanding = (transfer.totalBytes - resumeFrom).coerceAtLeast(0L)
+            val free = sftp.freeSpaceBytes(RemotePath.parentOf(transfer.remotePath))
+            if (free != null && transfer.totalBytes > 0 &&
+                !RemoteCommands.fitsInFreeSpace(outstanding, free)
+            ) {
+                throw NotEnoughRemoteSpaceException(outstanding, free)
+            }
+
             skipFully(input, resumeFrom)
-            sftp.upload(input, transfer.remotePath, resumeFrom = resumeFrom) { total ->
+            val limiter = RateLimiter(rateLimitBytesPerSecond())
+            val throttled = if (limiter.unlimited) input else ThrottledInputStream(input, limiter)
+            sftp.upload(throttled, transfer.remotePath, resumeFrom = resumeFrom) { total ->
                 if (transfer.id in cancelled) throw InterruptedTransfer()
                 queue.markProgress(transfer.id, total)
             }
@@ -890,6 +1503,18 @@ class SftpController(
 
     private companion object {
         const val MAX_RENAME_ATTEMPTS = 500
+
+        /** How much of a large file a preview reads before stopping. */
+        const val PREVIEW_WINDOW = 256L * 1024
+
+        /** Relay buffer for a server-to-server copy; the phone never holds the whole file. */
+        const val PIPE_BUFFER = 1 shl 16
+
+        /** Ceiling for a file staged into the share cache. */
+        const val MAX_SHARE_BYTES = 256L * 1024 * 1024
+
+        /** Past this, hashing the file twice costs more than the assurance is worth. */
+        const val MAX_VERIFY_BYTES = 512L * 1024 * 1024
         const val PUMP_IDLE_RECHECK_MS = 50L
     }
 }

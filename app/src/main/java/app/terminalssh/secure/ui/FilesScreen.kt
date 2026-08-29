@@ -74,13 +74,21 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     ) { uri ->
         val entry = pendingDownload
         pendingDownload = null
-        if (uri != null && entry != null) sftp.enqueueDownload(entry, uri)
+        if (uri != null && entry != null) {
+            // Persist the grant before the URI is written to the queue file, or a resume
+            // after process death has a path it is no longer allowed to open.
+            app.terminalssh.secure.sftp.SafPermissions.takePersistable(context.contentResolver, uri)
+            sftp.enqueueDownload(entry, uri)
+        }
     }
 
     val openLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments(),
     ) { uris ->
-        uris.forEach { uri -> sftp.enqueueUpload(uri, viewModel.displayNameFor(uri), browser.path) }
+        uris.forEach { uri ->
+            app.terminalssh.secure.sftp.SafPermissions.takePersistable(context.contentResolver, uri)
+            sftp.enqueueUpload(uri, viewModel.displayNameFor(uri), browser.path)
+        }
     }
 
     // One destination folder for the whole batch, picked once via SAF, rather than a
@@ -91,6 +99,7 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
         val entries = pendingBatchDownload
         pendingBatchDownload = emptyList()
         if (treeUri != null && entries.isNotEmpty()) {
+            app.terminalssh.secure.sftp.SafPermissions.takePersistableTree(context.contentResolver, treeUri)
             val parentDocUri = DocumentsContract.buildDocumentUriUsingTree(
                 treeUri,
                 DocumentsContract.getTreeDocumentId(treeUri),
@@ -100,7 +109,10 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                 val destination = runCatching {
                     DocumentsContract.createDocument(context.contentResolver, parentDocUri, "application/octet-stream", name)
                 }.getOrNull()
-                if (destination != null) sftp.enqueueDownload(entry, destination)
+                if (destination != null) {
+                    app.terminalssh.secure.sftp.SafPermissions.takePersistable(context.contentResolver, destination)
+                    sftp.enqueueDownload(entry, destination)
+                }
             }
         }
     }
@@ -112,6 +124,7 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
         val entry = pendingFolderDownload
         pendingFolderDownload = null
         if (treeUri != null && entry != null) {
+            app.terminalssh.secure.sftp.SafPermissions.takePersistableTree(context.contentResolver, treeUri)
             sftp.downloadFolder(entry.path, treeUri, entry.name)
         }
     }
@@ -151,6 +164,7 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
             listDirectories = sftp::listDirectories,
             onChmod = { entry, mode -> sftp.chmod(entry, mode) },
             onChmodRecursive = { path, mode -> sftp.chmodRecursive(path, mode) },
+            countRemoteFiles = { path -> sftp.countRemoteFiles(path) },
             onDownloadFolder = { entry ->
                 pendingFolderDownload = entry
                 folderDownloadTreeLauncher.launch(null)

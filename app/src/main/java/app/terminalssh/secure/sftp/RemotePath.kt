@@ -106,4 +106,14 @@ object RemotePath {
         val (stem, ext) = splitExtension(name)
         return if (ext.isEmpty()) "$stem ($n)" else "$stem ($n).$ext"
     }
+
+    /** The directory holding [path]; the root is its own parent. */
+    fun parentOf(path: String): String {
+        val normalized = normalize(path)
+        val cut = normalized.lastIndexOf('/')
+        return when {
+            cut <= 0 -> ROOT
+            else -> normalized.substring(0, cut)
+        }
+    }
 }

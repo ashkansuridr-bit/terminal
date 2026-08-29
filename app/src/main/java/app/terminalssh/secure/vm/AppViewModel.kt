@@ -32,6 +32,8 @@ import app.terminalssh.secure.security.SecretIo
 import app.terminalssh.secure.security.PrivateKeyFormat
 import app.terminalssh.secure.security.VaultAad
 import app.terminalssh.secure.security.VaultLimits
+import app.terminalssh.secure.settings.SettingsImportPreview
+import app.terminalssh.secure.settings.SettingsRegistry
 import app.terminalssh.secure.service.HostShortcuts
 import app.terminalssh.secure.service.SshForegroundService
 import app.terminalssh.secure.sftp.SftpController
@@ -47,6 +49,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -57,6 +60,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val sessions = container.sessions
     val settings = container.settings
     private val account = accountProvider(app)
+
+    init {
+        viewModelScope.launch {
+            container.settingsStore.revision.drop(1).collect {
+                val enabled = container.settingsStore.get(SettingsRegistry.keepAlive)
+                sessions.sessions.value.forEach { it.setKeepAlive(enabled) }
+            }
+        }
+    }
 
     // ---- sftp ----
 
@@ -74,7 +86,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun sftpControllerFor(session: SshSession): SftpController =
         sftpControllers.getOrPut(session.id) {
             val application = getApplication<Application>()
-            SftpController(session, application.contentResolver, application.cacheDir, viewModelScope)
+            SftpController(
+                session,
+                application.contentResolver,
+                application.cacheDir,
+                viewModelScope,
+                // Read per transfer, so changing the ceiling takes effect on the next file.
+                rateLimitBytesPerSecond = { container.settings.transferLimitKbPerSecond * 1024L },
+                mayStartTransfers = { !container.settings.transfersWifiOnly || onUnmeteredNetwork() },
+            ).also { app.terminalssh.secure.sftp.TransferCoordinator.register(session.id, it) }
         }
 
     /** False in market builds, which ship without any account integration. */
@@ -225,24 +245,38 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** @param onApplied invoked on the main thread so the settings screen can re-read values. */
-    fun importSettings(uri: Uri, onApplied: () -> Unit) {
+    fun previewSettingsImport(uri: Uri, onPreview: (SettingsImportPreview) -> Unit) {
         viewModelScope.launch {
-            val applied = withContext(Dispatchers.IO) {
+            val preview = withContext(Dispatchers.IO) {
                 runCatching {
-                    val text = getApplication<Application>().contentResolver.openInputStream(uri)
-                        ?.use { it.readBytes().toString(Charsets.UTF_8) }
+                    val bytes = getApplication<Application>().contentResolver.openInputStream(uri)
+                        ?.use { SecretIo.readBounded(it, MAX_SETTINGS_IMPORT_BYTES) }
                         ?: error("cannot read settings file")
-                    container.settingsStore.importJson(text)
+                    try {
+                        container.settingsStore.previewImport(bytes.toString(Charsets.UTF_8))
+                            ?: error("invalid settings file")
+                    } finally {
+                        bytes.fill(0)
+                    }
                 }.getOrNull()
             }
-            if (applied == null) {
+            if (preview == null) {
                 _toast.value = string(R.string.settings_import_failed)
             } else {
-                onApplied()
-                _toast.value = getApplication<Application>()
-                    .getString(R.string.settings_imported, applied)
+                onPreview(preview)
             }
+        }
+    }
+
+    fun applySettingsImport(preview: SettingsImportPreview): Boolean {
+        val applied = container.settingsStore.applyImport(preview)
+        return if (applied == null) {
+            _toast.value = string(R.string.settings_import_stale)
+            false
+        } else {
+            _toast.value = getApplication<Application>()
+                .getString(R.string.settings_imported, applied)
+            true
         }
     }
 
@@ -266,6 +300,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 profile = profile,
                 client = container.client,
                 keepAlive = settings.keepAlive,
+                // Read per output chunk so toggling it takes effect on the next line.
+                maskSecretsInOutput = {
+                    container.settingsStore.get(app.terminalssh.secure.settings.SettingsRegistry.maskSecretsInOutput)
+                },
+                terminalType = settings.terminalType,
                 onClipboardCopy = { text -> copyToClipboard(context, text) },
                 onPasteRequest = { pasteRequested.value = true },
             )
@@ -321,7 +360,21 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun knownHosts(): List<KnownHostsVerifier.KnownHost> = container.knownHosts.all()
 
+    /**
+     * True when the device is on a connection the user is not paying per byte for.
+     *
+     * Unknown counts as unmetered: refusing to transfer because the network state could
+     * not be read would strand the queue on a device that is perfectly fine.
+     */
+    private fun onUnmeteredNetwork(): Boolean = runCatching {
+        val manager = getApplication<Application>()
+            .getSystemService(android.net.ConnectivityManager::class.java) ?: return@runCatching true
+        val capabilities = manager.getNetworkCapabilities(manager.activeNetwork) ?: return@runCatching true
+        capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+    }.getOrDefault(true)
+
     fun closeSession(id: String) {
+        app.terminalssh.secure.sftp.TransferCoordinator.unregister(id)
         sftpControllers.remove(id)?.close()
         sessions.close(id)
         SshForegroundService.sync(getApplication(), sessions.liveCount())
@@ -377,6 +430,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
         }
+    }
+
+    private companion object {
+        const val MAX_SETTINGS_IMPORT_BYTES = 1_048_576
     }
 
 

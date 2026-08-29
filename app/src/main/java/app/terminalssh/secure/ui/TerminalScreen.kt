@@ -48,13 +48,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,14 +71,17 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.terminalssh.secure.R
+import app.terminalssh.secure.settings.SettingsRegistry
 import app.terminalssh.secure.ssh.SshSession
 import app.terminalssh.secure.ssh.SshSessionState
 import app.terminalssh.secure.ssh.TerminalKey
 import app.terminalssh.secure.ssh.TerminalModifier
 import app.terminalssh.secure.ui.theme.Stroke
 import app.terminalssh.secure.ui.theme.TextSecondary
+import app.terminalssh.secure.ui.theme.TerminalPalettes
 import app.terminalssh.secure.ui.theme.Turquoise
 import app.terminalssh.secure.vm.AppViewModel
 import kotlinx.coroutines.launch
@@ -84,6 +90,16 @@ import org.connectbot.terminal.Terminal
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
+    val settingsRevision by viewModel.settingsStore.revision.collectAsStateWithLifecycle()
+    val settingsStore = viewModel.settingsStore
+    val palette = remember(settingsRevision) {
+        val id = settingsStore.get(SettingsRegistry.theme)
+        TerminalPalettes.firstOrNull { it.id == id }
+            ?: TerminalPalettes.first { it.id == SettingsRegistry.theme.default }
+    }
+    val fontSize = settingsStore.get(SettingsRegistry.fontSize)
+    val hapticKeys = settingsStore.get(SettingsRegistry.hapticKeys)
+    val keepScreenOn = settingsStore.get(SettingsRegistry.keepScreenOn)
     val sessions by viewModel.sessions.sessions.collectAsStateWithLifecycle()
     val activeId by viewModel.sessions.activeId.collectAsStateWithLifecycle()
     val active = sessions.firstOrNull { it.id == activeId }
@@ -146,6 +162,12 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     val rootView = LocalView.current
     val keyboardScope = rememberCoroutineScope()
 
+    DisposableEffect(rootView, active.id, keepScreenOn) {
+        val previous = rootView.keepScreenOn
+        rootView.keepScreenOn = keepScreenOn
+        onDispose { rootView.keepScreenOn = previous }
+    }
+
     DisposableEffect(active.id) {
         onDispose { active.terminalInput.clearTransients() }
     }
@@ -197,14 +219,19 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
         )
         StatusBar(active)
         Box(Modifier.weight(1f).fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
-            Terminal(
-                terminalEmulator = active.emulator,
-                keyboardEnabled = true,
-                showSoftKeyboard = true,
-                focusRequester = terminalFocusRequester,
-                modifierManager = active.terminalInput,
-                onPasteRequest = { active.requestPaste() },
-            )
+            key(active.id, fontSize) {
+                Terminal(
+                    terminalEmulator = active.emulator,
+                    initialFontSize = fontSize.sp,
+                    backgroundColor = palette.background,
+                    foregroundColor = palette.foreground,
+                    keyboardEnabled = true,
+                    showSoftKeyboard = true,
+                    focusRequester = terminalFocusRequester,
+                    modifierManager = active.terminalInput,
+                    onPasteRequest = { active.requestPaste() },
+                )
+            }
         }
         if (composeOpen) {
             ComposeBar(
@@ -219,16 +246,18 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                 onDismiss = { composeOpen = false },
             )
         }
-        KeyToolbar(
-            active,
-            onShowKeyboard = showKeyboard,
-            onSnippets = { snippetsOpen = true },
-            onAgents = { agentSheetOpen = true },
-            onCompose = { composeOpen = !composeOpen },
-            onPortForward = { portForwardOpen = true },
-            composeActive = composeOpen,
-            onTerminalFocus = focusTerminal,
-        )
+        CompositionLocalProvider(LocalTerminalKeyHaptics provides hapticKeys) {
+            KeyToolbar(
+                active,
+                onShowKeyboard = showKeyboard,
+                onSnippets = { snippetsOpen = true },
+                onAgents = { agentSheetOpen = true },
+                onCompose = { composeOpen = !composeOpen },
+                onPortForward = { portForwardOpen = true },
+                composeActive = composeOpen,
+                onTerminalFocus = focusTerminal,
+            )
+        }
         PasteAndHostKeyDialogs(viewModel, active)
         if (portForwardOpen) {
             val forwards by active.portForwards.collectAsStateWithLifecycle()
@@ -536,6 +565,7 @@ private fun ToolKey(
     contentDescription: String? = null,
     onClick: () -> Unit,
 ) {
+    val hapticsEnabled = LocalTerminalKeyHaptics.current
     val haptics = LocalHapticFeedback.current
     val interactions = remember { MutableInteractionSource() }
     val isPressed by interactions.collectIsPressedAsState()
@@ -543,7 +573,7 @@ private fun ToolKey(
     val scale by animateFloatAsState(if (isPressed) 0.92f else 1f, Motion.press(), label = "key-press")
 
     val press: () -> Unit = {
-        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         onClick()
     }
 
@@ -577,3 +607,5 @@ private fun ToolKey(
             .padding(horizontal = 12.dp, vertical = 8.dp),
     )
 }
+
+private val LocalTerminalKeyHaptics = staticCompositionLocalOf { true }

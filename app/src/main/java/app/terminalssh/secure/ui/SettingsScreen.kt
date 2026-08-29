@@ -4,7 +4,6 @@ import android.app.Activity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -19,8 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -35,12 +32,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,17 +44,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.ProgressBarRangeInfo
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.semantics.progressBarRangeInfo
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.setProgress
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.toggleableState
-import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -68,40 +51,31 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.terminalssh.secure.BuildConfig
 import app.terminalssh.secure.R
+import app.terminalssh.secure.settings.SettingsImportPreview
+import app.terminalssh.secure.settings.SettingsRegistry
 import app.terminalssh.secure.ui.theme.Cyan
 import app.terminalssh.secure.ui.theme.Stroke
-import app.terminalssh.secure.ui.theme.TerminalPalettes
 import app.terminalssh.secure.ui.theme.Danger
 import app.terminalssh.secure.ui.theme.TextSecondary
 import app.terminalssh.secure.ui.theme.Turquoise
 import app.terminalssh.secure.vm.AppViewModel
-import kotlin.math.roundToInt
 
 @Composable
 fun SettingsScreen(viewModel: AppViewModel) {
-    val settings = viewModel.settings
     val accountIdentity by viewModel.accountIdentity.collectAsStateWithLifecycle()
     val activity = LocalContext.current as? Activity
-    var theme by remember { mutableStateOf(settings.themeName) }
-    var fontSize by remember { mutableIntStateOf(settings.fontSizeSp) }
-    var pasteConfirm by remember { mutableStateOf(settings.confirmMultilinePaste) }
-    var keepAlive by remember { mutableStateOf(settings.keepAlive) }
-    var biometricLock by remember { mutableStateOf(settings.biometricLock) }
-    var clipboardClear by remember { mutableIntStateOf(settings.clipboardClearSeconds) }
     val context = LocalContext.current
     val lockAvailability = remember { AppLock.availability(context) }
     val known = remember { viewModel.knownHosts() }
     val settingsStore = viewModel.settingsStore
-    // Bumped on every write so rows re-read their values; the store itself is not a
-    // Compose state holder.
-    var revision by remember { mutableIntStateOf(0) }
     var confirmResetAll by remember { mutableStateOf(false) }
+    var pendingImport by remember { mutableStateOf<SettingsImportPreview?>(null) }
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
     ) { uri -> uri?.let { viewModel.exportSettings(it) } }
     val importLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
-    ) { uri -> uri?.let { viewModel.importSettings(it) { revision++ } } }
+    ) { uri -> uri?.let { viewModel.previewSettingsImport(it) { preview -> pendingImport = preview } } }
 
     val window = rememberWindowSize()
     val maxContentWidth = window.width.contentMaxWidth()
@@ -137,7 +111,12 @@ fun SettingsScreen(viewModel: AppViewModel) {
         // Everything the schema knows about, with search, advanced mode, per-row reset
         // and changed markers — all generated rather than hand-written per setting.
         Section(stringResource(R.string.tab_settings)) {
-            SettingsCatalog(store = settingsStore, onChanged = { revision++ })
+            SettingsCatalog(
+                store = settingsStore,
+                isVisible = { spec ->
+                    spec != SettingsRegistry.biometricLock || lockAvailability == LockAvailability.AVAILABLE
+                },
+            )
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = { exportLauncher.launch("terminal-ssh-settings.json") }) {
@@ -156,87 +135,6 @@ fun SettingsScreen(viewModel: AppViewModel) {
             }
         }
 
-        Section(stringResource(R.string.settings_appearance)) {
-            Text(
-                stringResource(R.string.settings_theme),
-                style = MaterialTheme.typography.labelLarge,
-            )
-            Spacer(Modifier.height(12.dp))
-            // Six 48 dp targets plus 6 dp gaps fit the 320 dp content width of a common
-            // 360 dp handset, retaining accessible targets without horizontal clipping.
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TerminalPalettes.forEach { palette ->
-                    val paletteName = stringResource(
-                        when (palette.id) {
-                            "oled" -> R.string.settings_palette_oled
-                            "midnight" -> R.string.settings_palette_midnight
-                            "solarized" -> R.string.settings_palette_solarized
-                            "classic" -> R.string.settings_palette_classic
-                            "amber" -> R.string.settings_palette_amber
-                            else -> R.string.settings_palette_persian_neon
-                        },
-                    )
-                    Box(
-                        Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(palette.background)
-                            .border(
-                                width = if (theme == palette.id) 2.dp else 1.dp,
-                                color = if (theme == palette.id) Turquoise else Stroke,
-                                shape = CircleShape,
-                            )
-                            .semantics { contentDescription = paletteName }
-                            .selectable(
-                                selected = theme == palette.id,
-                                role = Role.RadioButton,
-                            ) {
-                                theme = palette.id
-                                settings.themeName = palette.id
-                            },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            "$",
-                            color = palette.accent,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-            // Formatted through resources so the digit shows in the locale's numerals;
-            // string concatenation would leave a Latin "14" beside Persian counts elsewhere.
-            Text(
-                stringResource(R.string.settings_fontsize_value, fontSize),
-                style = MaterialTheme.typography.labelLarge,
-            )
-            val fontSizeLabel = stringResource(R.string.settings_fontsize)
-            // steps would draw a tick under every one of the 15 sizes, which reads as noise
-            // at this width; the value is already stated above the track.
-            Slider(
-                value = fontSize.toFloat(),
-                onValueChange = { fontSize = it.toInt() },
-                onValueChangeFinished = { settings.fontSizeSp = fontSize },
-                valueRange = 10f..24f,
-                modifier = Modifier.clearAndSetSemantics {
-                    contentDescription = fontSizeLabel
-                    progressBarRangeInfo = ProgressBarRangeInfo(
-                        current = fontSize.toFloat(),
-                        range = 10f..24f,
-                        steps = 13,
-                    )
-                    setProgress { requestedValue ->
-                        val adjustedValue = requestedValue.roundToInt().coerceIn(10, 24)
-                        fontSize = adjustedValue
-                        settings.fontSizeSp = adjustedValue
-                        true
-                    }
-                },
-            )
-        }
-
         Section(stringResource(R.string.settings_security)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Security, null, tint = Turquoise)
@@ -247,24 +145,7 @@ fun SettingsScreen(viewModel: AppViewModel) {
                     color = TextSecondary,
                 )
             }
-            Spacer(Modifier.height(12.dp))
-            ToggleRow(stringResource(R.string.settings_paste_confirm), pasteConfirm) {
-                pasteConfirm = it
-                settings.confirmMultilinePaste = it
-            }
-            ToggleRow(stringResource(R.string.settings_keepalive), keepAlive) {
-                keepAlive = it
-                settings.keepAlive = it
-            }
-
-            // The toggle is only offered when the device can actually satisfy it;
-            // otherwise it explains what to set up instead of silently doing nothing.
-            if (lockAvailability == LockAvailability.AVAILABLE) {
-                ToggleRow(stringResource(R.string.settings_biometric), biometricLock) {
-                    biometricLock = it
-                    settings.biometricLock = it
-                }
-            } else {
+            if (lockAvailability != LockAvailability.AVAILABLE) {
                 Spacer(Modifier.height(8.dp))
                 Text(
                     stringResource(
@@ -278,32 +159,6 @@ fun SettingsScreen(viewModel: AppViewModel) {
                     color = TextSecondary,
                 )
             }
-
-            Spacer(Modifier.height(12.dp))
-            Text(
-                stringResource(R.string.settings_clipboard_clear),
-                style = MaterialTheme.typography.labelLarge,
-            )
-            Text(
-                if (clipboardClear == 0) {
-                    stringResource(R.string.settings_clipboard_clear_off)
-                } else {
-                    stringResource(R.string.settings_clipboard_clear_value, clipboardClear)
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = TextSecondary,
-            )
-            Slider(
-                value = clipboardClear.toFloat(),
-                onValueChange = {
-                    // Snap to 15s steps; 0 is the explicit "keep it" position.
-                    val snapped = (it / 15f).roundToInt() * 15
-                    clipboardClear = snapped
-                    settings.clipboardClearSeconds = snapped
-                },
-                valueRange = 0f..180f,
-                steps = 11,
-            )
 
             Spacer(Modifier.height(12.dp))
             Text(
@@ -346,7 +201,6 @@ fun SettingsScreen(viewModel: AppViewModel) {
             confirmButton = {
                 TextButton(onClick = {
                     settingsStore.resetAll()
-                    revision++
                     confirmResetAll = false
                 }) {
                     Text(stringResource(R.string.settings_reset_all), color = Danger)
@@ -354,6 +208,68 @@ fun SettingsScreen(viewModel: AppViewModel) {
             },
             dismissButton = {
                 TextButton(onClick = { confirmResetAll = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+
+    pendingImport?.let { preview ->
+        AlertDialog(
+            onDismissRequest = { pendingImport = null },
+            title = { Text(stringResource(R.string.settings_import_preview_title)) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        stringResource(
+                            R.string.settings_import_preview_summary,
+                            preview.changes.size,
+                            preview.invalidKeys.size,
+                            preview.unknownKeys.size,
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    preview.changes.forEach { change ->
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "${stringResource(change.spec.titleRes)}: ${change.oldValue} → ${change.newValue}",
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                    if (preview.invalidKeys.isNotEmpty()) {
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            stringResource(
+                                R.string.settings_import_invalid_keys,
+                                preview.invalidKeys.joinToString(),
+                            ),
+                            color = Danger,
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                    if (preview.unknownKeys.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            stringResource(
+                                R.string.settings_import_unknown_keys,
+                                preview.unknownKeys.joinToString(),
+                            ),
+                            color = TextSecondary,
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.applySettingsImport(preview)
+                    pendingImport = null
+                }) {
+                    Text(stringResource(R.string.settings_import_apply))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingImport = null }) {
                     Text(stringResource(R.string.cancel))
                 }
             },
@@ -447,32 +363,4 @@ private fun Section(title: String, content: @Composable () -> Unit) {
         Spacer(Modifier.height(12.dp))
         content()
     }
-}
-
-@Composable
-private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .toggleable(
-                value = checked,
-                role = Role.Switch,
-                onValueChange = onChange,
-            )
-            .clearAndSetSemantics {
-                contentDescription = label
-                role = Role.Switch
-                toggleableState = ToggleableState(checked)
-                onClick {
-                    onChange(!checked)
-                    true
-                }
-            },
-    ) {
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-        Switch(checked = checked, onCheckedChange = null)
-    }
-
 }

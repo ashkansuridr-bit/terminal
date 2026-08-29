@@ -238,6 +238,12 @@
     <string name="settings_exported">تمّ حفظ الإعدادات</string>
     <string name="settings_imported">تمّ تطبيق %1$d إعداد</string>
     <string name="settings_import_failed">فشل استيراد الإعدادات</string>
+    <string name="settings_import_preview_title">معاينة الاستيراد</string>
+    <string name="settings_import_preview_summary">%1$d تغييرات، %2$d قيم غير صالحة، %3$d مفاتيح غير معروفة</string>
+    <string name="settings_import_invalid_keys">قيم غير صالحة: %1$s</string>
+    <string name="settings_import_unknown_keys">مفاتيح غير معروفة: %1$s</string>
+    <string name="settings_import_apply">تطبيق التغييرات الصالحة</string>
+    <string name="settings_import_stale">تغيرت الإعدادات؛ اختر الملف مرة أخرى</string>
     <string name="settings_no_results">لم يُعثر على إعداد مطابق لهذا البحث</string>
     <string name="settings_group_appearance">المظهر</string>
     <string name="settings_group_terminal">المحطة الطرفية</string>
@@ -260,6 +266,10 @@
     <string name="settings_palette_catppuccin">Catppuccin</string>
     <string name="settings_palette_tokyo_night">Tokyo Night</string>
     <string name="settings_export_failed">فشل تصدير الإعدادات</string>
+    <string name="settings_transfer_limit">حد سرعة النقل</string>
+    <string name="settings_transfer_limit_summary">الصفر يعني بلا حد؛ كيلوبايت في الثانية</string>
+    <string name="settings_transfers_wifi_only">النقل عبر Wi-Fi فقط</string>
+    <string name="settings_transfers_wifi_only_summary">تنتظر عمليات النقل أثناء استخدام بيانات الهاتف</string>
     <string name="agent_install_title">تثبيت وكيل الكود</string>
     <string name="agent_install_body">سيُنفَّذ السكربت على هذا الخادم. اطلع عليه بالكامل قبل التنفيذ؛ لا شيء يُنفَّذ في الخفاء.</string>
     <string name="agent_which">أيّ وكيل</string>
@@ -371,4 +381,9 @@
     <string name="port_forward_active">نشط</string>
     <string name="port_forward_add">إضافة إعادة توجيه</string>
     <string name="port_forward_type">نوع إعادة التوجيه</string>
+    <string name="sftp_recursive_download_counting">جارٍ إحصاء ملفات المجلد «%1$s»…</string>
+    <string name="sftp_recursive_download_confirm_unknown">هل تريد تنزيل المجلد «%1$s»؟ تعذّر تحديد عدد الملفات.</string>
+    <string name="xfer_integrity_mismatch">الملف المنقول لا يطابق الأصل؛ وصل ناقصًا أو تالفًا.</string>
+    <string name="xfer_not_enough_remote_space">لا توجد مساحة كافية على الخادم.</string>
+    <string name="notif_cancel_transfers">إلغاء عمليات النقل</string>
 </resources>

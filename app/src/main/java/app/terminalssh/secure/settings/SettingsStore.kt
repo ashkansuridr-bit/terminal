@@ -26,15 +26,20 @@ class SettingsStore(context: Context) {
 
     // ---- typed access ----
 
-    fun get(spec: BoolSetting): Boolean = prefs.getBoolean(spec.key, spec.default)
+    fun get(spec: BoolSetting): Boolean =
+        runCatching { prefs.getBoolean(spec.key, spec.default) }.getOrDefault(spec.default)
 
-    fun get(spec: IntSetting): Int = spec.coerce(prefs.getInt(spec.key, spec.default))
+    fun get(spec: IntSetting): Int = spec.coerce(
+        runCatching { prefs.getInt(spec.key, spec.default) }.getOrDefault(spec.default),
+    )
 
     fun get(spec: ChoiceSetting): String =
-        spec.coerce(prefs.getString(spec.key, spec.default) ?: spec.default)
+        spec.coerce(runCatching { prefs.getString(spec.key, spec.default) }
+            .getOrNull() ?: spec.default)
 
     fun get(spec: TextSetting): String =
-        spec.coerce(prefs.getString(spec.key, spec.default) ?: spec.default)
+        spec.coerce(runCatching { prefs.getString(spec.key, spec.default) }
+            .getOrNull() ?: spec.default)
 
     fun set(spec: BoolSetting, value: Boolean) = write { putBoolean(spec.key, value) }
 
@@ -78,6 +83,7 @@ class SettingsStore(context: Context) {
      *
      * Contains no secrets: the registry holds preferences only, never credentials.
      */
+    @Synchronized
     fun exportJson(): String {
         val root = JSONObject()
         root.put(FIELD_VERSION, FORMAT_VERSION)
@@ -92,35 +98,56 @@ class SettingsStore(context: Context) {
      *   skipped rather than failing the whole import, so a file from a newer version still
      *   restores everything this version understands.
      */
-    fun importJson(json: String): Int {
-        val root = runCatching { JSONObject(json) }.getOrNull() ?: return 0
-        val values = root.optJSONObject(FIELD_SETTINGS) ?: return 0
-        var applied = 0
-        for (key in values.keys()) {
-            val spec = SettingsRegistry.byKey(key) ?: continue
-            val ok = runCatching {
-                when (spec) {
-                    is BoolSetting -> set(spec, values.getBoolean(key))
-                    is IntSetting -> set(spec, values.getInt(key))
-                    is ChoiceSetting -> {
-                        val raw = values.getString(key)
-                        // An unrecognised option would silently become the default;
-                        // skipping instead keeps the user's existing choice.
-                        if (!spec.isValid(raw)) return@runCatching false
-                        set(spec, raw)
-                    }
-                    is TextSetting -> set(spec, values.getString(key))
-                }
-                true
-            }.getOrDefault(false)
-            if (ok) applied++
+    @Synchronized
+    fun previewImport(json: String): SettingsImportPreview? {
+        val root = runCatching { JSONObject(json) }.getOrNull() ?: return null
+        val version = root.opt(FIELD_VERSION) as? Number ?: return null
+        if (version.toDouble() != FORMAT_VERSION.toDouble()) return null
+        val values = root.optJSONObject(FIELD_SETTINGS) ?: return null
+        val raw = buildMap<String, Any?> {
+            values.keys().forEach { key ->
+                put(key, values.opt(key).takeUnless { it === JSONObject.NULL })
+            }
         }
-        return applied
+        return SettingsImportPlanner.plan(
+            rawValues = raw,
+            currentValue = ::valueOf,
+            baseRevision = _revision.value,
+        )
     }
 
-    private inline fun write(block: SharedPreferences.Editor.() -> Unit) {
+    /** Applies every valid previewed change with one SharedPreferences transaction. */
+    @Synchronized
+    fun applyImport(preview: SettingsImportPreview): Int? {
+        if (preview.baseRevision != _revision.value) return null
+        if (preview.changes.isEmpty()) return 0
+
+        val editor = prefs.edit()
+        preview.changes.forEach { change -> editor.put(change.spec, change.newValue) }
+        editor.apply()
+        _revision.value++
+        return preview.changes.size
+    }
+
+    /** Compatibility entry point for non-UI callers; validation and persistence stay atomic. */
+    fun importJson(json: String): Int {
+        val preview = previewImport(json) ?: return 0
+        return applyImport(preview) ?: 0
+    }
+
+    @Synchronized
+    private fun write(block: SharedPreferences.Editor.() -> Unit) {
         prefs.edit().apply(block).apply()
         _revision.value++
+    }
+
+    private fun SharedPreferences.Editor.put(spec: SettingSpec<*>, value: Any) {
+        when (spec) {
+            is BoolSetting -> putBoolean(spec.key, value as Boolean)
+            is IntSetting -> putInt(spec.key, value as Int)
+            is ChoiceSetting -> putString(spec.key, value as String)
+            is TextSetting -> putString(spec.key, value as String)
+        }
     }
 
     companion object {

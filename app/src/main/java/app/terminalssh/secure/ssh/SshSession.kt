@@ -4,6 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import app.terminalssh.secure.model.AuthMethod
 import app.terminalssh.secure.model.HostProfile
+import app.terminalssh.secure.security.SecretScanner
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,7 +25,16 @@ class SshSession(
     val id: String,
     @Volatile var profile: HostProfile,
     private val client: JschSshClient,
-    private val keepAlive: Boolean,
+    keepAlive: Boolean,
+    private val terminalType: String = "xterm-256color",
+    /**
+     * Whether to redact secret-shaped output before it reaches the screen.
+     *
+     * Read per chunk rather than captured once, so turning it on takes effect on the
+     * next line instead of needing a reconnect. The audit flagged this setting as
+     * configurable in the UI but never actually wired to rendering; this is the wiring.
+     */
+    private val maskSecretsInOutput: () -> Boolean = { false },
     private val onClipboardCopy: (String) -> Unit,
     private val onPasteRequest: () -> Unit,
 ) {
@@ -39,6 +49,7 @@ class SshSession(
     @Volatile private var reader: Thread? = null
     @Volatile private var pendingPassword: ByteArray? = null
     @Volatile private var autoReconnect = true
+    @Volatile private var keepAlive = keepAlive
 
     val terminalInput = TerminalInputController()
 
@@ -79,6 +90,7 @@ class SshSession(
                 rows = dimensions.rows.coerceAtLeast(4),
                 passwordOverride = pendingPassword?.copyOf(),
                 keepAlive = keepAlive,
+                terminalType = terminalType,
             )
             if (gen != generation.get()) {
                 opened.close()
@@ -129,6 +141,20 @@ class SshSession(
     }
 
     /** Called after the user approves a first-use fingerprint; the caller stores the key. */
+    /**
+     * Redacted copy of [chunk], or null when nothing needed hiding.
+     *
+     * Returning null for the common case keeps the hot path allocation-free: almost every
+     * chunk of terminal output contains no secret, and copying each one would tax every
+     * session to protect the rare line that matters.
+     */
+    private fun maskChunk(chunk: ByteArray): ByteArray? {
+        if (!maskSecretsInOutput()) return null
+        val text = runCatching { String(chunk, Charsets.UTF_8) }.getOrNull() ?: return null
+        if (!SecretScanner.containsSecret(text)) return null
+        return SecretScanner.mask(text).toByteArray(Charsets.UTF_8)
+    }
+
     fun retryAfterTrust() {
         clearPendingHostKey()
         val gen = generation.incrementAndGet()
@@ -153,7 +179,13 @@ class SshSession(
                         main.post {
                             try {
                                 if (gen == generation.get() && shell === open) {
-                                    emulator.writeInput(chunk, 0, chunk.size)
+                                    val masked = maskChunk(chunk)
+                                    if (masked == null) {
+                                        emulator.writeInput(chunk, 0, chunk.size)
+                                    } else {
+                                        emulator.writeInput(masked, 0, masked.size)
+                                        masked.fill(0)
+                                    }
                                 }
                             } finally {
                                 chunk.fill(0)
@@ -223,6 +255,15 @@ class SshSession(
     }
 
     fun requestPaste() = onPasteRequest()
+
+    /** Applies immediately to a live JSch session and to every later reconnect. */
+    fun setKeepAlive(enabled: Boolean) {
+        keepAlive = enabled
+        val open = shell ?: return
+        io.execute {
+            if (shell === open) runCatching { open.setKeepAlive(enabled) }
+        }
+    }
 
     /**
      * An SFTP client riding this session's existing connection, or null when the session

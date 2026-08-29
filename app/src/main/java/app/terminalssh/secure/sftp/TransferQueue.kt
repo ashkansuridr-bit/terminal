@@ -51,7 +51,29 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
      */
     fun nextToStart(): Transfer? {
         if (active.size >= maxConcurrent) return null
-        return _transfers.value.firstOrNull { it.state == TransferState.QUEUED }
+        // Highest priority first, then insertion order — a user who queued ten files
+        // still gets the first one first unless they explicitly promoted something.
+        return _transfers.value
+            .filter { it.state == TransferState.QUEUED }
+            .minWithOrNull(compareByDescending<Transfer> { it.priority }.thenBy { it.enqueuedAt })
+    }
+
+    /**
+     * Promotes [id] above everything currently queued. Does not touch a transfer that is
+     * already running: interrupting live I/O to honour a reorder would cost more than the
+     * reorder is worth.
+     */
+    fun promote(id: String) {
+        val highest = _transfers.value.filter { it.state == TransferState.QUEUED }
+            .maxOfOrNull { it.priority } ?: 0
+        update(id) { if (it.state == TransferState.QUEUED) it.copy(priority = highest + 1) else it }
+    }
+
+    /** Sends [id] behind everything else queued. */
+    fun demote(id: String) {
+        val lowest = _transfers.value.filter { it.state == TransferState.QUEUED }
+            .minOfOrNull { it.priority } ?: 0
+        update(id) { if (it.state == TransferState.QUEUED) it.copy(priority = lowest - 1) else it }
     }
 
     fun markRunning(id: String) = update(id) {
@@ -164,6 +186,7 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
                 put("displayName", t.displayName)
                 put("totalBytes", t.totalBytes)
                 put("transferredBytes", t.transferredBytes)
+                put("priority", t.priority)
                 put("state", t.state.name)
                 put("finishedAt", t.finishedAt)
                 put("enqueuedAt", t.enqueuedAt)
@@ -188,6 +211,7 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
                     displayName = obj.optString("displayName", ""),
                     totalBytes = obj.optLong("totalBytes", Transfer.UNKNOWN_SIZE),
                     transferredBytes = obj.optLong("transferredBytes", 0L),
+                    priority = obj.optInt("priority", 0),
                     state = runCatching { TransferState.valueOf(obj.getString("state")) }.getOrDefault(TransferState.COMPLETED),
                     finishedAt = obj.optLong("finishedAt", 0L),
                     enqueuedAt = obj.optLong("enqueuedAt", 0L),
@@ -279,6 +303,7 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
                         displayName = obj.optString("displayName", ""),
                         totalBytes = obj.optLong("totalBytes", Transfer.UNKNOWN_SIZE),
                         transferredBytes = obj.optLong("transferredBytes", 0L),
+                    priority = obj.optInt("priority", 0),
                         state = runCatching { TransferState.valueOf(obj.getString("state")) }.getOrDefault(TransferState.QUEUED),
                         attempts = obj.optInt("attempts", 0),
                     ))
@@ -305,6 +330,7 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
                 put("displayName", t.displayName)
                 put("totalBytes", t.totalBytes)
                 put("transferredBytes", t.transferredBytes)
+                put("priority", t.priority)
                 put("state", state.name)
                 put("attempts", t.attempts)
             })

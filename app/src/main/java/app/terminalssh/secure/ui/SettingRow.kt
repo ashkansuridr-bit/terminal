@@ -22,9 +22,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.horizontalScroll
@@ -56,11 +60,11 @@ fun SettingRow(
     spec: SettingSpec<*>,
     store: SettingsStore,
     optionLabel: (String) -> String,
-    onChanged: () -> Unit,
 ) {
     val changed = store.isChanged(spec)
     val title = stringResource(spec.titleRes)
     val resetLabel = stringResource(R.string.settings_reset_one)
+    val booleanValue = (spec as? BoolSetting)?.let(store::get)
 
     Column(
         Modifier
@@ -69,14 +73,28 @@ fun SettingRow(
             // Long-press resets. Discoverability is the trade-off, so the changed marker
             // below doubles as the hint that there is something to go back from.
             .combinedClickable(
-                onClick = {},
+                onClick = {
+                    if (spec is BoolSetting && booleanValue != null) {
+                        store.set(spec, !booleanValue)
+                    }
+                },
                 onLongClick = {
                     if (changed) {
                         store.reset(spec)
-                        onChanged()
                     }
                 },
                 onLongClickLabel = resetLabel,
+            )
+            .then(
+                if (booleanValue != null) Modifier.clearAndSetSemantics {
+                    contentDescription = title
+                    role = Role.Switch
+                    toggleableState = ToggleableState(booleanValue)
+                    onClick {
+                        store.set(spec, !booleanValue)
+                        true
+                    }
+                } else Modifier,
             )
             .padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -112,8 +130,7 @@ fun SettingRow(
                 val value = store.get(spec)
                 Switch(
                     checked = value,
-                    onCheckedChange = { store.set(spec, it); onChanged() },
-                    modifier = Modifier.semantics { contentDescription = title },
+                    onCheckedChange = null,
                 )
             }
         }
@@ -130,10 +147,13 @@ fun SettingRow(
                 )
                 Slider(
                     value = value.toFloat(),
-                    onValueChange = { store.set(spec, it.roundToInt()); onChanged() },
+                    onValueChange = { store.set(spec, it.roundToInt()) },
                     valueRange = spec.min.toFloat()..spec.max.toFloat(),
                     // Compose counts the gaps between stops, not the stops themselves.
-                    steps = ((spec.max - spec.min) / spec.step - 1).coerceAtLeast(0),
+                    // Hundreds of painted tick marks make large ranges (such as transfer
+                    // rate) stall accessibility and rendering; coercion still snaps them.
+                    steps = ((spec.max - spec.min) / spec.step - 1)
+                        .takeIf { it in 1..100 } ?: 0,
                     modifier = Modifier.semantics { contentDescription = title },
                 )
             }
@@ -147,11 +167,14 @@ fun SettingRow(
                     spec.values.forEach { option ->
                         FilterChip(
                             selected = option == value,
-                            onClick = { store.set(spec, option); onChanged() },
+                            onClick = { store.set(spec, option) },
                             label = {
                                 Text(optionLabel(option), style = MaterialTheme.typography.labelSmall)
                             },
-                            modifier = Modifier.semantics { role = Role.RadioButton },
+                            modifier = Modifier.semantics {
+                                role = Role.RadioButton
+                                contentDescription = optionLabel(option)
+                            },
                         )
                     }
                 }
@@ -161,7 +184,7 @@ fun SettingRow(
                 val value = store.get(spec)
                 OutlinedTextField(
                     value = value,
-                    onValueChange = { store.set(spec, it); onChanged() },
+                    onValueChange = { store.set(spec, it) },
                     singleLine = true,
                     shape = MaterialTheme.shapes.small,
                     modifier = Modifier

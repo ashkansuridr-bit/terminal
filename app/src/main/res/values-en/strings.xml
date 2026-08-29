@@ -249,6 +249,12 @@
     <string name="settings_exported">Settings saved</string>
     <string name="settings_imported">%1$d settings applied</string>
     <string name="settings_import_failed">Could not import those settings</string>
+    <string name="settings_import_preview_title">Import preview</string>
+    <string name="settings_import_preview_summary">%1$d changes, %2$d invalid values, %3$d unknown keys</string>
+    <string name="settings_import_invalid_keys">Invalid values: %1$s</string>
+    <string name="settings_import_unknown_keys">Unknown keys: %1$s</string>
+    <string name="settings_import_apply">Apply valid changes</string>
+    <string name="settings_import_stale">Settings changed; select the file again</string>
     <string name="settings_no_results">No setting matches that</string>
     <string name="settings_group_appearance">Appearance</string>
     <string name="settings_group_terminal">Terminal</string>
@@ -271,6 +277,10 @@
     <string name="settings_palette_catppuccin">Catppuccin</string>
     <string name="settings_palette_tokyo_night">Tokyo Night</string>
     <string name="settings_export_failed">Could not export the settings</string>
+    <string name="settings_transfer_limit">Transfer speed limit</string>
+    <string name="settings_transfer_limit_summary">Zero means unlimited; kilobytes per second</string>
+    <string name="settings_transfers_wifi_only">Transfer on Wi-Fi only</string>
+    <string name="settings_transfers_wifi_only_summary">Transfers wait while the device uses mobile data</string>
     <string name="agent_install_title">Install a coding agent</string>
     <string name="agent_install_body">This runs on the connected server. Read it before running it — nothing is executed that you have not seen.</string>
     <string name="agent_which">Which agent</string>
@@ -367,4 +377,9 @@
     <string name="port_forward_active">Active</string>
     <string name="port_forward_add">Add port forward</string>
     <string name="port_forward_type">Forward type</string>
+    <string name="sftp_recursive_download_counting">Counting files in "%1$s"…</string>
+    <string name="sftp_recursive_download_confirm_unknown">Download folder "%1$s"? The file count could not be determined.</string>
+    <string name="xfer_integrity_mismatch">The transferred file does not match the original; it arrived incomplete or corrupted.</string>
+    <string name="xfer_not_enough_remote_space">Not enough free space on the server.</string>
+    <string name="notif_cancel_transfers">Cancel transfers</string>
 </resources>

@@ -233,6 +233,12 @@
     <string name="settings_exported">Настройки сохранены</string>
     <string name="settings_imported">Применено настроек: %1$d</string>
     <string name="settings_import_failed">Не удалось импортировать настройки</string>
+    <string name="settings_import_preview_title">Предпросмотр импорта</string>
+    <string name="settings_import_preview_summary">Изменений: %1$d, недопустимых значений: %2$d, неизвестных ключей: %3$d</string>
+    <string name="settings_import_invalid_keys">Недопустимые значения: %1$s</string>
+    <string name="settings_import_unknown_keys">Неизвестные ключи: %1$s</string>
+    <string name="settings_import_apply">Применить допустимые изменения</string>
+    <string name="settings_import_stale">Настройки изменились; выберите файл снова</string>
     <string name="settings_no_results">Нет настроек, соответствующих запросу</string>
     <string name="settings_group_appearance">Внешний вид</string>
     <string name="settings_group_terminal">Терминал</string>
@@ -255,6 +261,10 @@
     <string name="settings_palette_catppuccin">Catppuccin</string>
     <string name="settings_palette_tokyo_night">Tokyo Night</string>
     <string name="settings_export_failed">Не удалось экспортировать настройки</string>
+    <string name="settings_transfer_limit">Ограничение скорости передачи</string>
+    <string name="settings_transfer_limit_summary">Ноль означает без ограничения; килобайт в секунду</string>
+    <string name="settings_transfers_wifi_only">Передача только по Wi-Fi</string>
+    <string name="settings_transfers_wifi_only_summary">Передачи ожидают, пока используются мобильные данные</string>
     <string name="agent_install_title">Установить кодовый агент</string>
     <string name="agent_install_body">Устанавливается на подключённый сервер. Прочитайте скрипт перед запуском — ничего не выполнится без вашего ведома.</string>
     <string name="agent_which">Какой агент</string>
@@ -369,4 +379,9 @@
     <string name="port_forward_active">Активно</string>
     <string name="port_forward_add">Добавить перенаправление</string>
     <string name="port_forward_type">Тип перенаправления</string>
+    <string name="sftp_recursive_download_counting">Подсчёт файлов в «%1$s»…</string>
+    <string name="sftp_recursive_download_confirm_unknown">Скачать папку «%1$s»? Не удалось определить количество файлов.</string>
+    <string name="xfer_integrity_mismatch">Переданный файл не совпадает с оригиналом: он получен неполным или повреждённым.</string>
+    <string name="xfer_not_enough_remote_space">На сервере недостаточно свободного места.</string>
+    <string name="notif_cancel_transfers">Отменить передачи</string>
 </resources>

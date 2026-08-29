@@ -63,9 +63,11 @@ data class IntSetting(
         require(min <= max) { "$key: min must not exceed max" }
         require(default in min..max) { "$key: default must be inside the range" }
         require(step > 0) { "$key: step must be positive" }
+        require((default.toLong() - min) % step == 0L) { "$key: default must align with step" }
     }
 
-    override fun isValid(value: Int) = value in min..max
+    override fun isValid(value: Int) =
+        value in min..max && (value.toLong() - min) % step == 0L
     override fun coerce(value: Int): Int {
         val clamped = value.coerceIn(min, max)
         // Snap relative to min so a range like 10..24 step 2 yields 10, 12, 14 — not 10, 11, 13.
@@ -102,11 +104,21 @@ data class TextSetting(
     override val key: String,
     override val default: String,
     val maxLength: Int = 256,
+    /** Additional domain validation beyond the storage length bound. */
+    val accepts: (String) -> Boolean = { true },
     override val titleRes: Int,
     override val summaryRes: Int? = null,
     override val group: SettingGroup,
     override val advanced: Boolean = false,
 ) : SettingSpec<String> {
-    override fun isValid(value: String) = value.length <= maxLength
-    override fun coerce(value: String) = value.take(maxLength)
+    init {
+        require(maxLength > 0) { "$key: maxLength must be positive" }
+        require(default.length <= maxLength && accepts(default)) { "$key: invalid default" }
+    }
+
+    override fun isValid(value: String) = value.length <= maxLength && accepts(value)
+    override fun coerce(value: String): String {
+        val bounded = value.take(maxLength)
+        return if (accepts(bounded)) bounded else default
+    }
 }

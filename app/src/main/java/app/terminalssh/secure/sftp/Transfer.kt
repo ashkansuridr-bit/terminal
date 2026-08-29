@@ -59,6 +59,11 @@ data class Transfer(
     /** Wall-clock time this transfer reached a terminal state; 0 while still live. */
     val finishedAt: Long = 0L,
     /** Wall-clock time this transfer was first enqueued. */
+    /**
+     * Higher runs sooner. Insertion order still decides between equal priorities, so a
+     * queue nobody reorders behaves exactly as before.
+     */
+    val priority: Int = 0,
     val enqueuedAt: Long = System.currentTimeMillis(),
     /** Wall-clock time this transfer first started running (0 if never started). */
     val startedAt: Long = 0L,
@@ -104,6 +109,15 @@ enum class TransferErrorKind {
 
     /** The device rejected the local file (SAF permission revoked, storage detached). */
     LOCAL_UNAVAILABLE,
+
+    /**
+     * The bytes that arrived are not the bytes that were sent. Never retried
+     * automatically: a corrupted transfer that silently retries hides the corruption.
+     */
+    INTEGRITY_MISMATCH,
+
+    /** The receiving side does not have room for this transfer. */
+    NOT_ENOUGH_REMOTE_SPACE,
 
     UNKNOWN,
     ;

@@ -11,5 +11,7 @@ val TransferErrorKind.stringRes: Int
         TransferErrorKind.NOT_FOUND -> R.string.xfer_not_found
         TransferErrorKind.OUT_OF_SPACE -> R.string.xfer_out_of_space
         TransferErrorKind.LOCAL_UNAVAILABLE -> R.string.xfer_local_unavailable
+        TransferErrorKind.INTEGRITY_MISMATCH -> R.string.xfer_integrity_mismatch
+        TransferErrorKind.NOT_ENOUGH_REMOTE_SPACE -> R.string.xfer_not_enough_remote_space
         TransferErrorKind.UNKNOWN -> R.string.xfer_unknown
     }

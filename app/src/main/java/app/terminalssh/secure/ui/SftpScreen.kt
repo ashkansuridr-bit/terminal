@@ -103,6 +103,7 @@ fun SftpBrowser(
     onChmod: (RemoteEntry, Int) -> Unit = { _, _ -> },
     onChmodRecursive: (String, Int) -> Unit = { _, _ -> },
     onDownloadFolder: (RemoteEntry) -> Unit = {},
+    countRemoteFiles: (suspend (String) -> Int)? = null,
     onEditFile: (RemoteEntry) -> Unit = {},
     onPreviewFile: (RemoteEntry) -> Unit = {},
     fetchFileText: (suspend (String) -> Result<String>)? = null,
@@ -303,6 +304,7 @@ fun SftpBrowser(
     downloadFolderTarget?.let { entry ->
         DownloadFolderConfirmDialog(
             entry = entry,
+            countRemoteFiles = countRemoteFiles,
             onConfirm = { onDownloadFolder(entry); downloadFolderTarget = null },
             onDismiss = { downloadFolderTarget = null },
         )
@@ -788,13 +790,37 @@ private fun EmptyDirectory() {
 @Composable
 private fun DownloadFolderConfirmDialog(
     entry: RemoteEntry,
+    countRemoteFiles: (suspend (String) -> Int)?,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    // The count used to be a hardcoded 0, so the dialog asked the user to approve a long
+    // operation while stating something that was never true. Walking the tree takes a
+    // moment, so the dialog says it is counting rather than showing a wrong number.
+    var fileCount by remember(entry.path) { mutableStateOf<Int?>(null) }
+    var countFailed by remember(entry.path) { mutableStateOf(false) }
+    LaunchedEffect(entry.path) {
+        val counter = countRemoteFiles ?: run { countFailed = true; return@LaunchedEffect }
+        runCatching { counter(entry.path) }
+            .onSuccess { fileCount = it }
+            .onFailure { countFailed = true }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.sftp_recursive_folder_download)) },
-        text = { Text(stringResource(R.string.sftp_recursive_download_confirm, entry.name, 0)) },
+        text = {
+            Text(
+                when {
+                    fileCount != null ->
+                        stringResource(R.string.sftp_recursive_download_confirm, entry.name, fileCount!!)
+                    countFailed ->
+                        stringResource(R.string.sftp_recursive_download_confirm_unknown, entry.name)
+                    else ->
+                        stringResource(R.string.sftp_recursive_download_counting, entry.name)
+                },
+            )
+        },
         confirmButton = {
             TextButton(onClick = onConfirm) { Text(stringResource(R.string.download)) }
         },

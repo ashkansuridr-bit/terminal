@@ -39,10 +39,21 @@ class SettingSpecTest {
         }
     }
 
+    @Test fun intSettingRejectsValuesThatAreOffStep() {
+        val spec = intSpec(default = 10, min = 10, max = 25, step = 5)
+
+        assertTrue(spec.isValid(10))
+        assertTrue(spec.isValid(25))
+        assertFalse(spec.isValid(12))
+    }
+
     @Test fun intSettingRejectsAnImpossibleDeclaration() {
         assertFailsWith<IllegalArgumentException> { intSpec(default = 99) }
         assertFailsWith<IllegalArgumentException> { intSpec(min = 30, max = 10) }
         assertFailsWith<IllegalArgumentException> { intSpec(step = 0) }
+        assertFailsWith<IllegalArgumentException> {
+            intSpec(default = 12, min = 10, max = 25, step = 5)
+        }
     }
 
     @Test fun choiceSettingFallsBackToDefaultForUnknownOptions() {
@@ -73,5 +84,17 @@ class SettingSpecTest {
         assertEquals("abcde", spec.coerce("abcdefghij"))
         assertFalse(spec.isValid("abcdefghij"))
         assertTrue(spec.isValid("abc"))
+    }
+
+    @Test fun terminalTypeRejectsEmptyWhitespaceAndControlCharacters() {
+        val spec = SettingsRegistry.terminalType
+
+        assertTrue(spec.isValid("xterm-256color"))
+        assertTrue(spec.isValid("screen.xterm-256color"))
+        assertFalse(spec.isValid(""))
+        assertFalse(spec.isValid("xterm 256color"))
+        assertFalse(spec.isValid("xterm-۲۵۶color"))
+        assertFalse(spec.isValid("xterm\nmalicious"))
+        assertEquals(spec.default, spec.coerce("xterm\nmalicious"))
     }
 }
