@@ -32,8 +32,15 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
      * pending transfer sizes — 1 for a single large file, up to [MAX_CONCURRENCY]
      * for a batch of small files where latency dominates.
      */
-    var maxConcurrent: Int = maxConcurrent
-        private set
+    private val _concurrency = MutableStateFlow(maxConcurrent.coerceIn(1, MAX_CONCURRENCY))
+    val concurrency: StateFlow<Int> = _concurrency.asStateFlow()
+    val maxConcurrent: Int get() = _concurrency.value
+
+    /** Emits a dispatch event even when no transfer row changed. */
+    fun setConcurrency(limit: Int) {
+        require(limit in 1..MAX_CONCURRENCY)
+        _concurrency.value = limit
+    }
 
     val active: List<Transfer> get() = _transfers.value.filter { it.state == TransferState.RUNNING }
 
@@ -42,19 +49,36 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
         get() = _transfers.value.filterNot { it.state.isTerminal }
 
     fun enqueue(transfer: Transfer) {
-        _transfers.value += transfer.copy(state = TransferState.QUEUED)
+        _transfers.update { it + transfer.copy(state = TransferState.QUEUED) }
+    }
+
+    /** Recovery must publish the whole batch PAUSED in one emission: never enqueue-then-pause. */
+    fun importPaused(transfers: List<Transfer>) {
+        require(transfers.map { it.id }.toSet().size == transfers.size) { "Duplicate recovery IDs" }
+        _transfers.update { current ->
+            val byId = current.associateBy { it.id }
+            transfers.forEach { old ->
+                byId[old.id]?.let { existing ->
+                    require(existing.direction == old.direction && existing.remotePath == old.remotePath &&
+                        existing.localUri == old.localUri) { "Transfer identity conflict" }
+                }
+            }
+            current + transfers.filter { it.id !in byId }.map {
+                it.copy(state = TransferState.PAUSED, attempts = 0, errorKind = null)
+            }
+        }
     }
 
     /**
      * The next transfer that should start, or null when the queue is saturated or empty.
      * Runs in insertion order: a user who queued ten files expects the first one first.
      */
-    fun nextToStart(): Transfer? {
+    fun nextToStart(excludedIds: Set<String> = emptySet()): Transfer? {
         if (active.size >= maxConcurrent) return null
         // Highest priority first, then insertion order — a user who queued ten files
         // still gets the first one first unless they explicitly promoted something.
         return _transfers.value
-            .filter { it.state == TransferState.QUEUED }
+            .filter { it.state == TransferState.QUEUED && it.id !in excludedIds }
             .minWithOrNull(compareByDescending<Transfer> { it.priority }.thenBy { it.enqueuedAt })
     }
 
@@ -193,7 +217,7 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
                 put("startedAt", t.startedAt)
             })
         }
-        runCatching { historyFile.writeText(arr.toString()) }
+        TransferStatePaths.atomicWrite(historyFile, arr.toString())
     }
 
     fun loadHistory(historyFile: File) {
@@ -249,12 +273,12 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
     fun adaptConcurrency() {
         val queued = _transfers.value.filter { it.state == TransferState.QUEUED }
         if (queued.isEmpty()) {
-            maxConcurrent = DEFAULT_CONCURRENCY
+            _concurrency.value = DEFAULT_CONCURRENCY
             return
         }
         val allSmall = queued.all { it.totalBytes in 0 until SMALL_FILE_THRESHOLD }
         val allLarge = queued.all { it.totalBytes >= LARGE_FILE_THRESHOLD }
-        maxConcurrent = when {
+        _concurrency.value = when {
             queued.size == 1 -> DEFAULT_CONCURRENCY
             allSmall -> MAX_CONCURRENCY
             allLarge -> DEFAULT_CONCURRENCY
@@ -335,11 +359,11 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
                 put("attempts", t.attempts)
             })
         }
-        runCatching { persistFile.writeText(arr.toString()) }
+        TransferStatePaths.atomicWrite(persistFile, arr.toString())
     }
 
     /** Clears the persisted file. */
     fun clearPersisted(persistFile: File) {
-        runCatching { persistFile.delete() }
+        if (persistFile.exists() && !persistFile.delete()) throw java.io.IOException("Cannot remove transfer state")
     }
 }

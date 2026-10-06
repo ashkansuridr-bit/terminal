@@ -4,7 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import app.terminalssh.secure.model.AuthMethod
 import app.terminalssh.secure.model.HostProfile
-import app.terminalssh.secure.security.SecretScanner
+import app.terminalssh.secure.security.StreamingSecretMasker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -140,21 +140,6 @@ class SshSession(
         }
     }
 
-    /** Called after the user approves a first-use fingerprint; the caller stores the key. */
-    /**
-     * Redacted copy of [chunk], or null when nothing needed hiding.
-     *
-     * Returning null for the common case keeps the hot path allocation-free: almost every
-     * chunk of terminal output contains no secret, and copying each one would tax every
-     * session to protect the rare line that matters.
-     */
-    private fun maskChunk(chunk: ByteArray): ByteArray? {
-        if (!maskSecretsInOutput()) return null
-        val text = runCatching { String(chunk, Charsets.UTF_8) }.getOrNull() ?: return null
-        if (!SecretScanner.containsSecret(text)) return null
-        return SecretScanner.mask(text).toByteArray(Charsets.UTF_8)
-    }
-
     fun retryAfterTrust() {
         clearPendingHostKey()
         val gen = generation.incrementAndGet()
@@ -163,6 +148,8 @@ class SshSession(
     }
 
     private fun startReader(open: JschSshClient.Shell, gen: Long) {
+        // Capture masking for this stream: toggling settings cannot expose a held prefix.
+        val masker = if (maskSecretsInOutput()) StreamingSecretMasker() else null
         val thread = Thread({
             val buffer = ByteArray(READ_BUFFER)
             try {
@@ -176,19 +163,16 @@ class SshSession(
                         }
                         val chunk = buffer.copyOf(read)
                         buffer.fill(0, 0, read)
+                        val display = if (masker == null) chunk else {
+                            try { masker.accept(chunk) } finally { chunk.fill(0) }
+                        }
                         main.post {
                             try {
                                 if (gen == generation.get() && shell === open) {
-                                    val masked = maskChunk(chunk)
-                                    if (masked == null) {
-                                        emulator.writeInput(chunk, 0, chunk.size)
-                                    } else {
-                                        emulator.writeInput(masked, 0, masked.size)
-                                        masked.fill(0)
-                                    }
+                                    emulator.writeInput(display, 0, display.size)
                                 }
                             } finally {
-                                chunk.fill(0)
+                                display.fill(0)
                             }
                         }
                     }
@@ -197,6 +181,16 @@ class SshSession(
                 // Falls through to the disconnect handling below.
             } finally {
                 buffer.fill(0)
+                val tail = masker?.finish()
+                main.post {
+                    if (tail != null) {
+                        try {
+                            if (gen == generation.get() && (shell === open || shell == null)) emulator.writeInput(tail, 0, tail.size)
+                        } finally {
+                            tail.fill(0)
+                        }
+                    }
+                }
                 if (gen == generation.get()) {
                     shell = null
                     // The remote end sends an exit-status when the shell process itself
@@ -307,6 +301,58 @@ class SshSession(
     private fun hasStoredCredential(): Boolean = when (val auth = profile.auth) {
         is AuthMethod.Password -> auth.vaultRef.isNotBlank()
         is AuthMethod.PrivateKey -> true
+    }
+
+    /** Takes ownership of [key]. No PTY, terminal echo, command history or output capture.
+     * Completion means the detached launch command returned zero, not that the agent authenticated.
+     */
+    fun launchAgentWithKey(agent: app.terminalssh.secure.agents.CodingAgent, key: ByteArray,
+                           onComplete: (Boolean) -> Unit) {
+        if (key.isEmpty() || key.size > 16 * 1024 || key.any { it == 0.toByte() || it == 10.toByte() || it == 13.toByte() }) {
+            key.fill(0)
+            main.post { onComplete(false) }
+            return
+        }
+        try {
+            io.execute {
+                var channel: com.jcraft.jsch.ChannelExec? = null
+                val payload = key.copyOf(key.size + 1)
+                key.fill(0)
+                payload[payload.lastIndex] = 10
+                var success = false
+                try {
+                    val launchingShell = shell ?: error("No connected session")
+                    val transport = launchingShell.session
+                    val socket = "terminal-agent-" + java.util.UUID.randomUUID()
+                    channel = transport.openChannel("exec") as com.jcraft.jsch.ChannelExec
+                    channel.setPty(false)
+                    channel.setCommand(app.terminalssh.secure.agents.AgentInstallScript.secureLaunchCommand(agent, socket))
+                    channel.setInputStream(java.io.ByteArrayInputStream(payload))
+                    // An agent or a remote startup script could print its environment. Never render it.
+                    channel.setOutputStream(object : java.io.OutputStream() { override fun write(b: Int) {} override fun write(b: ByteArray, off: Int, len: Int) {} })
+                    channel.setErrStream(object : java.io.OutputStream() { override fun write(b: Int) {} override fun write(b: ByteArray, off: Int, len: Int) {} })
+                    channel.connect(10_000)
+                    val deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(15)
+                    while (!channel.isClosed && System.nanoTime() < deadline) Thread.sleep(20)
+                    success = channel.isClosed && channel.exitStatus == 0
+                    if (success && shell !== launchingShell) success = false
+                    if (success) {
+                        val attach = app.terminalssh.secure.agents.AgentInstallScript.secureAttachCommand(socket) + "\n"
+                        launchingShell.output.let { it.write(attach.toByteArray(Charsets.UTF_8)); it.flush() }
+                    }
+                } catch (_: Exception) {
+                    // Report a sanitized failure; remote exception text may contain credentials.
+                    success = false
+                } finally {
+                    try { channel?.disconnect() } finally { payload.fill(0); key.fill(0) }
+                    val result = success
+                    main.post { onComplete(result) }
+                }
+            }
+        } catch (_: java.util.concurrent.RejectedExecutionException) {
+            key.fill(0)
+            main.post { onComplete(false) }
+        }
     }
 
     // ---- port forwarding ----

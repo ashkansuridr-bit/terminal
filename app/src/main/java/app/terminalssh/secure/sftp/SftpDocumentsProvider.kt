@@ -103,45 +103,64 @@ class SftpDocumentsProvider : DocumentsProvider() {
     ): ParcelFileDescriptor {
         val (sessionId, path) = parse(documentId)
         val client = clientFor(sessionId) ?: throw java.io.FileNotFoundException(documentId)
-        val staging = File(context!!.cacheDir, "saf-${documentId.hashCode()}-${path.substringAfterLast('/')}")
-
-        // Read side: pull the file down once, hand back a descriptor onto the copy.
-        // Bounded, because the picker will happily be pointed at a 40 GB backup and the
-        // cache directory is not a place to discover that.
-        if (!mode.contains('w')) {
-            FileOutputStream(staging).use { out ->
-                client.download(path, LimitedOutputStream(out, MAX_STAGED_BYTES), 0L) {}
-            }
-            return ParcelFileDescriptor.open(staging, ParcelFileDescriptor.MODE_READ_ONLY)
-        }
-
-        // Write side: SFTP cannot be written through a seekable descriptor, so the edit
-        // lands in the cache file and is uploaded when the other app closes it.
-        if (mode.contains('r')) {
-            runCatching {
+        signal?.throwIfCanceled()
+        val session = liveSessions().firstOrNull { it.id == sessionId }
+            ?: throw java.io.FileNotFoundException(documentId)
+        val writable = mode.contains('w')
+        val store = SafStagingStore(File(context!!.filesDir, "saf-edits"))
+        val edit = store.create(sessionId, session.profile.id, session.profile.subtitle, path, writable)
+        val staging = edit.file
+        try {
+            val original = if (writable) client.editFingerprint(path) else null
+            original?.let { store.recordFingerprint(edit, it) }
+            // "w"/"wt" truncate; rw and append preserve the existing file.
+            if (!writable || (mode.contains('r') && !mode.contains('t')) || mode.contains('a')) {
                 FileOutputStream(staging).use { out ->
-                    client.download(path, LimitedOutputStream(out, MAX_STAGED_BYTES), 0L) {}
+                    client.download(path, LimitedOutputStream(out, MAX_STAGED_BYTES), 0L) {
+                        signal?.throwIfCanceled()
+                    }
                 }
-            }.onFailure {
-                staging.delete()
-                throw it
             }
+            signal?.throwIfCanceled()
+            original?.let { client.requireFingerprint(path, it) }
+            store.activate(edit)
+            return ParcelFileDescriptor.open(
+                staging, ParcelFileDescriptor.parseMode(mode), android.os.Handler(app.mainLooper),
+            ) { error ->
+                // Never perform network IO on the main-thread close listener.
+                SAVE_EXECUTOR.execute {
+                    if (!writable) {
+                        store.complete(edit)
+                    } else if (error != null) {
+                        retainFailedEdit(store, edit)
+                    } else {
+                        try {
+                            val expected = store.fingerprint(edit)
+                            client.requireFingerprint(path, expected)
+                            staging.inputStream().use { input ->
+                                client.atomicUpload(input, path, beforeCommit = {
+                                    client.requireFingerprint(path, expected)
+                                })
+                            }
+                            store.complete(edit)
+                        } catch (failure: Exception) {
+                            // The local copy and metadata remain available even after process death.
+                            retainFailedEdit(store, edit)
+                        }
+                    }
+                }
+            }
+        } catch (failure: Exception) {
+            store.complete(edit)
+            throw failure
         }
-        val handler = android.os.Handler(app.mainLooper)
-        return ParcelFileDescriptor.open(
-            staging,
-            ParcelFileDescriptor.MODE_READ_WRITE or ParcelFileDescriptor.MODE_CREATE,
-            handler,
-        ) { error ->
-            // Runs when the reader/writer closes. Upload only on a clean close: pushing a
-            // half-written file back over the original is exactly the data loss this
-            // whole module tries to avoid.
-            if (error == null) {
-                runCatching {
-                    staging.inputStream().use { input -> client.upload(input, path, 0L) {} }
-                }
-            }
-            staging.delete()
+    }
+
+    private fun retainFailedEdit(store: SafStagingStore, edit: SafStagingStore.Edit) {
+        try { store.failed(edit) }
+        finally {
+            // Metadata errors must still notify. Neither the edit nor metadata is deleted.
+            FailedSaveActivity.notifyRecovery(context!!)
         }
     }
 
@@ -156,7 +175,12 @@ class SftpDocumentsProvider : DocumentsProvider() {
         if (mimeType == Document.MIME_TYPE_DIR) {
             client.makeDirectory(path)
         } else {
-            client.uploadText(path, "")
+            check(!client.exists(path)) { "Document already exists" }
+            byteArrayOf().inputStream().use { source ->
+                client.atomicUpload(source, path, beforeCommit = {
+                    check(!client.exists(path)) { "Document already exists" }
+                })
+            }
         }
         return docId(sessionId, path)
     }
@@ -182,7 +206,7 @@ class SftpDocumentsProvider : DocumentsProvider() {
     override fun isChildDocument(parentDocumentId: String, documentId: String): Boolean {
         val (parentSession, parentPath) = parse(parentDocumentId)
         val (childSession, childPath) = parse(documentId)
-        return parentSession == childSession && childPath.startsWith(parentPath)
+        return parentSession == childSession && SafStagingStore.isChild(parentPath, childPath)
     }
 
     // ---- helpers ----
@@ -250,7 +274,8 @@ class SftpDocumentsProvider : DocumentsProvider() {
     }
 
     private companion object {
-        /** `::` cannot appear in a POSIX path component, so it cannot be ambiguous. */
+        val SAVE_EXECUTOR = java.util.concurrent.Executors.newSingleThreadExecutor()
+        /** Split only on the first separator; subsequent separators are legal path text. */
         const val SEPARATOR = "::"
 
         /** Ceiling for a file staged through the cache for another app to open. */

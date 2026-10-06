@@ -32,10 +32,16 @@ import app.terminalssh.secure.security.SecretIo
 import app.terminalssh.secure.security.PrivateKeyFormat
 import app.terminalssh.secure.security.VaultAad
 import app.terminalssh.secure.security.VaultLimits
+import app.terminalssh.secure.security.CredentialReference
+import app.terminalssh.secure.security.CredentialReferences
+import app.terminalssh.secure.storage.MetadataCommitException
 import app.terminalssh.secure.settings.SettingsImportPreview
 import app.terminalssh.secure.settings.SettingsRegistry
 import app.terminalssh.secure.service.HostShortcuts
 import app.terminalssh.secure.service.SshForegroundService
+import app.terminalssh.secure.sftp.TransferRecoveryStore
+import app.terminalssh.secure.sftp.SftpWorkspaceStore
+import kotlinx.coroutines.CancellationException
 import app.terminalssh.secure.sftp.SftpController
 import app.terminalssh.secure.storage.SshConfigExport
 import app.terminalssh.secure.storage.SshConfigImport
@@ -54,10 +60,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
+enum class HostMetadataState { Loading, Ready, Failed }
+class HostMetadataUnavailableException : IllegalStateException("host metadata unavailable")
+
 class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private val container = app as TerminalApp
     val sessions = container.sessions
+    val sessionCleanupFailures = container.lifecycle.cleanupFailures
     val settings = container.settings
     private val account = accountProvider(app)
 
@@ -72,41 +82,56 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---- sftp ----
 
-    // Assumes closeSession is the only teardown path for a session: if SessionRegistry's
-    // closeAll() is ever called directly, any controller cached here for that session
-    // would leak (its pump loop keeps running against a now-destroyed SshSession).
-    private val sftpControllers = mutableMapOf<String, SftpController>()
+    private val sftpControllers get() = container.lifecycle.controllers
 
     /**
      * The SFTP controller for [session], created on first use and kept alive across tab
-     * switches — on [viewModelScope], not tied to the Files tab's composition — so a
+     * switches — on the application session scope, not tied to the Files tab's composition — so a
      * transfer keeps running while the user is on another tab. Torn down only when the
      * session itself closes, in [closeSession].
      */
     fun sftpControllerFor(session: SshSession): SftpController =
-        sftpControllers.getOrPut(session.id) {
+        container.lifecycle.controllerFor(session.id) {
             val application = getApplication<Application>()
             SftpController(
                 session,
                 application.contentResolver,
                 application.cacheDir,
-                viewModelScope,
+                container.sessionScope,
+                SftpWorkspaceStore(
+                    application.getSharedPreferences("sftp_workspace", android.content.Context.MODE_PRIVATE),
+                    session.profile.id,
+                ),
                 // Read per transfer, so changing the ceiling takes effect on the next file.
                 rateLimitBytesPerSecond = { container.settings.transferLimitKbPerSecond * 1024L },
-                mayStartTransfers = { !container.settings.transfersWifiOnly || onUnmeteredNetwork() },
-            ).also { app.terminalssh.secure.sftp.TransferCoordinator.register(session.id, it) }
+                mayStartTransfers = { !container.settings.transfersWifiOnly || container.onUnmeteredNetwork() },
+                persistentDir = application.filesDir,
+            )
         }
 
     /** False in market builds, which ship without any account integration. */
     val accountSupported: Boolean get() = account.isSupported
 
-    private val _hosts = MutableStateFlow(container.hosts.hosts())
+    private data class MetadataSnapshot(
+        val hosts: List<HostProfile>, val keys: List<KeyEntry>, val snippets: List<SnippetEntry>,
+    )
+    private fun readMetadataSnapshot() = MetadataSnapshot(
+        container.hosts.hosts(), container.hosts.keys(), container.hosts.snippets(),
+    )
+    // A failed parse is an explicit unavailable state, never an ordinary empty store.
+    private val initialMetadata = try { readMetadataSnapshot() } catch (_: Exception) { null }
+    private val _hostMetadataState = MutableStateFlow(
+        if (initialMetadata == null) HostMetadataState.Failed else HostMetadataState.Ready,
+    )
+    val hostMetadataState = _hostMetadataState.asStateFlow()
+
+    private val _hosts = MutableStateFlow(initialMetadata?.hosts ?: emptyList())
     val hosts: StateFlow<List<HostProfile>> = _hosts.asStateFlow()
 
-    private val _keys = MutableStateFlow(container.hosts.keys())
+    private val _keys = MutableStateFlow(initialMetadata?.keys ?: emptyList())
     val keys: StateFlow<List<KeyEntry>> = _keys.asStateFlow()
 
-    private val _snippets = MutableStateFlow(container.hosts.snippets())
+    private val _snippets = MutableStateFlow(initialMetadata?.snippets ?: emptyList())
     val snippets: StateFlow<List<SnippetEntry>> = _snippets.asStateFlow()
 
     private val _query = MutableStateFlow("")
@@ -122,51 +147,181 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val _generatedPublicKey = MutableStateFlow<String?>(null)
     val generatedPublicKey: StateFlow<String?> = _generatedPublicKey.asStateFlow()
 
+    init { if (_hostMetadataState.value == HostMetadataState.Ready) retryCredentialCleanup() }
+
+    private fun metadataMutationAllowed(): Boolean {
+        if (_hostMetadataState.value == HostMetadataState.Ready) {
+            try {
+                readMetadataSnapshot() // Revalidate before a mutation, including stale UI callbacks.
+                return true
+            } catch (_: Exception) {
+                _hosts.value = emptyList()
+                _keys.value = emptyList()
+                _snippets.value = emptyList()
+                _hostMetadataState.value = HostMetadataState.Failed
+            }
+        }
+        _toast.value = string(R.string.host_metadata_failed)
+        return false
+    }
+
+    fun reloadHostMetadata() {
+        if (_hostMetadataState.value == HostMetadataState.Loading) return
+        _hostMetadataState.value = HostMetadataState.Loading
+        viewModelScope.launch {
+            try {
+                val snapshot = withContext(Dispatchers.IO) { readMetadataSnapshot() }
+                _hosts.value = snapshot.hosts
+                _keys.value = snapshot.keys
+                _snippets.value = snapshot.snippets
+                _hostMetadataState.value = HostMetadataState.Ready
+                retryCredentialCleanup()
+            } catch (cancelled: CancellationException) {
+                _hostMetadataState.value = HostMetadataState.Failed
+                throw cancelled
+            } catch (_: Exception) {
+                _hosts.value = emptyList()
+                _keys.value = emptyList()
+                _snippets.value = emptyList()
+                _hostMetadataState.value = HostMetadataState.Failed
+                _toast.value = string(R.string.host_metadata_failed)
+            }
+        }
+    }
+
+    /** Explicit recovery export preserves raw records; it does not reset or repair trust. */
+    fun exportRawHostMetadata(uri: Uri) = viewModelScope.launch {
+        try {
+            withContext(Dispatchers.IO) {
+                val raw = container.hosts.rawMetadataSnapshot()
+                val resolver = getApplication<Application>().contentResolver
+                requireNotNull(resolver.openOutputStream(uri, "wt")) { "metadata export unavailable" }
+                    .bufferedWriter(Charsets.UTF_8).use { it.write(raw) }
+            }
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { _toast.value = string(R.string.host_metadata_export_failed) }
+    }
+
     fun setQuery(value: String) { _query.value = value }
     fun consumeToast() { _toast.value = null }
     fun notify(message: String) { _toast.value = message }
 
+    // Recovery is non-secret metadata. Nothing runs until the user chooses a verified
+    // connected session; imports are PAUSED and reviewed in Files before Resume.
+    private val recoveryStore = TransferRecoveryStore(app.filesDir)
+    private val _recoverableTransfers = MutableStateFlow<List<TransferRecoveryStore.Entry>>(emptyList())
+    val recoverableTransfers = _recoverableTransfers.asStateFlow()
+    private val _recoveryLoading = MutableStateFlow(false)
+    val recoveryLoading = _recoveryLoading.asStateFlow()
+
+    fun refreshRecovery() {
+        if (_recoveryLoading.value) return
+        _recoveryLoading.value = true
+        viewModelScope.launch {
+            try {
+                val ids = sessions.sessions.value.map { it.id }.toSet()
+                _recoverableTransfers.value = withContext(Dispatchers.IO) { recoveryStore.discover(ids) }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                _toast.value = string(R.string.recovery_failed)
+            } finally { _recoveryLoading.value = false }
+        }
+    }
+
+    fun restoreTransfers(entry: TransferRecoveryStore.Entry) {
+        if (_recoveryLoading.value) return
+        _recoveryLoading.value = true
+        viewModelScope.launch {
+            try {
+                val candidates = sessions.sessions.value.filter { it.state.value.isLive }
+                val session = withContext(Dispatchers.IO) {
+                    candidates.firstOrNull { recoveryStore.matches(entry.file, it.profile) }
+                }
+                if (session == null) { _toast.value = string(R.string.recovery_connect_first); return@launch }
+                sftpControllerFor(session).importRecoveredQueue(entry.file)
+                sessions.select(session.id)
+                _toast.value = string(R.string.recovery_imported)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                _toast.value = string(R.string.recovery_failed)
+            } finally {
+                _recoveryLoading.value = false
+                refreshRecovery()
+            }
+        }
+    }
+
     // ---- hosts ----
 
-    fun saveHost(profile: HostProfile, password: CharArray?): Boolean {
+    /** Fresh refs make failure rollback possible without destroying the saved credential. */
+    fun saveHost(profile: HostProfile, password: CharArray?, passphrase: CharArray? = null): Boolean {
         return try {
+            if (!metadataMutationAllowed()) return false
             var stored = profile
             if (password != null && password.isNotEmpty()) {
-                val ref = (profile.auth as? AuthMethod.Password)?.vaultRef?.takeIf { it.isNotBlank() }
-                    ?: UUID.randomUUID().toString()
-                val bytes = SecretEncoding.utf8(password)
-                try {
-                    container.vault.put(ref, bytes, VaultAad.PASSWORD)
-                } finally {
-                    bytes.fill(0)
-                }
+                val ref = UUID.randomUUID().toString()
+                storeFreshHostSecret(ref, password, VaultAad.PASSWORD)
                 stored = profile.copy(auth = AuthMethod.Password(ref))
+            } else if (profile.auth is AuthMethod.PrivateKey && passphrase != null) {
+                val ref = if (passphrase.isEmpty()) null else UUID.randomUUID().toString()
+                if (ref != null) storeFreshHostSecret(ref, passphrase, VaultAad.PASSPHRASE)
+                stored = profile.copy(auth = profile.auth.copy(passphraseVaultRef = ref))
             }
-            container.hosts.upsert(stored)
+            container.hosts.saveCredentials(stored)
             _hosts.value = container.hosts.hosts()
+            retryCredentialCleanup()
             true
-        } catch (_: Exception) {
+        } catch (failure: Exception) {
+            // A failed rollback leaves disk ownership ambiguous. Preserve ciphertext and
+            // its journal until restart loads durable metadata; never delete speculatively.
+            if (failure !is MetadataCommitException || failure.rollbackSucceeded) {
+                retryCredentialCleanup()
+            }
             _toast.value = getApplication<Application>().getString(R.string.host_save_failed)
             false
         } finally {
             password?.fill('\u0000')
+            passphrase?.fill('\u0000')
+        }
+    }
+
+    private fun storeFreshHostSecret(ref: String, secret: CharArray, aad: VaultAad) {
+        container.hosts.scheduleCredentialCleanup(CredentialReference(ref, aad))
+        val bytes = SecretEncoding.utf8(secret)
+        try {
+            container.vault.put(ref, bytes, aad)
+        } finally {
+            bytes.fill(0)
+        }
+    }
+
+    /** Durable journal survives cleanup failures/process death; failures are visible. */
+    fun retryCredentialCleanup(): Boolean {
+        if (!metadataMutationAllowed()) return false
+        return try {
+            container.hosts.pendingCredentialCleanup().forEach { ref ->
+                if (!container.hosts.credentialIsReferenced(ref)) container.vault.delete(ref.ref, ref.aad)
+                container.hosts.finishCredentialCleanup(ref)
+            }
+            true
+        } catch (_: Exception) {
+            _toast.value = string(R.string.credential_cleanup_pending)
+            false
         }
     }
 
     fun deleteHost(profile: HostProfile) {
-        // The private key itself is a reusable Keys-screen entity, removed separately
-        // via deleteKey(); only the per-host secret dies with the host.
-        when (val auth = profile.auth) {
-            is AuthMethod.Password -> auth.vaultRef.takeIf { it.isNotBlank() }
-                ?.let { container.vault.delete(it, VaultAad.PASSWORD) }
-            is AuthMethod.PrivateKey -> auth.passphraseVaultRef?.takeIf { it.isNotBlank() }
-                ?.let { container.vault.delete(it, VaultAad.PASSPHRASE) }
+        if (!metadataMutationAllowed()) return
+        try {
+            container.hosts.removeHostCredentials(profile.id)
+            _hosts.value = container.hosts.hosts()
+            retryCredentialCleanup()
+            HostShortcuts.refresh(getApplication(), _hosts.value)
+        } catch (_: Exception) {
+            _toast.value = string(R.string.host_save_failed)
         }
-        container.hosts.delete(profile.id)
-        _hosts.value = container.hosts.hosts()
-        // Replaces the whole shortcut set, so the deleted host cannot linger in the
-        // launcher pointing at an id that no longer resolves.
-        HostShortcuts.refresh(getApplication(), _hosts.value)
     }
 
     /**
@@ -175,6 +330,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
      * file twice does not duplicate the list.
      */
     fun importHostsFromSshConfig(uri: Uri) {
+        if (!metadataMutationAllowed()) return
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
@@ -269,9 +425,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun applySettingsImport(preview: SettingsImportPreview): Boolean {
-        val applied = container.settingsStore.applyImport(preview)
+        val applied = try {
+            container.settingsStore.applyImport(preview)
+        } catch (failure: IllegalStateException) {
+            // Failed durable write/rollback must remain an import error, never success.
+            _toast.value = string(R.string.settings_import_failed)
+            return false
+        }
         return if (applied == null) {
-            _toast.value = string(R.string.settings_import_stale)
+            _toast.value = string(R.string.settings_import_failed)
             false
         } else {
             _toast.value = getApplication<Application>()
@@ -281,8 +443,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun toggleFavorite(profile: HostProfile) {
-        container.hosts.upsert(profile.copy(favorite = !profile.favorite))
-        _hosts.value = container.hosts.hosts()
+        if (!metadataMutationAllowed()) return
+        try {
+            container.hosts.upsert(profile.copy(favorite = !profile.favorite))
+            _hosts.value = container.hosts.hosts()
+        } catch (failure: Exception) {
+            if (failure is MetadataCommitException && !failure.rollbackSucceeded) {
+                _hostMetadataState.value = HostMetadataState.Failed
+            }
+            _toast.value = string(R.string.host_save_failed)
+        }
     }
 
     fun hasStoredSecret(profile: HostProfile): Boolean = when (val auth = profile.auth) {
@@ -293,8 +463,23 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // ---- sessions ----
 
     fun openSession(profile: HostProfile, password: CharArray? = null): SshSession {
+        var publishedSessionId: String? = null
         try {
+            if (!metadataMutationAllowed()) throw HostMetadataUnavailableException()
             val context = getApplication<Application>()
+            // Validate/persist metadata before publishing any new session resources.
+            try {
+                container.hosts.touch(profile.id)
+                _hosts.value = container.hosts.hosts()
+                HostShortcuts.refresh(context, _hosts.value)
+            } catch (_: Exception) {
+                _hostMetadataState.value = HostMetadataState.Failed
+                _hosts.value = emptyList()
+                _keys.value = emptyList()
+                _snippets.value = emptyList()
+                _toast.value = string(R.string.host_metadata_failed)
+                throw HostMetadataUnavailableException()
+            }
             val session = SshSession(
                 id = UUID.randomUUID().toString(),
                 profile = profile,
@@ -302,21 +487,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 keepAlive = settings.keepAlive,
                 // Read per output chunk so toggling it takes effect on the next line.
                 maskSecretsInOutput = {
-                    container.settingsStore.get(app.terminalssh.secure.settings.SettingsRegistry.maskSecretsInOutput)
+                    container.settingsStore.get(SettingsRegistry.maskSecretsInOutput)
                 },
                 terminalType = settings.terminalType,
                 onClipboardCopy = { text -> copyToClipboard(context, text) },
                 onPasteRequest = { pasteRequested.value = true },
             )
             sessions.add(session)
-            container.hosts.touch(profile.id)
-            _hosts.value = container.hosts.hosts()
-            HostShortcuts.refresh(context, _hosts.value)
+            publishedSessionId = session.id
 
             val bytes = password?.let { SecretEncoding.utf8(it) }
             session.connect(bytes)
             observe(session)
             return session
+        } catch (failure: Throwable) {
+            publishedSessionId?.let { container.lifecycle.closeSession(it) }
+            throw failure
         } finally {
             password?.fill('\u0000')
         }
@@ -347,38 +533,57 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         SshForegroundService.sync(getApplication(), sessions.liveCount(), activeTransfers)
     }
 
+    private val trustingHostKeys = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
     fun trustHostKey(session: SshSession, pending: SshSessionState.AwaitingHostKeyApproval) {
-        try {
-            container.knownHosts.put(pending.host, pending.port, pending.algorithm, pending.key)
-        } finally {
-            pending.key.fill(0)
+        viewModelScope.launch {
+            if (!trustingHostKeys.add(session.id)) return@launch
+            var copy: ByteArray? = null
+            try {
+                if (session.state.value !== pending) return@launch
+                val key = pending.key.copyOf()
+                copy = key
+                withContext(Dispatchers.IO) {
+                    container.knownHosts.put(pending.host, pending.port, pending.algorithm, key)
+                }
+                // A durable write is required before discarding the approval or reconnecting.
+                if (session.state.value === pending) {
+                    pending.key.fill(0)
+                    session.retryAfterTrust()
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                _toast.value = string(R.string.trust_store_failed)
+            } finally {
+                copy?.fill(0)
+                trustingHostKeys.remove(session.id)
+            }
         }
-        session.retryAfterTrust()
     }
 
-    fun forgetHostKey(host: String, port: Int) = container.knownHosts.remove(host, port)
-
-    fun knownHosts(): List<KnownHostsVerifier.KnownHost> = container.knownHosts.all()
-
-    /**
-     * True when the device is on a connection the user is not paying per byte for.
-     *
-     * Unknown counts as unmetered: refusing to transfer because the network state could
-     * not be read would strand the queue on a device that is perfectly fine.
-     */
-    private fun onUnmeteredNetwork(): Boolean = runCatching {
-        val manager = getApplication<Application>()
-            .getSystemService(android.net.ConnectivityManager::class.java) ?: return@runCatching true
-        val capabilities = manager.getNetworkCapabilities(manager.activeNetwork) ?: return@runCatching true
-        capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
-    }.getOrDefault(true)
-
-    fun closeSession(id: String) {
-        app.terminalssh.secure.sftp.TransferCoordinator.unregister(id)
-        sftpControllers.remove(id)?.close()
-        sessions.close(id)
-        SshForegroundService.sync(getApplication(), sessions.liveCount())
+    fun forgetHostKey(host: String, port: Int) = viewModelScope.launch {
+        try {
+            withContext(Dispatchers.IO) { container.knownHosts.remove(host, port) }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            _toast.value = string(R.string.trust_store_failed)
+        }
     }
+
+    suspend fun knownHosts(): Result<List<KnownHostsVerifier.KnownHost>> = withContext(Dispatchers.IO) {
+        try {
+            Result.success(container.knownHosts.all())
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            Result.failure(failure)
+        }
+    }
+
+    fun closeSession(id: String) = container.lifecycle.closeSession(id)
+    fun closeAllSessions() = container.lifecycle.closeAllSessions()
 
     // ---- clipboard ----
 
@@ -474,6 +679,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // ---- private keys ----
 
     fun importKey(uri: Uri, name: String) {
+        if (!metadataMutationAllowed()) return
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
@@ -526,6 +732,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
      * to the server; it is not a secret and is deliberately kept outside the vault.
      */
     fun generateKey(algorithm: KeyAlgorithm, name: String) {
+        if (!metadataMutationAllowed()) return
         viewModelScope.launch {
             val result = withContext(Dispatchers.Default) {
                 runCatching {
@@ -635,39 +842,67 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         container.vault.delete(ref, VaultAad.AGENT_API_KEY)
     }
 
-    /**
-     * Sends the agent's key into the session as an environment variable.
-     *
-     * The command is written so it does not land in shell history, and the decrypted
-     * bytes are wiped as soon as they have been handed to the session.
-     */
+    /** Called only after explicit UI consent to an isolated tmux launch. */
     fun injectAgentKey(agent: CodingAgent, session: SshSession): Boolean {
-        val variable = agent.apiKeyVariable ?: return false
+        if (agent.apiKeyVariable == null) return false
         val bytes = AgentKeyRef.resolutionOrder(agent, session.profile.id)
             .firstNotNullOfOrNull { ref -> container.vault.get(ref, VaultAad.AGENT_API_KEY) }
             ?: run {
                 _toast.value = string(R.string.agent_key_missing)
                 return false
             }
+        session.launchAgentWithKey(agent, bytes) { success ->
+            _toast.value = string(if (success) R.string.agent_key_injected else R.string.agent_key_launch_failed)
+        }
+        return true // accepted for asynchronous execution; success is reported by callback
+    }
+
+    fun keyDependencies(entry: KeyEntry): List<HostProfile> =
+        CredentialReferences.keyDependents(entry.id, container.hosts.hosts())
+
+    /** Enforced again at the storage layer; a stale UI cannot delete a referenced key. */
+    fun deleteKey(entry: KeyEntry): Boolean {
+        if (!metadataMutationAllowed()) return false
         return try {
-            val command = AgentInstallScript.exportKeyCommand(variable, bytes.toString(Charsets.UTF_8))
-            session.send(command + "\n")
-            _toast.value = string(R.string.agent_key_injected)
+            if (keyDependencies(entry).isNotEmpty()) {
+                _toast.value = string(R.string.key_dependencies_title)
+                return false
+            }
+            container.hosts.deleteKey(entry.id)
+            _keys.value = container.hosts.keys()
+            retryCredentialCleanup()
             true
-        } finally {
-            bytes.fill(0)
+        } catch (_: Exception) {
+            _toast.value = string(R.string.key_delete_failed)
+            false
         }
     }
 
-    fun deleteKey(entry: KeyEntry) {
-        container.vault.delete(entry.id, VaultAad.PRIVATE_KEY)
-        container.hosts.deleteKey(entry.id)
-        _keys.value = container.hosts.keys()
+    /** Replacement or unlink-to-prompt is explicit; key deletion remains a separate action. */
+    fun resolveKeyDependencies(entry: KeyEntry, replacementKeyId: String? = null): Boolean {
+        if (!metadataMutationAllowed()) return false
+        return try {
+            val auth = if (replacementKeyId == null) AuthMethod.Password("") else {
+                require(replacementKeyId != entry.id && container.hosts.keys().any { it.id == replacementKeyId })
+                AuthMethod.PrivateKey(replacementKeyId)
+            }
+            container.hosts.replaceKeyForHosts(entry.id, auth)
+            _hosts.value = container.hosts.hosts()
+            retryCredentialCleanup()
+            true
+        } catch (_: Exception) {
+            _toast.value = string(R.string.host_save_failed)
+            false
+        }
     }
 
     // ---- encrypted snippets ----
 
     fun saveSnippet(name: String, command: CharArray) {
+        if (!metadataMutationAllowed()) {
+            command.fill('\u0000')
+            return
+        }
         if (command.isEmpty()) {
             command.fill('\u0000')
             return
@@ -708,6 +943,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun deleteSnippet(entry: SnippetEntry) {
+        if (!metadataMutationAllowed()) return
         container.vault.delete(entry.id, VaultAad.SNIPPET)
         container.hosts.deleteSnippet(entry.id)
         _snippets.value = container.hosts.snippets()

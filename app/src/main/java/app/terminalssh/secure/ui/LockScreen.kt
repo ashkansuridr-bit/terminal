@@ -1,5 +1,7 @@
 package app.terminalssh.secure.ui
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,10 +27,14 @@ import app.terminalssh.secure.R
  * the session list or host list, so the lock also covers the app-switcher preview.
  */
 @Composable
-fun LockScreen(onUnlock: () -> Unit) {
+fun LockScreen(
+    onUnlock: () -> Unit,
+    availability: LockAvailability = LockAvailability.AVAILABLE,
+    onSecuritySettings: () -> Unit = {},
+) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(32.dp),
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(32.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -45,14 +51,19 @@ fun LockScreen(onUnlock: () -> Unit) {
                 textAlign = TextAlign.Center,
             )
             Text(
-                stringResource(R.string.lock_subtitle),
+                stringResource(if (availability == LockAvailability.AVAILABLE)
+                    R.string.lock_subtitle else R.string.lock_recovery_unavailable),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 8.dp),
             )
-            Button(onClick = onUnlock, modifier = Modifier.padding(top = 24.dp)) {
-                Text(stringResource(R.string.lock_unlock))
+            Button(
+                onClick = if (availability == LockAvailability.AVAILABLE) onUnlock else onSecuritySettings,
+                modifier = Modifier.padding(top = 24.dp),
+            ) {
+                Text(stringResource(if (availability == LockAvailability.AVAILABLE)
+                    R.string.lock_unlock else R.string.lock_recovery_settings))
             }
         }
     }

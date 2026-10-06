@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased — implementation awaiting Android verification
+
+These source changes are not a release or a claim of passing Android tests.
+
+- Settings writes/resets/imports now use checked commits, rollback and a durable
+  write-intent marker; unresolved writes retain lock protection after reconstruction.
+- Trust acceptance/removal and vault clearing check persistence. Corrupt trust/policy
+  records block verification; metadata failures have explicit recovery/export UI.
+- Bounded remote editor, fail-closed upload conflicts, event-driven transfer dispatch,
+  durable per-session state and explicit paused recovery dashboard.
+- Verified sibling staging for editor, provider, copy, sync and queued uploads;
+  full content identity checks for resume and stale sync plans.
+- Independent SAF staging, retained failed edits, guarded retry and path boundaries.
+- Credential replacement journal, referenced-key protection, incremental output masking
+  and separate stdin transport for explicitly authorized agent credentials.
+- Shared lifecycle cleanup, visible cleanup failures, locale-aware terminal direction
+  and scrollable keyboard controls.
+- Candidate-only release graph and strict package/version/signature/hash validation.
+- Early SSH setup failures wipe supplied credentials; configured unverified jump routes
+  fail closed. Authentication cleanup retains primary errors and closes failed transports.
+- Lock recreation, unavailable enrollment and stale callbacks remain gated; malformed
+  lock preferences fail closed and invalid settings imports cannot partially apply.
+
+Executed tooling evidence: nine Python artifact-validator tests and source checks.
+Android build, Kotlin tests, device integration and minified runtime remain blocked by
+Gradle distribution/network availability. See `docs/verification/0.7.0-progress.md`.
+
 ## 0.6.1 — Ed25519 that actually works, and transfers that do not corrupt
 
 No signed production release exists for this version. See README for signing state.

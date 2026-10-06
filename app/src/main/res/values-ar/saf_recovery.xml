@@ -1,0 +1,8 @@
+<resources>
+    <string name="saf_recovery_title">عمليات الحفظ الفاشلة والمتوقفة</string>
+    <string name="saf_recovery_explanation">تم الاحتفاظ بالتعديلات المحلية. أعد الاتصال بالخادم نفسه ثم راجع الحفظ وأعد المحاولة.</string>
+    <string name="saf_recovery_empty">لا توجد عمليات حفظ معلقة.</string>
+    <string name="saf_recovery_retry">إعادة محاولة الحفظ</string>
+    <string name="saf_recovery_confirm">أغلق كل محرر خارجي يستخدم هذا الملف قبل المتابعة. سيستبدل هذا الملف الحالي على الخادم بالتعديل المحلي. راجع تغييرات الخادم قبل المتابعة.</string>
+    <string name="saf_recovery_failed">تعذر الحفظ. تم الاحتفاظ بالتعديل المحلي. تحقق من الاتصال وأذونات الخادم.</string>
+</resources>

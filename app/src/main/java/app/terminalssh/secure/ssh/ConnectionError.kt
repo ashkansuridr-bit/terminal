@@ -40,6 +40,9 @@ enum class ConnectionErrorKind {
     /** The stored host key no longer matches what the server presented. */
     HOST_KEY_CHANGED,
 
+    /** A configured hop lacks independently verified routing; no direct fallback. */
+    JUMP_HOST_UNAVAILABLE,
+
     /** Nothing more specific could be determined. */
     UNKNOWN,
 }
@@ -48,6 +51,7 @@ object ConnectionError {
 
     fun classify(t: Throwable): ConnectionErrorKind = when (t) {
         is HostKeyRejected -> ConnectionErrorKind.HOST_KEY_CHANGED
+        is JumpHostUnavailable -> ConnectionErrorKind.JUMP_HOST_UNAVAILABLE
         is MissingCredential -> ConnectionErrorKind.AUTH_FAILED
         is UnknownHostException -> ConnectionErrorKind.UNKNOWN_HOST
         is ConnectException -> ConnectionErrorKind.CONNECTION_REFUSED

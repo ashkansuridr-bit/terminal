@@ -1,5 +1,8 @@
 package app.terminalssh.secure.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.text.BasicSecureTextField
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,6 +30,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +39,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -48,11 +55,9 @@ import app.terminalssh.secure.ui.theme.Turquoise
 /**
  * Installs a coding agent on the connected server.
  *
- * The script is shown in full before anything runs. That is the entire point: the
- * alternative people actually use is pasting `curl … | bash` from a web page into a
- * root shell on their phone, having read none of it.
+ * Previews the installation wrapper, not the upstream scripts or package contents.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun AgentInstallSheet(
     onDismiss: () -> Unit,
@@ -62,15 +67,35 @@ fun AgentInstallSheet(
     onInjectKey: (CodingAgent) -> Unit = {},
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var confirmSecureLaunch by remember { mutableStateOf(false) }
     var agent by remember { mutableStateOf(CodingAgent.CLAUDE_CODE) }
     var packageManager by remember { mutableStateOf<PackageManager?>(PackageManager.APT) }
     var installTmux by remember { mutableStateOf(true) }
     var projectDir by remember { mutableStateOf("") }
-    var apiKey by remember { mutableStateOf("") }
+    // Never rememberSaveable: credentials must not enter Activity saved-instance state.
+    val apiKey = remember { TextFieldState() }
+    DisposableEffect(apiKey) {
+        onDispose { apiKey.edit { replace(0, length, "") } }
+    }
     var hostScopedKey by remember { mutableStateOf(false) }
 
     val script = remember(agent, packageManager, installTmux) {
         AgentInstallScript.installScript(agent, packageManager, installTmux)
+    }
+
+    if (confirmSecureLaunch) {
+        AlertDialog(
+            onDismissRequest = { confirmSecureLaunch = false },
+            title = { Text(stringResource(R.string.agent_key_inject)) },
+            text = { Text(stringResource(R.string.agent_secure_launch_consent)) },
+            confirmButton = { TextButton(onClick = {
+                confirmSecureLaunch = false
+                onInjectKey(agent)
+            }) { Text(stringResource(R.string.agent_key_inject)) } },
+            dismissButton = { TextButton(onClick = { confirmSecureLaunch = false }) {
+                Text(stringResource(android.R.string.cancel))
+            } },
+        )
     }
 
     ModalBottomSheet(
@@ -178,14 +203,15 @@ fun AgentInstallSheet(
                         style = MaterialTheme.typography.labelSmall,
                         color = TextSecondary,
                     )
-                    OutlinedTextField(
-                        value = apiKey,
-                        onValueChange = { apiKey = it },
-                        label = { Text(stringResource(R.string.agent_key_title)) },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        shape = MaterialTheme.shapes.small,
-                        modifier = Modifier.fillMaxWidth(),
+                    val keyFieldLabel = stringResource(R.string.agent_key_title)
+                    // State-based secure entry avoids keeping a plaintext String in app state.
+                    BasicSecureTextField(
+                        state = apiKey,
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .semantics { contentDescription = keyFieldLabel }
+                            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
+                            .padding(12.dp),
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = hostScopedKey, onCheckedChange = { hostScopedKey = it })
@@ -197,13 +223,14 @@ fun AgentInstallSheet(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(
                             onClick = {
-                                onSaveKey(agent, hostScopedKey, apiKey.toCharArray())
-                                apiKey = ""
+                                val chars = CharArray(apiKey.text.length) { apiKey.text[it] }
+                                try { onSaveKey(agent, hostScopedKey, chars) }
+                                finally { chars.fill('\u0000'); apiKey.edit { replace(0, length, "") } }
                             },
-                            enabled = apiKey.isNotBlank(),
+                            enabled = apiKey.text.isNotBlank(),
                         ) { Text(stringResource(R.string.agent_key_save)) }
                         TextButton(
-                            onClick = { onInjectKey(agent) },
+                            onClick = { confirmSecureLaunch = true },
                             enabled = hasKey(agent),
                         ) { Text(stringResource(R.string.agent_key_inject)) }
                     }

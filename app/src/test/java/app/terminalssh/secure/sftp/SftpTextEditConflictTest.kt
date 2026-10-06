@@ -34,6 +34,14 @@ class SftpTextEditConflictTest {
     }
 
     @Test
+    fun directSaveCannotSkipConflictGuardEvenIfUiCheckWasOmitted() = runBlocking {
+        val remote = FakeChannel(mtime = 200, content = opened)
+        val controller = controller(remote, saved(mtime = 100, text = opened))
+        assertTrue(runCatching { controller.writeOpenedFileText(PATH, "local edited text") }.isFailure)
+        assertEquals(0, remote.uploadCount)
+    }
+
+    @Test
     fun unchangedRemoteFileIsCheckedWithoutPerformingAHiddenUpload() = runBlocking {
         val remote = FakeChannel(mtime = 100, content = opened)
         val controller = controller(remote, saved(mtime = 100, text = opened))
@@ -97,6 +105,45 @@ class SftpTextEditConflictTest {
         assertFalse(EditConflict.statProvesChange(saved, currentMtime = 100L, currentSize = 10L))
     }
 
+    @Test
+    fun oversizedReopenRevokesPreviousPermissionAndCannotOverwriteTwoMegabytes() = runBlocking {
+        val original = "x".repeat(2 * 1024 * 1024)
+        val remote = FakeChannel(mtime = 100, content = original)
+        val controller = controller(remote, saved(100, opened))
+        val result = controller.downloadFileTextForEdit(PATH)
+        val failure = result.exceptionOrNull()
+        assertTrue(failure is TextEditTooLargeException)
+        assertEquals(MAX_EDIT_BYTES.toInt(), (failure as TextEditTooLargeException).preview.content.length)
+        assertTrue(runCatching { controller.writeOpenedFileText(PATH, "partial") }.isFailure)
+        assertTrue(controller.checkFileTextConflict(PATH).isFailure)
+        assertEquals(0, remote.uploadCount)
+    }
+
+    @Test
+    fun failedReopenRevokesPreviousPermission() = runBlocking {
+        val remote = FakeChannel(mtime = null, content = opened)
+        val controller = controller(remote, saved(100, opened))
+        assertTrue(controller.downloadFileTextForEdit(PATH).isFailure)
+        assertTrue(runCatching { controller.writeOpenedFileText(PATH, "partial") }.isFailure)
+        assertEquals(0, remote.uploadCount)
+    }
+
+    @Test
+    fun exactLimitIsEditableButOneAdditionalByteIsNot() {
+        val exact = BoundedText.read(ByteArrayInputStream(ByteArray(MAX_EDIT_BYTES.toInt()) { 65 }))
+        assertFalse(exact.truncated)
+        assertEquals(MAX_EDIT_BYTES, exact.totalSize)
+        exact.requireEditable()
+        val large = BoundedText.read(ByteArrayInputStream(ByteArray(MAX_EDIT_BYTES.toInt() + 1) { 65 }))
+        assertTrue(large.truncated)
+        assertTrue(runCatching { large.requireEditable() }.isFailure)
+    }
+
+    @Test
+    fun invalidUtf8CannotBecomeAnEditableLossySnapshot() {
+        assertTrue(runCatching { BoundedText.read(ByteArrayInputStream(byteArrayOf(0xC3.toByte()))) }.isFailure)
+    }
+
     private fun saved(mtime: Long, text: String) = EditFingerprint(
         mtimeEpochSeconds = mtime,
         sizeBytes = text.toByteArray().size.toLong(),
@@ -136,6 +183,8 @@ class SftpTextEditConflictTest {
             setACMODTIME(availableMtime, availableMtime)
             setSIZE(content.toByteArray().size.toLong())
         }
+
+        override fun lstat(path: String): SftpATTRS = stat(path)
 
         override fun get(source: String): InputStream =
             ByteArrayInputStream(content.toByteArray(Charsets.UTF_8))

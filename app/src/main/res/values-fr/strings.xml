@@ -264,26 +264,26 @@
     <string name="settings_transfers_wifi_only">Transfert uniquement en Wi-Fi</string>
     <string name="settings_transfers_wifi_only_summary">Les transferts attendent pendant l’utilisation des données mobiles</string>
     <string name="agent_install_title">Installer un agent de code</string>
-    <string name="agent_install_body">Ceci s\u2019exécute sur le serveur connecté. Lisez-le avant de l\u2019exécuter\u202f; rien n\u2019est lancé sans que vous l\u2019ayez vu.</string>
+    <string name="agent_install_body">This previews installation commands only. Downloaded installer bodies and package contents are not reviewed; execution trusts upstream sources.</string>
     <string name="agent_which">Quel agent</string>
     <string name="agent_package_manager">Gestionnaire de paquets du serveur</string>
     <string name="agent_pm_skip">Inconnu — ignorer</string>
     <string name="agent_install_tmux">Installer tmux en parallèle</string>
     <string name="agent_install_tmux_why">Sans tmux, la session de l\u2019agent meurt avec la connexion</string>
     <string name="agent_project_dir">Répertoire du projet (optionnel)</string>
-    <string name="agent_review_script">Le script qui sera exécuté</string>
+    <string name="agent_review_script">Installation wrapper (downloaded body is not shown)</string>
     <string name="agent_run_install">Lancer l\u2019installation</string>
     <string name="agent_launch">Lancer l\u2019agent dans tmux</string>
     <string name="agent_short">Agent</string>
     <string name="agent_key_saved">Clé enregistrée</string>
     <string name="agent_key_save_failed">Impossible d\u2019enregistrer la clé</string>
     <string name="agent_key_missing">Aucune clé stockée pour cet agent</string>
-    <string name="agent_key_injected">Clé définie pour cette session</string>
+    <string name="agent_key_injected">Isolated tmux launch request succeeded; agent authentication is not verified.</string>
     <string name="agent_key_title">Clé API</string>
     <string name="agent_key_hint">Conservée dans le même coffre-fort chiffré que vos secrets SSH</string>
     <string name="agent_key_scope_host">Uniquement pour ce serveur</string>
     <string name="agent_key_save">Enregistrer la clé</string>
-    <string name="agent_key_inject">Définir la clé dans cette session</string>
+    <string name="agent_key_inject">Launch securely with key</string>
     <string name="agent_key_stored">Clé stockée</string>
     <string name="compose_title">Mode conversation</string>
     <string name="compose_hint">Entrée ajoute une ligne\u202f; envoyez avec le bouton</string>
@@ -382,4 +382,6 @@
     <string name="xfer_integrity_mismatch">Le fichier transféré ne correspond pas à l\'original ; il est arrivé incomplet ou corrompu.</string>
     <string name="xfer_not_enough_remote_space">Espace insuffisant sur le serveur.</string>
     <string name="notif_cancel_transfers">Annuler les transferts</string>
+    <string name="agent_secure_launch_consent">Send the key through separate SSH stdin to the agent environment, without changing the current shell. Start and attach to a fresh isolated tmux session in the home directory. The server and agent can access the key. Both tmux and the agent must already be installed. Continue?</string>
+    <string name="agent_key_launch_failed">Secure launch failed. Check the connection and that tmux and the agent are installed.</string>
 </resources>

@@ -52,6 +52,7 @@ import app.terminalssh.secure.ui.theme.Cyan
 import app.terminalssh.secure.ui.theme.Ink
 import app.terminalssh.secure.ui.theme.Turquoise
 import app.terminalssh.secure.vm.AppViewModel
+import app.terminalssh.secure.vm.HostMetadataUnavailableException
 
 enum class Tab { HOSTS, TERMINAL, FILES, KEYS, SETTINGS }
 
@@ -78,8 +79,13 @@ fun RootScreen(viewModel: AppViewModel, launchHostId: String? = null) {
     }
 
     val openTerminal: (HostProfile, CharArray?) -> Unit = { profile, password ->
-        viewModel.openSession(profile, password)
-        tab = Tab.TERMINAL
+        try {
+            viewModel.openSession(profile, password)
+            tab = Tab.TERMINAL
+        } catch (failure: HostMetadataUnavailableException) {
+            // The ViewModel retains the storage failure and reports the localized error.
+            // No new tab or connection is approved when metadata cannot be trusted.
+        }
     }
 
     // A launcher shortcut names a host by id. Only hosts with a stored credential can
@@ -156,7 +162,7 @@ fun RootScreen(viewModel: AppViewModel, launchHostId: String? = null) {
         ) {
             Crossfade(targetState = tab, label = "root-tab") { target ->
                 when (target) {
-                    Tab.HOSTS -> HostsScreen(viewModel, onConnect = openTerminal)
+                    Tab.HOSTS -> HostsScreen(viewModel, onConnect = openTerminal, onTerminal = { tab = Tab.TERMINAL }, onFiles = { tab = Tab.FILES })
                     Tab.TERMINAL -> TerminalScreen(viewModel, onGoToHosts = { tab = Tab.HOSTS })
                     Tab.FILES -> FilesScreen(viewModel, onGoToHosts = { tab = Tab.HOSTS })
                     Tab.KEYS -> KeysScreen(viewModel)

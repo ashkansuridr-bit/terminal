@@ -45,6 +45,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.terminalssh.secure.model.KeyEntry
 import app.terminalssh.secure.security.KeyAlgorithm
 import app.terminalssh.secure.R
 import app.terminalssh.secure.ui.theme.Danger
@@ -55,6 +56,9 @@ import app.terminalssh.secure.vm.AppViewModel
 @Composable
 fun KeysScreen(viewModel: AppViewModel) {
     val keys by viewModel.keys.collectAsStateWithLifecycle()
+    val hosts by viewModel.hosts.collectAsStateWithLifecycle()
+    var deleting by remember { mutableStateOf<KeyEntry?>(null) }
+    var replacementId by remember { mutableStateOf<String?>(null) }
     val generatedPublicKey by viewModel.generatedPublicKey.collectAsStateWithLifecycle()
     var generating by remember { mutableStateOf(false) }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -78,6 +82,9 @@ fun KeysScreen(viewModel: AppViewModel) {
                 onClick = { picker.launch(arrayOf("*/*")) },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
             ) { Text(stringResource(R.string.keys_import)) }
+            TextButton(onClick = { viewModel.retryCredentialCleanup() }) {
+                Text(stringResource(R.string.credential_cleanup_retry))
+            }
             Spacer(Modifier.height(12.dp))
         }
 
@@ -124,7 +131,7 @@ fun KeysScreen(viewModel: AppViewModel) {
                     )
                 }
                 IconButton(
-                    onClick = { viewModel.deleteKey(entry) },
+                    onClick = { deleting = entry; replacementId = null },
                     modifier = Modifier.semantics { contentDescription = deleteDescription },
                 ) {
                     Icon(
@@ -135,6 +142,47 @@ fun KeysScreen(viewModel: AppViewModel) {
                 }
             }
         }
+    }
+
+    deleting?.let { entry ->
+        val dependencies = hosts.filter { (it.auth as? app.terminalssh.secure.model.AuthMethod.PrivateKey)?.keyVaultRef == entry.id }
+        AlertDialog(
+            onDismissRequest = { deleting = null },
+            title = { Text(stringResource(if (dependencies.isEmpty()) R.string.key_delete_confirm else R.string.key_dependencies_title)) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(ltr(entry.name))
+                    if (dependencies.isNotEmpty()) {
+                        Text(stringResource(R.string.key_dependencies_body))
+                        dependencies.forEach { host -> Text(ltr(host.displayName + " — " + host.subtitle)) }
+                        keys.filter { it.id != entry.id }.forEach { candidate ->
+                            FilterChip(
+                                selected = replacementId == candidate.id,
+                                onClick = { replacementId = candidate.id },
+                                label = { Text(ltr(candidate.name)) },
+                            )
+                        }
+                        TextButton(
+                            enabled = replacementId != null,
+                            onClick = {
+                                if (viewModel.resolveKeyDependencies(entry, replacementId)) replacementId = null
+                            },
+                        ) { Text(stringResource(R.string.key_dependencies_replace)) }
+                        TextButton(onClick = { viewModel.resolveKeyDependencies(entry) }) {
+                            Text(stringResource(R.string.key_dependencies_unlink))
+                        }
+                        Text(stringResource(R.string.key_dependencies_password_prompt), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = dependencies.isEmpty(),
+                    onClick = { if (viewModel.deleteKey(entry)) deleting = null },
+                ) { Text(stringResource(R.string.key_delete, entry.name)) }
+            },
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.cancel)) } },
+        )
     }
 
     if (generating) {

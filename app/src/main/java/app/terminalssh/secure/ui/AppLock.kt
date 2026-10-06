@@ -26,8 +26,9 @@ object AppLock {
 
     /**
      * DEVICE_CREDENTIAL is included alongside BIOMETRIC_WEAK deliberately: requiring a
-     * fingerprint outright would lock out anyone whose sensor stopped working, and the
-     * PIN is the same secret that protects the AndroidKeyStore this app's vault sits on.
+     * fingerprint outright would lock out anyone whose sensor stopped working. This
+     * authenticates the UI gate only: the vault wrapping key does not require user
+     * authentication on each decryption, so this is not a per-decrypt KeyStore policy.
      */
     private const val AUTHENTICATORS =
         BiometricManager.Authenticators.BIOMETRIC_WEAK or
@@ -49,7 +50,7 @@ object AppLock {
         title: String,
         subtitle: String,
         onResult: (Boolean) -> Unit,
-    ) {
+    ): BiometricPrompt {
         val prompt = BiometricPrompt(
             activity,
             androidx.core.content.ContextCompat.getMainExecutor(activity),
@@ -72,5 +73,6 @@ object AppLock {
                 .setAllowedAuthenticators(AUTHENTICATORS)
                 .build(),
         )
+        return prompt
     }
 }

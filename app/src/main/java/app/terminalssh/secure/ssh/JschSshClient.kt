@@ -77,129 +77,136 @@ class JschSshClient(
         keepAlive: Boolean = true,
         terminalType: String = DEFAULT_PTY_TYPE,
     ): Shell {
-        val jsch = JSch()
-        val captured = AtomicReference<PresentedHostKey?>()
-        jsch.hostKeyRepository = PolicyHostKeyRepository(profile, knownHosts, captured)
-
-        when (val auth = profile.auth) {
-            is AuthMethod.Password -> Unit
-            is AuthMethod.PrivateKey -> {
-                val privateKey = requireNotNull(vault.get(auth.keyVaultRef, VaultAad.PRIVATE_KEY)) {
-                    "missing private key"
-                }
-                val passphrase = auth.passphraseVaultRef?.let { vault.get(it, VaultAad.PASSPHRASE) }
-                try {
-                    jsch.addIdentity(profile.id, privateKey, null, passphrase)
-                } finally {
-                    privateKey.fill(0)
-                    passphrase?.fill(0)
-                }
-            }
-        }
-
-        val session = jsch.getSession(profile.username, profile.host, profile.port)
-        session.setConfig("StrictHostKeyChecking", "yes")
-        session.setConfig("PreferredAuthentications", "publickey,password,keyboard-interactive")
-
-        // ProxyJump: if this host has a jump host configured, tunnel through it.
-        val jumpProfile = profile.jumpHostId.takeIf { it.isNotBlank() }
-            ?.let { id -> hostStore.hosts().firstOrNull { it.id == id } }
-        if (jumpProfile != null) {
-            // Add the jump host's identity so JSch can authenticate to it.
-            // Key-based auth is required for ProxyJump — passwords are session-scoped
-            // and get overwritten by the target host's password.
-            when (val jumpAuth = jumpProfile.auth) {
-                is AuthMethod.PrivateKey -> {
-                    val key = requireNotNull(vault.get(jumpAuth.keyVaultRef, VaultAad.PRIVATE_KEY)) {
-                        "missing jump host private key"
-                    }
-                    val pass = jumpAuth.passphraseVaultRef?.let { vault.get(it, VaultAad.PASSPHRASE) }
-                    try {
-                        jsch.addIdentity("jump-${jumpProfile.id}", key, null, pass)
-                    } finally {
-                        key.fill(0)
-                        pass?.fill(0)
-                    }
-                }
-                is AuthMethod.Password -> {
-                    // Password auth for jump host is not supported with ProxyJump
-                    // because JSch passwords are session-scoped and get overwritten.
-                    // Use key-based auth for the jump host instead.
-                }
-            }
-            val jumpUser = jumpProfile.username
-            val jumpHost = jumpProfile.host
-            val jumpPort = jumpProfile.port
-            session.setConfig("ProxyJump", "$jumpUser@$jumpHost:$jumpPort")
-        }
-
-        if (profile.auth is AuthMethod.Password) {
-            val password = passwordOverride
-                ?: profile.auth.vaultRef.takeIf { it.isNotBlank() }?.let { vault.get(it, VaultAad.PASSWORD) }
-                ?: throw MissingCredential()
-            try {
-                session.setPassword(password)
-            } finally {
-                password.fill(0)
-            }
-        } else {
+        // Own the caller's mutable credential even when setup fails before setPassword.
+        try {
+            return connectInternal(profile, columns, rows, passwordOverride, keepAlive, terminalType)
+        } finally {
             passwordOverride?.fill(0)
         }
+    }
 
+    private fun connectInternal(
+        profile: HostProfile,
+        columns: Int,
+        rows: Int,
+        passwordOverride: ByteArray?,
+        keepAlive: Boolean,
+        terminalType: String,
+    ): Shell {
+        // A configuration string alone is not a verified transport. Never silently
+        // bypass a requested hop or validate its key against the target's identity.
+        if (profile.jumpHostId.isNotBlank()) {
+            throw JumpHostUnavailable()
+        }
+        val jsch = JSch()
+        var establishedSession: Session? = null
+        var establishedChannel: ChannelShell? = null
+        var primaryFailure: Throwable? = null
         try {
-            session.connect(CONNECT_TIMEOUT_MS)
-        } catch (e: Exception) {
-            runCatching { session.disconnect() }
-            captured.getAndSet(null)?.let { presented ->
-                when (val decision = presented.decision) {
-                    is KnownHostsVerifier.Decision.FirstUse -> {
-                        val ownedKey = requireNotNull(presented.key)
-                        presented.key = null
-                        throw FirstUseRequired(
-                            profile.host, profile.port, presented.algorithm, ownedKey, decision.fingerprint,
-                        )
+            val captured = AtomicReference<PresentedHostKey?>()
+            jsch.hostKeyRepository = PolicyHostKeyRepository(profile, knownHosts, captured)
+
+            when (val auth = profile.auth) {
+                is AuthMethod.Password -> Unit
+                is AuthMethod.PrivateKey -> {
+                    val privateKey = requireNotNull(vault.get(auth.keyVaultRef, VaultAad.PRIVATE_KEY)) {
+                        "missing private key"
                     }
-                    is KnownHostsVerifier.Decision.Reject -> {
-                        presented.clear()
-                        throw HostKeyRejected(
-                            buildString {
-                                append(decision.reason)
-                                decision.expected?.let { append("; expected ").append(it) }
-                                decision.actual?.let { append("; received ").append(it) }
-                            },
-                        )
+                    var passphrase: ByteArray? = null
+                    try {
+                        passphrase = auth.passphraseVaultRef?.let {
+                            requireNotNull(vault.get(it, VaultAad.PASSPHRASE)) { "missing private key passphrase" }
+                        }
+                        jsch.addIdentity(profile.id, privateKey, null, passphrase)
+                    } finally {
+                        privateKey.fill(0)
+                        passphrase?.fill(0)
                     }
-                    KnownHostsVerifier.Decision.Accept -> presented.clear()
                 }
             }
-            throw e
+
+            val session = jsch.getSession(profile.username, profile.host, profile.port)
+            establishedSession = session
+            session.setConfig("StrictHostKeyChecking", "yes")
+            session.setConfig("PreferredAuthentications", "publickey,password,keyboard-interactive")
+
+            if (profile.auth is AuthMethod.Password) {
+                val password = passwordOverride
+                    ?: profile.auth.vaultRef.takeIf { it.isNotBlank() }?.let { vault.get(it, VaultAad.PASSWORD) }
+                    ?: throw MissingCredential()
+                try {
+                    session.setPassword(password)
+                } finally {
+                    password.fill(0)
+                }
+            } else {
+                passwordOverride?.fill(0)
+            }
+
+            try {
+                session.connect(CONNECT_TIMEOUT_MS)
+            } catch (e: Exception) {
+                runCatching { session.disconnect() }
+                captured.getAndSet(null)?.let { presented ->
+                    when (val decision = presented.decision) {
+                        is KnownHostsVerifier.Decision.FirstUse -> {
+                            val ownedKey = requireNotNull(presented.key)
+                            presented.key = null
+                            throw FirstUseRequired(
+                                profile.host, profile.port, presented.algorithm, ownedKey, decision.fingerprint,
+                            )
+                        }
+                        is KnownHostsVerifier.Decision.Reject -> {
+                            presented.clear()
+                            throw HostKeyRejected(
+                                buildString {
+                                    append(decision.reason)
+                                    decision.expected?.let { append("; expected ").append(it) }
+                                    decision.actual?.let { append("; received ").append(it) }
+                                },
+                            )
+                        }
+                        KnownHostsVerifier.Decision.Accept -> presented.clear()
+                    }
+                }
+                throw e
+            }
+
+            captured.getAndSet(null)?.clear()
+
+            // The connect timeout doubles as SO_TIMEOUT. Leaving it set would tear the
+            // session down after 15 idle seconds, so clear it and use keepalive instead.
+            session.timeout = 0
+            if (keepAlive) {
+                session.serverAliveInterval = KEEPALIVE_MS
+                session.serverAliveCountMax = KEEPALIVE_RETRIES
+            }
+
+            var channel: ChannelShell? = null
+            try {
+                channel = session.openChannel("shell") as ChannelShell
+                establishedChannel = channel
+                channel.setPty(true)
+                channel.setPtyType(terminalType, columns, rows, 0, 0)
+                val input = channel.inputStream
+                val output = channel.outputStream
+                channel.connect(CONNECT_TIMEOUT_MS)
+                return Shell(session, channel, input, output)
+            } catch (e: Exception) {
+                runCatching { channel?.disconnect() }
+                runCatching { session.disconnect() }
+                throw e
+            }
+        } catch (failure: Throwable) {
+            primaryFailure = failure
+            throw failure
         } finally {
-            runCatching { jsch.removeAllIdentity() }
-        }
-
-        captured.getAndSet(null)?.clear()
-
-        // The connect timeout doubles as SO_TIMEOUT. Leaving it set would tear the
-        // session down after 15 idle seconds, so clear it and use keepalive instead.
-        session.timeout = 0
-        if (keepAlive) {
-            session.serverAliveInterval = KEEPALIVE_MS
-            session.serverAliveCountMax = KEEPALIVE_RETRIES
-        }
-
-        var channel: ChannelShell? = null
-        try {
-            channel = session.openChannel("shell") as ChannelShell
-            channel.setPty(true)
-            channel.setPtyType(terminalType, columns, rows, 0, 0)
-            val input = channel.inputStream
-            val output = channel.outputStream
-            channel.connect(CONNECT_TIMEOUT_MS)
-            return Shell(session, channel, input, output)
-        } catch (e: Exception) {
-            runCatching { channel?.disconnect() }
-            runCatching { session.disconnect() }
-            throw e
+            cleanupSshIdentities(
+                primaryFailure,
+                cleanupIdentities = { jsch.removeAllIdentity() },
+                closeChannel = { establishedChannel?.disconnect() },
+                closeSession = { establishedSession?.disconnect() },
+            )
         }
     }
 

@@ -17,8 +17,11 @@ class AndroidKeyStoreVault(
     private val codec: AesGcmVaultCodec = AesGcmVaultCodec(),
 ) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private var durabilityUncertain = false
 
+    @Synchronized
     fun put(ref: String, value: ByteArray, aad: VaultAad) {
+        check(!durabilityUncertain) { "vault durability uncertain" }
         require(ref.isNotBlank())
         when (aad) {
             VaultAad.PRIVATE_KEY -> VaultLimits.requirePrivateKeySize(value)
@@ -27,10 +30,19 @@ class AndroidKeyStoreVault(
         }
         val sealed = codec.seal(getOrCreateKey(), value, aad)
         val packed = byteArrayOf(VERSION) + sealed.nonce + sealed.ciphertext
-        prefs.edit().putString(keyName(ref, aad), Base64.encodeToString(packed, Base64.NO_WRAP)).apply()
+        val record = keyName(ref, aad)
+        val previous = prefs.getString(record, null)
+        if (!prefs.edit().putString(record, Base64.encodeToString(packed, Base64.NO_WRAP)).commit()) {
+            val restored = prefs.edit().putString(record, previous).commit()
+            durabilityUncertain = !restored
+            check(restored) { "vault rollback failed" }
+            error("vault write failed")
+        }
     }
 
+    @Synchronized
     fun get(ref: String, aad: VaultAad): ByteArray? {
+        check(!durabilityUncertain) { "vault durability uncertain" }
         val encoded = prefs.getString(keyName(ref, aad), null) ?: return null
         val packed = Base64.decode(encoded, Base64.NO_WRAP)
         require(packed.size >= 1 + AesGcmVaultCodec.NONCE_BYTES + AesGcmVaultCodec.TAG_BYTES) { "invalid vault record" }
@@ -47,12 +59,33 @@ class AndroidKeyStoreVault(
         )
     }
 
+    @Synchronized
     fun delete(ref: String, aad: VaultAad) {
-        prefs.edit().remove(keyName(ref, aad)).apply()
+        check(!durabilityUncertain) { "vault durability uncertain" }
+        val record = keyName(ref, aad)
+        val previous = prefs.getString(record, null)
+        if (!prefs.edit().remove(record).commit()) {
+            val restored = prefs.edit().putString(record, previous).commit()
+            durabilityUncertain = !restored
+            check(restored) { "vault rollback failed" }
+            error("vault deletion failed")
+        }
     }
 
+    @Synchronized
     fun clearEncryptedRecords() {
-        prefs.edit().clear().apply()
+        check(!durabilityUncertain) { "vault durability uncertain" }
+        val previous = prefs.all.mapValues { (_, value) ->
+            check(value is String) { "invalid vault record" }
+            value
+        }
+        if (!prefs.edit().clear().commit()) {
+            val rollback = prefs.edit().clear()
+            previous.forEach { (key, value) -> rollback.putString(key, value) }
+            val restored = rollback.commit()
+            durabilityUncertain = !restored
+            error(if (restored) "vault clear failed" else "vault clear rollback failed")
+        }
     }
 
     private fun getOrCreateKey(): SecretKey {

@@ -5,14 +5,18 @@ import android.net.Uri
 import app.terminalssh.secure.ssh.SshSession
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -36,7 +40,8 @@ class SftpController(
     private val session: SshSession,
     private val contentResolver: ContentResolver,
     private val cacheDir: File,
-    private val scope: CoroutineScope,
+    scope: CoroutineScope,
+    private val workspaceStore: SftpWorkspaceStore,
     /**
      * Bytes per second ceiling, re-read per transfer so a settings change takes effect on
      * the next file rather than needing a restart. 0 means unlimited.
@@ -48,7 +53,15 @@ class SftpController(
      * Queued transfers resume on their own once this goes true again.
      */
     private val mayStartTransfers: () -> Boolean = { true },
+    private val persistentDir: File = cacheDir,
 ) {
+    private val parentScope = scope
+    private val controllerJob = SupervisorJob(scope.coroutineContext[Job])
+    private val scope = CoroutineScope(scope.coroutineContext + controllerJob)
+    private val closeMutex = Mutex()
+    @Volatile private var closing = false
+    private var closed = false
+
     data class BrowserState(
         val path: String = RemotePath.ROOT,
         /** Already sorted and filtered for display; [rawEntries] is what the server sent. */
@@ -102,9 +115,37 @@ class SftpController(
     private val _browser = MutableStateFlow(BrowserState())
     val browser: StateFlow<BrowserState> = _browser.asStateFlow()
 
-    /** Persists pending transfers across process death. Stored in cacheDir for simplicity. */
-    private val persistFile = java.io.File(cacheDir, "transfer_queue.json")
+    /** Session-isolated durable ledger; legacy shared ledgers are never uploaded to an unknown host. */
+    private val persistFile = TransferStatePaths.queueFile(persistentDir, session.profile.id, session.id)
     val queue = TransferQueue.fromPersisted(persistFile)
+
+    /** Explicit recovery never starts workers. The user reviews paused items in Files. */
+    suspend fun importRecoveredQueue(file: File): Int = withContext(Dispatchers.IO) {
+        closeMutex.withLock {
+        synchronized(TransferRecoveryStore.importLock) {
+            check(!closing && !closed) { "Session is closing" }
+            check(TransferRecoveryStore(persistentDir).matches(file, session.profile)) { "Recovery server mismatch" }
+            check(file.length() <= 8_388_608L) { "Recovery ledger exceeds limit" }
+            val raw = org.json.JSONArray(file.readText())
+            for (index in 0 until raw.length()) {
+                val item = raw.getJSONObject(index)
+                check(item.getString("id").matches(Regex("[A-Za-z0-9_-]{1,128}")))
+                check(item.getString("remotePath").startsWith("/"))
+                check(android.net.Uri.parse(item.getString("localUri")).scheme == "content")
+                TransferDirection.valueOf(item.getString("direction"))
+                TransferState.valueOf(item.getString("state"))
+            }
+            val recovered = TransferQueue.fromPersisted(file).transfers.value.filter { !it.state.isTerminal }
+            check(recovered.isNotEmpty()) { "No recoverable transfers" }
+            queue.importPaused(recovered)
+            // Commit the new owner before removing the previous ledger. A failed write
+            // keeps the original on disk and leaves the copies paused (never overwrite).
+            queue.persist(persistFile)
+            if (!file.delete()) throw IOException("Cannot retire recovered ledger")
+            recovered.size
+        }
+        }
+    }
 
     private val _uploadConflict = MutableStateFlow<UploadConflict?>(null)
     val uploadConflict: StateFlow<UploadConflict?> = _uploadConflict.asStateFlow()
@@ -113,31 +154,51 @@ class SftpController(
     // below (a different thread) cannot observe a stale reference and leak the channel.
     @Volatile
     private var client: SftpClient? = null
-    private val pumpLock = Any()
-    private var pumpJob: Job? = null
+
+    private val _persistenceFailed = MutableStateFlow(false)
+    val persistenceFailed: StateFlow<Boolean> = _persistenceFailed.asStateFlow()
+
+    private fun writeState(write: () -> Unit) {
+        try {
+            write()
+            _persistenceFailed.value = false
+        } catch (failure: IOException) {
+            // Expose a recoverability failure; teardown still retries and throws if
+            // its final durable snapshot cannot be committed.
+            _persistenceFailed.value = true
+            android.util.Log.e("TransferState", "Transfer state persistence failed")
+        }
+    }
 
     /** Auto-persist queue whenever it changes so pending transfers survive process death. */
     private val persistJob = scope.launch {
         queue.transfers.collect {
             withContext(Dispatchers.IO) {
-                if (it.any { t -> !t.state.isTerminal }) {
-                    queue.persist(persistFile)
-                } else {
-                    queue.clearPersisted(persistFile)
+                synchronized(TransferRecoveryStore.importLock) {
+                    writeState {
+                        if (queue.transfers.value.any { t -> !t.state.isTerminal }) {
+                            queue.persist(persistFile)
+                        } else {
+                            queue.clearPersisted(persistFile)
+                        }
+                    }
                 }
             }
         }
     }
 
     /** Persist transfer history to disk. */
-    private val historyFile = java.io.File(cacheDir, "transfer_history.json")
+    private val historyFile = TransferStatePaths.historyFile(persistentDir, session.profile.id, session.id)
 
     init {
+        scope.launch(Dispatchers.IO) {
+            writeState { TransferStatePaths.registerSession(persistentDir, session.profile.id, session.id, session.profile) }
+        }
         queue.loadHistory(historyFile)
         scope.launch {
             queue.history.collect {
                 withContext(Dispatchers.IO) {
-                    queue.persistHistory(historyFile)
+                    writeState { queue.persistHistory(historyFile) }
                 }
             }
         }
@@ -162,6 +223,7 @@ class SftpController(
 
     private suspend fun client(): SftpClient = withContext(Dispatchers.IO) {
         synchronized(this@SftpController) {
+            check(!closing) { "SFTP controller is closing" }
             client?.let { return@withContext it }
             val opened = session.openSftp() ?: throw IllegalStateException("session is not connected")
             client = opened
@@ -277,8 +339,14 @@ class SftpController(
         val result = runCatching {
             withContext(Dispatchers.IO) {
                 val sftp = client()
+                val sourceFingerprint = sftp.editFingerprint(entry.path)
+                val guard = sftp.destinationGuard(target)
                 temp.outputStream().use { sink -> sftp.download(entry.path, sink, resumeFrom = 0L) {} }
-                temp.inputStream().use { source -> sftp.upload(source, target, resumeFrom = 0L) {} }
+                check(temp.length() == sourceFingerprint.sizeBytes &&
+                    temp.inputStream().use { SyncComparison.sha256(it) }.joinToString("") { "%02x".format(it) } ==
+                    sourceFingerprint.sha256) { "Source changed while copying" }
+                sftp.requireFingerprint(entry.path, sourceFingerprint)
+                temp.inputStream().use { source -> sftp.atomicUpload(source, target, beforeCommit = guard) }
             }
         }
         temp.delete()
@@ -404,9 +472,20 @@ class SftpController(
                 permissions = "",
             )
             // Check for conflict
-            val exists = withContext(Dispatchers.IO) { client().exists(remoteFilePath) }
+            val exists = runCatching {
+                withContext(Dispatchers.IO) { client().exists(remoteFilePath) }
+            }.getOrElse { failure ->
+                if (failure is kotlinx.coroutines.CancellationException) throw failure
+                showBrowserError(failure)
+                return@launch
+            }
             if (exists) {
-                val renamed = nonCollidingName(RemotePath.parent(remoteFilePath), displayName)
+                val renamed = runCatching { nonCollidingName(RemotePath.parent(remoteFilePath), displayName) }
+                    .getOrElse { failure ->
+                        if (failure is kotlinx.coroutines.CancellationException) throw failure
+                        showBrowserError(failure)
+                        return@launch
+                    }
                 val renamedPath = RemotePath.join(RemotePath.parent(remoteFilePath), renamed)
                 enqueueUploadNow(android.net.Uri.fromFile(localFile), renamed, renamedPath)
             } else {
@@ -449,17 +528,17 @@ class SftpController(
     suspend fun downloadFileTextForEdit(remotePath: String, maxBytes: Long = 512_000): Result<Pair<String, Long>> {
         return runCatching {
             withContext(Dispatchers.IO) {
+                // A failed or oversized reopen must invalidate an earlier editable snapshot.
+                editFingerprints.remove(remotePath)
                 val sftp = client()
-                val text = sftp.downloadText(remotePath, maxBytes)
-                val mtime = sftp.mtime(remotePath)
-                // Hash what we actually opened. mtime and size are only the fast path;
-                // this is what catches an edit that preserved both.
-                editFingerprints[remotePath] = EditFingerprint(
-                    mtimeEpochSeconds = mtime,
-                    sizeBytes = sftp.size(remotePath),
-                    sha256 = EditConflict.sha256(text),
-                )
-                text to mtime
+                val loaded = sftp.downloadTextResult(remotePath, maxBytes)
+                loaded.requireEditable()
+                val baseline = sftp.editFingerprint(remotePath)
+                val text = loaded.content
+                check(EditConflict.sha256(text) == baseline.sha256) { "Remote file changed while opening" }
+                sftp.requireFingerprint(remotePath, baseline)
+                editFingerprints[remotePath] = baseline
+                text to baseline.mtimeEpochSeconds
             }
         }
     }
@@ -480,7 +559,10 @@ class SftpController(
                 val currentSha = if (EditConflict.statProvesChange(saved, currentMtime, currentSize)) {
                     null
                 } else {
-                    runCatching { EditConflict.sha256(sftp.downloadText(remotePath, maxBytes)) }.getOrNull()
+                    sftp.downloadTextResult(remotePath, maxBytes).let { loaded ->
+                        loaded.requireEditable()
+                        EditConflict.sha256(loaded.content)
+                    }
                 }
 
                 when (EditConflict.verdict(saved, currentMtime, currentSize, currentSha)) {
@@ -493,15 +575,39 @@ class SftpController(
         }
     }
 
-    /** Uploads text content back to a remote path (after editing). */
-    fun uploadFileText(remotePath: String, text: String) = scope.launch {
-        val result = runCatching { withContext(Dispatchers.IO) { client().uploadText(remotePath, text) } }
+    /** No caller, including force-save, may write a partial or failed editor load. */
+    internal suspend fun writeOpenedFileText(
+        remotePath: String,
+        text: String,
+        forceOverwrite: Boolean = false,
+    ) = withContext(Dispatchers.IO) {
+        val opened = editFingerprints[remotePath] ?: error("No complete editable snapshot")
+        val sftp = client()
+        // Force is only authorized by the separate confirmation action, and still rejects
+        // changes made while this upload is staging. It never bypasses failed reads.
+        val expected = if (forceOverwrite) sftp.editFingerprint(remotePath) else opened
+        sftp.requireFingerprint(remotePath, expected)
+        val bytes = text.toByteArray(Charsets.UTF_8)
+        try {
+            bytes.inputStream().use { source ->
+                sftp.atomicUpload(source, remotePath, beforeCommit = {
+                    sftp.requireFingerprint(remotePath, expected)
+                })
+            }
+        } finally { bytes.fill(0) }
+    }
+
+    /** The caller keeps its editor open until the verified replacement succeeds. */
+    suspend fun uploadFileText(remotePath: String, text: String, forceOverwrite: Boolean = false): Result<Unit> {
+        val result = runCatching { writeOpenedFileText(remotePath, text, forceOverwrite) }
+        result.exceptionOrNull()?.let { if (it is kotlinx.coroutines.CancellationException) throw it }
         if (result.isSuccess) {
             editFingerprints.remove(remotePath)
             refresh()
         } else {
             showBrowserError(result.exceptionOrNull()!!)
         }
+        return result
     }
 
     /** Changes POSIX mode bits on a remote file/directory, then refreshes. */
@@ -568,8 +674,9 @@ class SftpController(
                 }
                 // Upload zip to remote destination
                 val remotePath = RemotePath.join(remoteDestDir, zipName)
+                val guard = sftp.destinationGuard(remotePath)
                 java.io.FileInputStream(zipFile).use { inp ->
-                    sftp.upload(inp, remotePath, 0L) {}
+                    sftp.atomicUpload(inp, remotePath, beforeCommit = guard)
                 }
                 zipFile.delete()
                 remotePath
@@ -581,18 +688,10 @@ class SftpController(
 
     // ---- one-way sync (#28/#29) ----
 
-    // ---- bookmarked folders (#31) ----
+    // Bookmarks and presets are host-scoped durable metadata, independent of sessions.
     private val _bookmarks = MutableStateFlow<List<String>>(emptyList())
     val bookmarks: StateFlow<List<String>> = _bookmarks.asStateFlow()
 
-    fun toggleBookmark(path: String) {
-        val current = _bookmarks.value
-        _bookmarks.value = if (path in current) current - path else current + path
-    }
-
-    fun isBookmarked(path: String): Boolean = path in _bookmarks.value
-
-    // ---- sync presets (#48) ----
     data class SyncPreset(
         val id: String,
         val name: String,
@@ -604,12 +703,60 @@ class SftpController(
     private val _syncPresets = MutableStateFlow<List<SyncPreset>>(emptyList())
     val syncPresets: StateFlow<List<SyncPreset>> = _syncPresets.asStateFlow()
 
+    private val workspaceMutex = Mutex()
+
+    init {
+        scope.launch {
+            try {
+                workspaceMutex.withLock {
+                    publishWorkspace(withContext(Dispatchers.IO) { workspaceStore.load() })
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                showBrowserError(failure)
+            }
+        }
+    }
+
+    private fun publishWorkspace(state: SftpWorkspaceState) {
+        _bookmarks.value = state.bookmarks
+        _syncPresets.value = state.presets.map { SyncPreset(it.id, it.name, it.localDir, it.remoteDir, it.deleteRemote) }
+    }
+
+    private fun updateWorkspace(change: (SftpWorkspaceState) -> SftpWorkspaceState) {
+        scope.launch {
+            try {
+                // Commit first: a failed disk write must not look like a saved bookmark.
+                workspaceMutex.withLock {
+                    publishWorkspace(withContext(Dispatchers.IO) { workspaceStore.update(change) })
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                showBrowserError(failure)
+            }
+        }
+    }
+
+    fun toggleBookmark(path: String) {
+        val normalized = RemotePath.normalize(path)
+        updateWorkspace { state ->
+            state.copy(bookmarks = if (normalized in state.bookmarks) state.bookmarks - normalized else state.bookmarks + normalized)
+        }
+    }
+
+    fun isBookmarked(path: String): Boolean = RemotePath.normalize(path) in _bookmarks.value
+
     fun saveSyncPreset(preset: SyncPreset) {
-        _syncPresets.value = _syncPresets.value.filter { it.id != preset.id } + preset
+        updateWorkspace { state ->
+            val durable = WorkspaceSyncPreset(preset.id, preset.name, preset.localDir, RemotePath.normalize(preset.remoteDir), preset.deleteRemote)
+            state.copy(presets = state.presets.filter { it.id != preset.id } + durable)
+        }
     }
 
     fun deleteSyncPreset(id: String) {
-        _syncPresets.value = _syncPresets.value.filter { it.id != id }
+        updateWorkspace { state -> state.copy(presets = state.presets.filter { it.id != id }) }
     }
 
     // ---- folder size (#45) ----
@@ -631,78 +778,128 @@ class SftpController(
         val kind: Kind,
         val localSize: Long = 0L,
         val remoteSize: Long = 0L,
+        val localSnapshot: SyncFileSnapshot? = null,
+        val remoteSnapshot: SyncFileSnapshot? = null,
+        val snapshotVerified: Boolean = false,
     ) {
         enum class Kind { UPLOAD, DELETE_REMOTE, SKIP_IDENTICAL }
     }
 
     /**
-     * Computes a one-way sync plan: local → remote.
-     * Compares files by relative path and size (fast heuristic; mtime not available via SFTP universally).
+     * Computes a one-way sync plan: local → remote. SAFE hashes every equal-sized
+     * candidate; FAST is an explicit path/size/mtime heuristic, not a content guarantee.
+     * Any remote stat/hash failure aborts planning rather than authorizing destructive work.
      */
-    suspend fun computeSyncPlan(localDir: java.io.File, remoteDir: String, deleteRemote: Boolean = false): List<SyncAction> {
-        return withContext(Dispatchers.IO) {
-            val sftp = client()
-            // Local files
-            val localFiles = localDir.walkTopDown().filter { it.isFile }.map { file ->
-                file.relativeTo(localDir).path to file.length()
-            }.toMap()
-            // Remote files
-            val remoteFiles = sftp.listRecursive(remoteDir).map { (remotePath, relative) ->
-                val size = runCatching { sftp.size(remotePath) }.getOrDefault(0L)
-                relative to size
-            }.toMap()
-
-            val actions = mutableListOf<SyncAction>()
-
-            // Files to upload: new or different size
-            for ((relPath, localSize) in localFiles) {
-                val remoteSize = remoteFiles[relPath]
-                if (remoteSize == null) {
-                    actions.add(SyncAction(relPath, SyncAction.Kind.UPLOAD, localSize, 0L))
-                } else if (remoteSize != localSize) {
-                    actions.add(SyncAction(relPath, SyncAction.Kind.UPLOAD, localSize, remoteSize))
-                } else {
-                    actions.add(SyncAction(relPath, SyncAction.Kind.SKIP_IDENTICAL, localSize, remoteSize))
-                }
-            }
-
-            // Files to delete on remote (remote has files not in local)
-            if (deleteRemote) {
-                for ((relPath, remoteSize) in remoteFiles) {
-                    if (relPath !in localFiles) {
-                        actions.add(SyncAction(relPath, SyncAction.Kind.DELETE_REMOTE, 0L, remoteSize))
-                    }
-                }
-            }
-
-            actions.sortedBy { it.relativePath }
+    suspend fun computeSyncPlan(
+        localDir: File,
+        remoteDir: String,
+        deleteRemote: Boolean = false,
+        mode: SyncMode = SyncMode.SAFE,
+    ): List<SyncAction> = withContext(Dispatchers.IO) {
+        require(localDir.isDirectory) { "Sync source must be an existing directory" }
+        val sftp = client()
+        val localFiles = localDir.walkTopDown().onFail { _, failure -> throw failure }.filter { it.isFile }.associateBy {
+            it.relativeTo(localDir).invariantSeparatorsPath
         }
+        // listRecursive and metadata/hash reads propagate permission/network failures.
+        val remoteFiles = sftp.listRecursive(remoteDir).associate { (path, relative) ->
+            val size = sftp.size(path)
+            check(size >= 0) { "Remote size could not be verified" }
+            relative to Triple(path, size, sftp.mtime(path))
+        }
+        val actions = mutableListOf<SyncAction>()
+        for ((relative, file) in localFiles) {
+            val localSize = file.length()
+            val remote = remoteFiles[relative]
+            val localSnapshot = syncLocalSnapshot(file) ?: throw IOException("Sync source disappeared")
+            val remoteSnapshot = remote?.let { syncRemoteSnapshot(sftp, it.first) }
+            check(remote == null || remoteSnapshot != null) { "Remote disappeared during planning" }
+            val identical = remoteSnapshot != null && SyncComparison.identical(
+                mode, localSnapshot.bytes, localSnapshot.mtimeSeconds,
+                remoteSnapshot.bytes, remoteSnapshot.mtimeSeconds,
+                localHash = { localSnapshot.sha256.toByteArray(Charsets.US_ASCII) },
+                remoteHash = { remoteSnapshot.sha256.toByteArray(Charsets.US_ASCII) },
+            )
+            actions += SyncAction(
+                relative,
+                if (identical) SyncAction.Kind.SKIP_IDENTICAL else SyncAction.Kind.UPLOAD,
+                localSize,
+                remote?.second ?: 0L,
+                localSnapshot, remoteSnapshot, snapshotVerified = true,
+            )
+        }
+        if (deleteRemote) {
+            for ((relative, remote) in remoteFiles) {
+                if (relative !in localFiles) actions += SyncAction(
+                    relative, SyncAction.Kind.DELETE_REMOTE, 0L, remote.second,
+                    remoteSnapshot = syncRemoteSnapshot(sftp, remote.first), snapshotVerified = true,
+                )
+            }
+        }
+        actions.sortedBy { it.relativePath }
     }
 
     /**
      * Executes a sync plan: uploads new/changed files, deletes remote-only files.
      */
-    suspend fun executeSyncPlan(localDir: java.io.File, remoteDir: String, actions: List<SyncAction>) {
+    private fun syncLocalSnapshot(file: File): SyncFileSnapshot? {
+        if (!file.exists()) return null
+        check(file.isFile) { "Sync source is no longer a regular file" }
+        val size = file.length()
+        val mtime = file.lastModified() / 1000L
+        val hash = file.inputStream().use { ContentIdentity.hex(SyncComparison.sha256(it)) }
+        check(file.length() == size && file.lastModified() / 1000L == mtime) { "Sync source changed during inspection" }
+        return SyncFileSnapshot(size, mtime, hash)
+    }
+
+    private fun syncRemoteSnapshot(sftp: SftpClient, path: String): SyncFileSnapshot? {
+        if (!sftp.exists(path)) return null
+        val size = sftp.size(path)
+        check(size >= 0) { "Remote size could not be verified" }
+        val mtime = sftp.mtime(path)
+        val hash = ContentIdentity.hex(sftp.sha256(path))
+        check(sftp.size(path) == size && sftp.mtime(path) == mtime) { "Remote changed during inspection" }
+        return SyncFileSnapshot(size, mtime, hash)
+    }
+
+    suspend fun executeSyncPlan(localDir: File, remoteDir: String, actions: List<SyncAction>) {
         withContext(Dispatchers.IO) {
             val sftp = client()
+            val root = localDir.canonicalFile
+            // Validate the entire plan before starting any destructive operation.
             for (action in actions) {
+                SyncPlanGuard.requireRelativePath(action.relativePath)
+                check(action.snapshotVerified) { "Sync plan must be recomputed before execution" }
+                val file = File(root, action.relativePath).canonicalFile
+                check(file.path.startsWith(root.path + File.separator)) { "Sync source escapes its root" }
+                SyncPlanGuard.requireUnchanged(action.localSnapshot, syncLocalSnapshot(file))
+                SyncPlanGuard.requireUnchanged(action.remoteSnapshot,
+                    syncRemoteSnapshot(sftp, RemotePath.join(remoteDir, action.relativePath)))
+            }
+            for (action in actions) {
+                val localFile = File(root, action.relativePath).canonicalFile
+                val remotePath = RemotePath.join(remoteDir, action.relativePath)
+                SyncPlanGuard.requireUnchanged(action.localSnapshot, syncLocalSnapshot(localFile))
+                SyncPlanGuard.requireUnchanged(action.remoteSnapshot, syncRemoteSnapshot(sftp, remotePath))
                 when (action.kind) {
                     SyncAction.Kind.UPLOAD -> {
-                        val localFile = java.io.File(localDir, action.relativePath)
-                        if (!localFile.exists()) continue
-                        val remotePath = RemotePath.join(remoteDir, action.relativePath)
-                        // Ensure parent directory exists
-                        val parentDir = RemotePath.parent(remotePath)
-                        runCatching { sftp.makeDirectory(parentDir) }
-                        java.io.FileInputStream(localFile).use { inp ->
-                            sftp.upload(inp, remotePath, 0L) {}
+                        val snapshot = File.createTempFile("sync-source-", ".tmp", cacheDir)
+                        try {
+                            localFile.inputStream().use { input -> snapshot.outputStream().use { input.copyTo(it) } }
+                            val stagedHash = snapshot.inputStream().use { ContentIdentity.hex(SyncComparison.sha256(it)) }
+                            check(stagedHash == action.localSnapshot?.sha256) { "Sync source changed before upload" }
+                            sftp.ensureDirectories(RemotePath.parent(remotePath))
+                            snapshot.inputStream().use { input ->
+                                sftp.atomicUpload(input, remotePath, beforeCommit = {
+                                    SyncPlanGuard.requireUnchanged(action.remoteSnapshot, syncRemoteSnapshot(sftp, remotePath))
+                                })
+                            }
+                        } finally {
+                            if (!snapshot.delete() && snapshot.exists()) throw IOException("Could not remove sync staging file")
                         }
                     }
-                    SyncAction.Kind.DELETE_REMOTE -> {
-                        val remotePath = RemotePath.join(remoteDir, action.relativePath)
-                        runCatching { sftp.delete(remotePath, false) }
-                    }
-                    SyncAction.Kind.SKIP_IDENTICAL -> { /* no-op */ }
+                    SyncAction.Kind.DELETE_REMOTE -> sftp.delete(remotePath, false)
+                    SyncAction.Kind.SKIP_IDENTICAL -> Unit
                 }
             }
         }
@@ -754,7 +951,11 @@ class SftpController(
             val remotePath = RemotePath.join(remoteDirectory, RemotePath.sanitizeDownloadName(displayName))
             val collides = runCatching {
                 withContext(Dispatchers.IO) { client().exists(remotePath) }
-            }.getOrDefault(false)
+            }.getOrElse { failure ->
+                if (failure is kotlinx.coroutines.CancellationException) throw failure
+                showBrowserError(failure)
+                return@launch
+            }
             if (!collides) {
                 enqueueUploadNow(source, displayName, remotePath)
                 return@launch
@@ -766,7 +967,12 @@ class SftpController(
                     enqueueUploadNow(source, displayName, remotePath)
                 ConflictResolution.SKIP -> Unit
                 ConflictResolution.RENAME -> {
-                    val renamed = nonCollidingName(remoteDirectory, displayName)
+                    val renamed = runCatching { nonCollidingName(remoteDirectory, displayName) }
+                        .getOrElse { failure ->
+                            if (failure is kotlinx.coroutines.CancellationException) throw failure
+                            showBrowserError(failure)
+                            return@launch
+                        }
                     enqueueUploadNow(
                         source,
                         renamed,
@@ -803,7 +1009,12 @@ class SftpController(
             ConflictResolution.OVERWRITE ->
                 enqueueUploadNow(conflict.source, conflict.displayName, conflict.remotePath)
             ConflictResolution.RENAME -> scope.launch {
-                val renamed = nonCollidingName(conflict.remoteDirectory, conflict.displayName)
+                val renamed = runCatching { nonCollidingName(conflict.remoteDirectory, conflict.displayName) }
+                    .getOrElse { failure ->
+                        if (failure is kotlinx.coroutines.CancellationException) throw failure
+                        showBrowserError(failure)
+                        return@launch
+                    }
                 val renamedPath = RemotePath.join(conflict.remoteDirectory, RemotePath.sanitizeDownloadName(renamed))
                 enqueueUploadNow(conflict.source, renamed, renamedPath)
             }
@@ -813,9 +1024,8 @@ class SftpController(
 
     /**
      * `file.txt` -> `file (1).txt` -> `file (2).txt`, probing the server for each
-     * candidate until one is free. Gives up after [MAX_RENAME_ATTEMPTS] probes and falls
-     * back to a timestamp suffix, so a directory with hundreds of colliding names can't
-     * turn this into an unbounded loop.
+     * candidate until one is free. Fails after [MAX_RENAME_ATTEMPTS] probes: an
+     * untested timestamp suffix is not evidence that overwriting it is safe.
      */
     private suspend fun nonCollidingName(remoteDirectory: String, displayName: String): String {
         val sanitized = RemotePath.sanitizeDownloadName(displayName)
@@ -824,8 +1034,7 @@ class SftpController(
             val taken = withContext(Dispatchers.IO) { client().exists(RemotePath.join(remoteDirectory, candidate)) }
             if (!taken) return candidate
         }
-        val (stem, ext) = RemotePath.splitExtension(sanitized)
-        return if (ext.isEmpty()) "$stem-${System.currentTimeMillis()}" else "$stem-${System.currentTimeMillis()}.$ext"
+        error("No verified unused destination name")
     }
 
     fun pause(id: String) {
@@ -834,7 +1043,8 @@ class SftpController(
     }
 
     fun resume(id: String) {
-        cancelled -= id
+        // Keep the interrupted attempt marked until it actually exits. The scheduler
+        // removes this marker only when the next worker owns the transfer.
         queue.resume(id)
         pump()
     }
@@ -851,40 +1061,31 @@ class SftpController(
      * Adaptive concurrency: launches up to maxConcurrent transfers in parallel,
      * each on its own SFTP channel for true parallel I/O.
      */
-    private fun pump() {
-        // Guarded because pump() is called from UI callbacks (enqueue/retry/resume) that
-        // are not confined to one thread. Two callers racing the isActive check would each
-        // launch a pump loop, and both could take the same transfer from nextToStart()
-        // before either marked it RUNNING — two uploads writing one remote path.
-        synchronized(pumpLock) {
-            if (pumpJob?.isActive == true) return
-            pumpJob = scope.launch {
-                while (isActive) {
-                    queue.adaptConcurrency()
-                    // Holding rather than failing: the user asked to wait for Wi-Fi, not
-                    // to lose the queue.
-                    val next = if (mayStartTransfers()) queue.nextToStart() else null
-                    if (next == null) {
-                        // Nothing eligible right now. Re-check once after a beat instead of
-                        // recursing into pump(): this job is still active here, so pump()'s
-                        // own guard returned immediately and the queue stalled until some
-                        // external call happened to restart it. Retry backoffs expiring and
-                        // adaptConcurrency() raising the limit both land in this window.
-                        delay(PUMP_IDLE_RECHECK_MS)
-                        if (queue.nextToStart() == null) break else continue
-                    }
-                    queue.markRunning(next.id)
-                    cancelled -= next.id
-                    val transfer = queue.transfers.value.first { it.id == next.id }
-                    // Launch each transfer as a separate coroutine for parallel execution
-                    launch {
-                        runTransfer(transfer)
-                        transferClients.remove(transfer.id)?.close()
-                    }
-                }
+    private val schedulerDelegate = lazy {
+        TransferScheduler(scope, queue, { !closing && session.state.value.isLive && mayStartTransfers() }) { transfer ->
+            cancelled -= transfer.id
+            try {
+                runTransfer(transfer)
+            } finally {
+                transferClients.remove(transfer.id)?.close()
             }
         }
     }
+
+    private val scheduler by schedulerDelegate
+
+    init {
+        scope.launch {
+            session.state.collect { state ->
+                if (state.isLive) onSchedulingConditionsChanged()
+            }
+        }
+    }
+
+    private fun pump() = scheduler.wake()
+
+    /** Call after network capabilities or the Wi-Fi-only setting changes. */
+    fun onSchedulingConditionsChanged() = pump()
 
     private suspend fun runTransfer(transfer: Transfer) {
         // Each concurrent transfer gets its own SFTP channel for true parallel I/O.
@@ -893,6 +1094,10 @@ class SftpController(
         }.getOrNull()
         if (transferClient != null) {
             transferClients[transfer.id] = transferClient
+            if (closing) {
+                transferClients.remove(transfer.id)?.close()
+                throw CancellationException("SFTP controller is closing")
+            }
         }
 
         val result = runCatching {
@@ -1106,18 +1311,35 @@ class SftpController(
             val name = nonCollidingName(destinationDir, sourceEntry.name)
             val target = RemotePath.join(destinationDir, RemotePath.sanitizeDownloadName(name))
 
+            val sourceFingerprint = source.editFingerprint(sourceEntry.path)
+            val guard = destination.destinationGuard(target)
+            val sourceFailure = java.util.concurrent.atomic.AtomicReference<Throwable?>()
+            val streamedDigest = java.security.MessageDigest.getInstance("SHA-256")
             val pipeIn = java.io.PipedInputStream(PIPE_BUFFER)
             val pipeOut = java.io.PipedOutputStream(pipeIn)
             val pump = kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
                 try {
                     pipeOut.use { out -> source.download(sourceEntry.path, out, 0L) {} }
-                } catch (_: Exception) {
-                    runCatching { pipeOut.close() }
+                } catch (failure: Exception) {
+                    sourceFailure.set(failure)
+                    try { pipeOut.close() } catch (cleanup: Exception) { failure.addSuppressed(cleanup) }
                 }
             }
             try {
-                pipeIn.use { input -> destination.upload(input, target, 0L) {} }
+                pipeIn.use { input ->
+                    java.security.DigestInputStream(input, streamedDigest).use { checkedInput ->
+                        destination.atomicUpload(checkedInput, target, beforeCommit = {
+                            sourceFailure.get()?.let { throw java.io.IOException("Source transfer failed", it) }
+                            check(streamedDigest.digest().joinToString("") { "%02x".format(it) } ==
+                                sourceFingerprint.sha256) { "Incomplete or changed source transfer" }
+                            source.requireFingerprint(sourceEntry.path, sourceFingerprint)
+                            guard()
+                        })
+                    }
+                }
             } finally {
+                pipeIn.close()
+                pipeOut.close()
                 pump.cancel()
             }
             target
@@ -1324,14 +1546,16 @@ class SftpController(
         // intact; it says nothing about the file those bytes came from. Re-stat the
         // remote too, or a file replaced between attempts gets its tail appended to the
         // old file's head and the user receives a corrupted download reported as success.
-        val currentRemoteBytes = runCatching { sftp.size(transfer.remotePath) }.getOrNull()
-        val resumeFrom = if (canTrustRemoteForResume(transfer.totalBytes, currentRemoteBytes) &&
-            canTrustResume(transfer.transferredBytes, actualStagedBytes)
-        ) {
-            transfer.transferredBytes
-        } else {
-            0L
-        }
+        val currentRemoteBytes = sftp.size(transfer.remotePath)
+        check(currentRemoteBytes >= 0) { "Remote size could not be verified" }
+        check(transfer.totalBytes < 0 || currentRemoteBytes == transfer.totalBytes) { "Remote file size changed" }
+        val expectedHash = sftp.sha256(transfer.remotePath)
+        val candidate = transfer.transferredBytes
+        val resumeFrom = if (candidate > 0 && candidate <= currentRemoteBytes &&
+            canTrustResume(candidate, actualStagedBytes) && staging.inputStream().use {
+                ContentIdentity.matches(ContentIdentity.prefix(it, candidate), sftp.sha256Prefix(transfer.remotePath, candidate))
+            }
+        ) candidate else 0L
         if (resumeFrom == 0L) {
             if (transfer.transferredBytes != 0L) queue.resetProgress(transfer.id)
             staging.delete()
@@ -1345,6 +1569,11 @@ class SftpController(
         } else {
             downloadSingleStream(sftp, transfer, staging, resumeFrom)
         }
+        // Verification happens before opening the user destination in truncate mode.
+        check(staging.length() == currentRemoteBytes && staging.inputStream().use {
+            ContentIdentity.matches(expectedHash, SyncComparison.sha256(it))
+        }) { "Downloaded content changed or is incomplete" }
+        check(ContentIdentity.matches(expectedHash, sftp.sha256(transfer.remotePath))) { "Remote changed during download" }
         deliverStagedDownload(transfer, staging)
     }
 
@@ -1440,65 +1669,118 @@ class SftpController(
     }
 
     private fun upload(sftp: SftpClient, transfer: Transfer) {
+        require(transfer.id.matches(Regex("[A-Za-z0-9-]+"))) { "Invalid transfer identifier" }
+        sftp.requireAtomicReplace()
+        sftp.requirePrivateStagingDirectory(transfer.remotePath)
         val uri = Uri.parse(transfer.localUri)
-        if (!SafPermissions.isAccessible(contentResolver, uri)) {
-            throw LocalUriUnavailableException(transfer.localUri)
+        if (!SafPermissions.isAccessible(contentResolver, uri)) throw LocalUriUnavailableException(transfer.localUri)
+        // Hash the source before modifying anything; keep the authorization across retries.
+        val currentSourceHash = contentResolver.openInputStream(uri)?.use {
+            ContentIdentity.hex(SyncComparison.sha256(it))
+        } ?: throw LocalUriUnavailableException(transfer.localUri)
+        val checkpointFile = File(persistentDir, "sftp-upload-${transfer.id}.checkpoint")
+        val hadCheckpoint = checkpointFile.exists()
+        val checkpoint = if (hadCheckpoint) UploadCheckpoint.load(checkpointFile) else {
+            check(transfer.transferredBytes == 0L) { "Legacy upload has no safe resume authorization" }
+            UploadCheckpoint(currentSourceHash, syncRemoteSnapshot(sftp, transfer.remotePath)).also { it.save(checkpointFile) }
         }
-        val source = contentResolver.openInputStream(uri)
-            ?: throw LocalUriUnavailableException(transfer.localUri)
+        check(currentSourceHash == checkpoint.sourceSha256) { "Upload source changed; resume refused" }
+        val stagedPath = RemotePath.join(RemotePath.parent(transfer.remotePath), checkpoint.stagingName)
+        val currentTarget = syncRemoteSnapshot(sftp, transfer.remotePath)
+        // Process death can occur after atomic rename but before queue completion. Reconcile
+        // only an exact desired-content match with the private staging already consumed.
+        if (hadCheckpoint && currentTarget?.sha256 == checkpoint.sourceSha256 && !sftp.exists(stagedPath)) {
+            if (!checkpointFile.delete() && checkpointFile.exists()) throw IOException("Could not clean upload authorization")
+            return
+        }
+        SyncPlanGuard.requireUnchanged(checkpoint.target, currentTarget)
+        val source = contentResolver.openInputStream(uri) ?: throw LocalUriUnavailableException(transfer.localUri)
         source.use { input ->
-            // Pre-resume consistency check: trust transfer.transferredBytes only if the
-            // remote file's current size still matches it. A mismatch (the file changed
-            // since the last attempt, or was never actually started) means the recorded
-            // offset can't be trusted, so restart from zero.
-            val remoteSize = sftp.size(transfer.remotePath)
-            val resumeFrom = if (canTrustResume(transfer.transferredBytes, remoteSize)) {
-                transfer.transferredBytes
-            } else {
-                0L
-            }
-            if (resumeFrom == 0L && transfer.transferredBytes != 0L) queue.resetProgress(transfer.id)
-
-            // Ask the server whether this fits before sending gigabytes at a full disk.
-            // A server that will not answer df is not a reason to refuse the upload.
+            val stageExists = sftp.exists(stagedPath)
+            val resumeFrom = if (stageExists) {
+                check(hadCheckpoint) { "Unrecorded upload staging exists; refusing overwrite" }
+                val stagedBytes = sftp.regularFileSize(stagedPath)
+                check(stagedBytes >= 0 && (transfer.totalBytes < 0 || stagedBytes <= transfer.totalBytes)) {
+                    "Upload staging size is invalid"
+                }
+                val localPrefix = contentResolver.openInputStream(uri)?.use { prefixInput ->
+                    ContentIdentity.prefix(prefixInput, stagedBytes)
+                } ?: throw LocalUriUnavailableException(transfer.localUri)
+                check(ContentIdentity.matches(localPrefix, sftp.sha256Prefix(stagedPath, stagedBytes))) {
+                    "Upload prefix content changed; resume refused"
+                }
+                // JSch RESUME skips the remote size itself. The upload input must remain
+                // at byte zero; prefix validation uses its own separately opened stream.
+                stagedBytes
+            } else 0L
+            // Progress callbacks may lag remote acknowledgements at disconnect. A verified
+            // prefix is authoritative even when persisted progress is slightly different.
+            queue.resetProgress(transfer.id)
+            if (resumeFrom > 0L) queue.markProgress(transfer.id, resumeFrom)
+            sftp.preparePrivateStaging(stagedPath, create = !stageExists)
             val outstanding = (transfer.totalBytes - resumeFrom).coerceAtLeast(0L)
             val free = sftp.freeSpaceBytes(RemotePath.parentOf(transfer.remotePath))
-            if (free != null && transfer.totalBytes > 0 &&
-                !RemoteCommands.fitsInFreeSpace(outstanding, free)
-            ) {
+            if (free != null && transfer.totalBytes > 0 && !RemoteCommands.fitsInFreeSpace(outstanding, free)) {
                 throw NotEnoughRemoteSpaceException(outstanding, free)
             }
-
-            skipFully(input, resumeFrom)
             val limiter = RateLimiter(rateLimitBytesPerSecond())
             val throttled = if (limiter.unlimited) input else ThrottledInputStream(input, limiter)
-            sftp.upload(throttled, transfer.remotePath, resumeFrom = resumeFrom) { total ->
+            sftp.upload(throttled, stagedPath, resumeFrom = resumeFrom) { total ->
                 if (transfer.id in cancelled) throw InterruptedTransfer()
                 queue.markProgress(transfer.id, total)
             }
         }
+        check(ContentIdentity.hex(sftp.sha256(stagedPath)) == checkpoint.sourceSha256) { "Uploaded source changed or is incomplete" }
+        if (transfer.id in cancelled) throw InterruptedTransfer()
+        sftp.commitStagedUpload(stagedPath, transfer.remotePath) {
+            SyncPlanGuard.requireUnchanged(checkpoint.target, syncRemoteSnapshot(sftp, transfer.remotePath))
+        }
+        if (!checkpointFile.delete() && checkpointFile.exists()) throw IOException("Could not clean upload authorization")
     }
 
     /** Signals a user-requested stop, distinguishing it from a real transfer failure. */
     private class InterruptedTransfer : RuntimeException("transfer interrupted by the user")
 
     fun onSessionLost() {
+        cancelled.addAll(queue.active.map { it.id })
         queue.onConnectionLost()
-        close()
-    }
-
-    fun close() {
-        pumpJob?.cancel()
-        persistJob.cancel()
-        queue.persist(persistFile)
-        transferClients.values.forEach { runCatching { it.close() } }
+        // Keep the dispatcher alive; a Connected state event will release the queue.
+        transferClients.values.forEach { it.close() }
         transferClients.clear()
-        // Same monitor client() opens under: without it, close() can null the field while
-        // client() is mid-open, leaking that channel, or hand back a channel just closed.
         synchronized(this) {
-            runCatching { client?.close() }
+            client?.close()
             client = null
         }
+    }
+
+    /** Convenience for callers that cannot suspend; lifecycle teardown awaits closeAndJoin. */
+    fun close() {
+        parentScope.launch(Dispatchers.IO) { closeAndJoin() }
+    }
+
+    suspend fun closeAndJoin() = closeMutex.withLock {
+        if (closed) return@withLock
+        closing = true
+        cancelled.addAll(queue.active.map { it.id })
+        if (schedulerDelegate.isInitialized()) scheduler.close()
+        controllerJob.cancel()
+        var closeFailure: Exception? = null
+        // Close channels before joining: blocking SFTP I/O needs its channel closed to exit.
+        transferClients.values.forEach {
+            try { it.close() } catch (failure: Exception) { if (closeFailure == null) closeFailure = failure }
+        }
+        synchronized(this) {
+            try { client?.close() } catch (failure: Exception) { if (closeFailure == null) closeFailure = failure }
+            client = null
+        }
+        controllerJob.join()
+        transferClients.clear()
+        // Workers and persistence observers have stopped. This final snapshot cannot
+        // race a late progress/completion callback or an earlier disk write.
+        queue.persist(persistFile)
+        queue.persistHistory(historyFile)
+        closed = true
+        closeFailure?.let { throw it }
     }
 
     private companion object {
@@ -1515,6 +1797,6 @@ class SftpController(
 
         /** Past this, hashing the file twice costs more than the assurance is worth. */
         const val MAX_VERIFY_BYTES = 512L * 1024 * 1024
-        const val PUMP_IDLE_RECHECK_MS = 50L
+
     }
 }

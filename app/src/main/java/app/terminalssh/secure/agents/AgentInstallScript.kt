@@ -8,8 +8,8 @@ package app.terminalssh.secure.agents
  * quoting rule below is directly unit-testable.
  *
  * Two rules the whole file follows:
- *  - **Nothing is executed that the user has not seen.** The UI shows the exact script
- *    before running it; `curl | bash` with a hidden body is the thing this replaces.
+ *  - **The wrapper is previewed.** Upstream installer bodies and package contents are
+ *    downloaded at execution time and are not reviewed by this preview.
  *  - **No value from outside is interpolated unquoted.** Paths, keys and project names
  *    are single-quoted with embedded quotes escaped, so a crafted value cannot break out
  *    into a second command.
@@ -89,16 +89,24 @@ object AgentInstallScript {
         appendLine("echo '== done =='")
     }.trimEnd()
 
-    /**
-     * Exports an API key for the current shell only.
-     *
-     * The leading space matters: with `HISTCONTROL=ignorespace` — the default on most
-     * distributions — a command starting with a space is not written to shell history.
-     * `history -d` afterwards covers shells where it is not, so the key does not sit in
-     * `~/.bash_history` afterwards.
+    /** Secret-free command. The key is provided separately on exec stdin, never terminal input.
+     * A fresh tmux server avoids changing an existing server's environment. No shell history
+     * settings are relied on; neither stdin nor child output is routed to the terminal.
      */
-    fun exportKeyCommand(variable: String, key: String): String =
-        " export $variable=${shellQuote(key)}; history -d \$((HISTCMD-1)) 2>/dev/null || true"
+    fun secureLaunchCommand(agent: CodingAgent, socket: String): String {
+        val variable = requireNotNull(agent.apiKeyVariable)
+        require(socket.matches(Regex("terminal-agent-[a-zA-Z0-9-]+")))
+        val body = "set +x; set +v; IFS= read -r $variable || exit 1; " +
+            "[ -n \"\$$variable\" ] || exit 1; export $variable; " +
+            "exec tmux -L ${shellQuote(socket)} -f /dev/null new-session -d -s agent " +
+            shellQuote("exec ${agent.launchCommand}")
+        return "/bin/sh -c " + shellQuote(body)
+    }
+
+    fun secureAttachCommand(socket: String): String {
+        require(socket.matches(Regex("terminal-agent-[a-zA-Z0-9-]+")))
+        return "tmux -L ${shellQuote(socket)} attach -t agent"
+    }
 
     /**
      * Starts the agent inside tmux so the session survives a dropped connection.
@@ -126,8 +134,7 @@ object AgentInstallScript {
     }
 
     private fun agentInstallCommand(agent: CodingAgent): String = when (agent) {
-        // Downloaded to a file and shown before running rather than piped straight into a
-        // shell, so the user can see what they are about to execute.
+        // This wrapper downloads and executes upstream code; its body is not previewed.
         CodingAgent.CLAUDE_CODE ->
             "curl -fsSL https://claude.ai/install.sh -o /tmp/install-claude.sh && " +
                 "sh /tmp/install-claude.sh && rm -f /tmp/install-claude.sh"

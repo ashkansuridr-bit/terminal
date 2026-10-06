@@ -43,6 +43,7 @@ fun TextEditorDialog(
     isReadOnly: Boolean = false,
     onContentChange: (String) -> Unit = {},
     onSave: () -> Unit = {},
+    onDownload: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -98,7 +99,12 @@ fun TextEditorDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            androidx.compose.foundation.layout.Row {
+                if (!isLoading && isReadOnly && onDownload != null) {
+                    TextButton(onClick = onDownload) { Text(stringResource(R.string.download)) }
+                }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            }
         },
     )
 }

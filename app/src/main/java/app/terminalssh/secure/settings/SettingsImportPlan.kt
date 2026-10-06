@@ -58,17 +58,19 @@ object SettingsImportPlanner {
         )
     }
 
-    private fun validatedValue(spec: SettingSpec<*>, raw: Any?): Any? = when (spec) {
-        is BoolSetting -> raw.takeIf { it is Boolean }
-        is IntSetting -> {
-            val number = raw as? Number ?: return null
-            val long = number.toLong()
-            val isWhole = number.toDouble().isFinite() && number.toDouble() == long.toDouble()
-            long.takeIf { isWhole && it in Int.MIN_VALUE..Int.MAX_VALUE }
-                ?.toInt()
-                ?.takeIf(spec::isValid)
+    internal fun validatedValue(spec: SettingSpec<*>, raw: Any?): Any? {
+        return when (spec) {
+            is BoolSetting -> raw.takeIf { it is Boolean }
+            is IntSetting -> {
+                val number = raw as? Number ?: return null
+                val long = number.toLong()
+                val isWhole = number.toDouble().isFinite() && number.toDouble() == long.toDouble()
+                long.takeIf { isWhole && it in Int.MIN_VALUE..Int.MAX_VALUE }
+                    ?.toInt()
+                    ?.takeIf(spec::isValid)
+            }
+            is ChoiceSetting -> (raw as? String)?.takeIf(spec::isValid)
+            is TextSetting -> (raw as? String)?.takeIf(spec::isValid)
         }
-        is ChoiceSetting -> (raw as? String)?.takeIf(spec::isValid)
-        is TextSetting -> (raw as? String)?.takeIf(spec::isValid)
     }
 }

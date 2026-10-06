@@ -109,7 +109,7 @@ fun SftpBrowser(
     fetchFileText: (suspend (String) -> Result<String>)? = null,
     fetchFileTextForEdit: (suspend (String) -> Result<Pair<String, Long>>)? = null,
     fetchFileBytes: (suspend (String) -> Result<ByteArray>)? = null,
-    onUploadEditedText: ((String, String) -> Unit)? = null,
+    onUploadEditedText: (suspend (String, String, Boolean) -> Result<Unit>)? = null,
     onUploadEditedTextChecked: (suspend (String) -> Result<Boolean>)? = null,
     onCompressSelected: (List<RemoteEntry>) -> Unit = {},
     onSyncToRemote: ((RemoteEntry) -> Unit)? = null,
@@ -334,8 +334,10 @@ fun SftpBrowser(
             entry = entry,
             fetchFileText = fetchFileText,
             fetchFileTextForEdit = fetchFileTextForEdit,
-            onUpload = { text -> onUploadEditedText?.invoke(entry.path, text); editTarget = null },
+            onUpload = { text, force -> onUploadEditedText?.invoke(entry.path, text, force)
+                ?: Result.failure(IllegalStateException("Editor save unavailable")) },
             onUploadChecked = onUploadEditedTextChecked,
+            onDownload = { onDownload(entry) },
             onDismiss = { editTarget = null },
         )
     }
@@ -835,31 +837,53 @@ private fun RemoteTextEditor(
     entry: RemoteEntry,
     fetchFileText: (suspend (String) -> Result<String>)?,
     fetchFileTextForEdit: (suspend (String) -> Result<Pair<String, Long>>)? = null,
-    onUpload: (String) -> Unit,
+    onUpload: suspend (String, Boolean) -> Result<Unit>,
     onUploadChecked: (suspend (String) -> Result<Boolean>)? = null,
+    onDownload: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     var loading by remember { mutableStateOf(true) }
     var content by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var concurrentEditWarning by remember { mutableStateOf(false) }
+    var editable by remember(entry.path) { mutableStateOf(false) }
+    val oversizedMessage = stringResource(R.string.sftp_editor_too_large)
     val conflictCheckFailed = stringResource(R.string.xfer_unknown)
 
     LaunchedEffect(entry.path) {
         loading = true
         error = null
+        editable = false
+        content = ""
         if (fetchFileTextForEdit != null) {
             fetchFileTextForEdit(entry.path)
-                .onSuccess { (text, _) -> content = text; loading = false }
-                .onFailure { e -> error = e.message; loading = false }
+                .onSuccess { (text, _) -> content = text; editable = true }
+                .onFailure { e ->
+                    if (e is app.terminalssh.secure.sftp.TextEditTooLargeException) {
+                        content = e.preview.content
+                        error = oversizedMessage
+                    } else error = conflictCheckFailed
+                }
         } else {
-            fetchFileText?.invoke(entry.path)
-                ?.onSuccess { text -> content = text; loading = false }
-                ?.onFailure { e -> error = e.message; loading = false }
+            // Preview-only callbacks cannot grant permission to overwrite a file.
+            fetchFileText?.invoke(entry.path)?.onSuccess { content = it }
+            error = conflictCheckFailed
         }
+        loading = false
     }
 
     val scope = rememberCoroutineScope()
+    var saving by remember(entry.path) { mutableStateOf(false) }
+    val save: (Boolean) -> Unit = { force ->
+        if (!saving && editable) scope.launch {
+            saving = true
+            try {
+                onUpload(content, force)
+                    .onSuccess { onDismiss() }
+                    .onFailure { error = conflictCheckFailed }
+            } finally { saving = false }
+        }
+    }
 
     if (concurrentEditWarning) {
         AlertDialog(
@@ -869,7 +893,7 @@ private fun RemoteTextEditor(
             confirmButton = {
                 TextButton(onClick = {
                     concurrentEditWarning = false
-                    onUpload(content)
+                    save(true)
                 }) {
                     Text(stringResource(R.string.sftp_force_save))
                 }
@@ -883,9 +907,11 @@ private fun RemoteTextEditor(
     } else {
         TextEditorDialog(
             fileName = entry.name,
-            isLoading = loading,
+            isLoading = loading || saving,
             content = content,
             errorMessage = error,
+            isReadOnly = !editable,
+            onDownload = onDownload,
             onContentChange = { content = it },
             onSave = {
                 if (onUploadChecked != null) {
@@ -896,16 +922,16 @@ private fun RemoteTextEditor(
                                 if (modifiedExternally) {
                                     concurrentEditWarning = true
                                 } else {
-                                    onUpload(content)
+                                    save(false)
                                 }
                             }
                             .onFailure { failure -> error = failure.message ?: conflictCheckFailed }
                     }
                 } else {
-                    onUpload(content)
+                    save(false)
                 }
             },
-            onDismiss = onDismiss,
+            onDismiss = { if (!saving) onDismiss() },
         )
     }
 }

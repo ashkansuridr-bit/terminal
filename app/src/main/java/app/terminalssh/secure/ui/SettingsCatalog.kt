@@ -31,6 +31,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +42,8 @@ import app.terminalssh.secure.settings.SettingGroup
 import app.terminalssh.secure.settings.SettingSpec
 import app.terminalssh.secure.settings.SettingsRegistry
 import app.terminalssh.secure.settings.SettingsStore
+import app.terminalssh.secure.settings.SettingsPersistenceFailure
+import app.terminalssh.secure.ui.theme.Danger
 import app.terminalssh.secure.ui.theme.TextSecondary
 import app.terminalssh.secure.ui.theme.Turquoise
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -65,9 +69,18 @@ fun SettingsCatalog(
 
     var query by remember { mutableStateOf("") }
     var advanced by remember { mutableStateOf(false) }
-    val revision by store.revision.collectAsStateWithLifecycle()
+    val persistenceFailure by store.persistenceFailure.collectAsStateWithLifecycle()
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        persistenceFailure?.let { failure ->
+            Text(
+                stringResource(if (failure == SettingsPersistenceFailure.ROLLBACK_FAILED) {
+                    R.string.settings_persistence_uncertain
+                } else R.string.settings_persistence_failed),
+                color = Danger,
+                modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
@@ -116,7 +129,7 @@ fun SettingsCatalog(
                 )
             } else {
                 hits.forEach { spec ->
-                    key(revision, spec.key) {
+                    key(spec.key) {
                         SettingRow(spec, store, optionLabel = { optionLabel(it, context) })
                     }
                 }
@@ -138,7 +151,7 @@ fun SettingsCatalog(
                 color = Turquoise,
             )
             specs.forEach { spec ->
-                key(revision, spec.key) {
+                key(spec.key) {
                     SettingRow(spec, store, optionLabel = { optionLabel(it, context) })
                 }
             }

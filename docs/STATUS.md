@@ -1,4 +1,8 @@
-# وضعیت واقعی این نسخه — قبل از انتشار بخوانید
+# سابقهٔ وضعیت نسخه‌های قبلی
+
+این فایل گزارش تاریخی است؛ ادعاهای build و تست زیر، تأیید تغییرات فعلی نیستند.
+وضعیت سورس فعلی و محدودیت اجرای تست در [دفتر بررسی](verification/0.7.0-progress.md)
+و [بررسی محیط build](verification/build-environment-audit.md) ثبت شده است.
 
 ## 0.4.1 verification update
 
@@ -66,3 +70,7 @@ Still blocked in this environment:
 - emulator/device instrumentation;
 - production signing/store validation;
 - GitHub branch creation remains subject to connector write authorization.
+
+## Authentication audit: configured jump hosts
+
+`JschSshClient.connect` now rejects every non-empty `jumpHostId` before credential loading or socket creation. The previous configuration did not establish independently verified hop authentication and could silently connect directly when a referenced host was missing. Jump host routing remains unsupported until a separately authenticated, separately host-key-verified transport is implemented and integration-tested. Saved profiles retain their routing configuration. The connection failure is localized in Persian, English, and Arabic.

@@ -25,7 +25,7 @@ class SshForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_DISCONNECT_ALL) {
-            (application as TerminalApp).sessions.closeAll()
+            (application as TerminalApp).lifecycle.closeAllSessions()
             stopSelf()
             return START_NOT_STICKY
         }
@@ -59,7 +59,7 @@ class SshForegroundService : Service() {
      * rather than being killed mid-session with no explanation.
      */
     override fun onTimeout(startId: Int) {
-        (application as TerminalApp).sessions.closeAll()
+        (application as TerminalApp).lifecycle.closeAllSessions()
         stopSelf()
     }
 

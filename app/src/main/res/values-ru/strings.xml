@@ -266,26 +266,26 @@
     <string name="settings_transfers_wifi_only">Передача только по Wi-Fi</string>
     <string name="settings_transfers_wifi_only_summary">Передачи ожидают, пока используются мобильные данные</string>
     <string name="agent_install_title">Установить кодовый агент</string>
-    <string name="agent_install_body">Устанавливается на подключённый сервер. Прочитайте скрипт перед запуском — ничего не выполнится без вашего ведома.</string>
+    <string name="agent_install_body">This previews installation commands only. Downloaded installer bodies and package contents are not reviewed; execution trusts upstream sources.</string>
     <string name="agent_which">Какой агент</string>
     <string name="agent_package_manager">Менеджер пакетов сервера</string>
     <string name="agent_pm_skip">Неизвестен — пропустить</string>
     <string name="agent_install_tmux">Установить tmux</string>
     <string name="agent_install_tmux_why">Без него сессия агента завершится при разрыве соединения</string>
     <string name="agent_project_dir">Директория проекта (необязательно)</string>
-    <string name="agent_review_script">Скрипт, который будет выполнен</string>
+    <string name="agent_review_script">Installation wrapper (downloaded body is not shown)</string>
     <string name="agent_run_install">Запустить установку</string>
     <string name="agent_launch">Запустить агента в tmux</string>
     <string name="agent_short">Агент</string>
     <string name="agent_key_saved">Ключ сохранён</string>
     <string name="agent_key_save_failed">Не удалось сохранить ключ</string>
     <string name="agent_key_missing">Ключ для этого агента не сохранён</string>
-    <string name="agent_key_injected">Ключ установлен для этой сессии</string>
+    <string name="agent_key_injected">Isolated tmux launch request succeeded; agent authentication is not verified.</string>
     <string name="agent_key_title">API-ключ</string>
     <string name="agent_key_hint">Хранится в том же зашифрованном хранилище, что и ваши SSH-ключи</string>
     <string name="agent_key_scope_host">Только для этого сервера</string>
     <string name="agent_key_save">Сохранить ключ</string>
-    <string name="agent_key_inject">Установить ключ в этой сессии</string>
+    <string name="agent_key_inject">Launch securely with key</string>
     <string name="agent_key_stored">Ключ сохранён</string>
     <string name="compose_title">Режим диалога</string>
     <string name="compose_hint">Enter добавляет строку; отправляйте кнопкой</string>
@@ -384,4 +384,6 @@
     <string name="xfer_integrity_mismatch">Переданный файл не совпадает с оригиналом: он получен неполным или повреждённым.</string>
     <string name="xfer_not_enough_remote_space">На сервере недостаточно свободного места.</string>
     <string name="notif_cancel_transfers">Отменить передачи</string>
+    <string name="agent_secure_launch_consent">Send the key through separate SSH stdin to the agent environment, without changing the current shell. Start and attach to a fresh isolated tmux session in the home directory. The server and agent can access the key. Both tmux and the agent must already be installed. Continue?</string>
+    <string name="agent_key_launch_failed">Secure launch failed. Check the connection and that tmux and the agent are installed.</string>
 </resources>

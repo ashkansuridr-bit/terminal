@@ -14,5 +14,6 @@ val ConnectionErrorKind.stringRes: Int
         ConnectionErrorKind.AUTH_FAILED -> R.string.err_auth_failed
         ConnectionErrorKind.ALGORITHM_MISMATCH -> R.string.err_algorithm_mismatch
         ConnectionErrorKind.HOST_KEY_CHANGED -> R.string.err_host_key_changed
+        ConnectionErrorKind.JUMP_HOST_UNAVAILABLE -> R.string.err_jump_host_unavailable
         ConnectionErrorKind.UNKNOWN -> R.string.err_unknown
     }

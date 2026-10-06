@@ -8,12 +8,12 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,7 +41,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.defaultMinSize
@@ -336,14 +335,12 @@ private fun SessionTabs(
     onSelect: (String) -> Unit,
     onClose: (String) -> Unit,
 ) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberStartAlignedScrollState())
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        sessions.forEach { session ->
+        items(sessions, key = { it.id }) { session ->
             val selected = session.id == activeId
             val state by session.state.collectAsStateWithLifecycle()
             val closeDescription = stringResource(R.string.close_session, session.title)
@@ -452,6 +449,7 @@ private fun StatusBar(session: SshSession) {
  * The single most important mobile-SSH affordance: keys a soft keyboard does not have.
  * Ctrl, Alt, and Shift latch for exactly one following keystroke, like a real terminal.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun KeyToolbar(
     session: SshSession,
@@ -481,11 +479,14 @@ private fun KeyToolbar(
     // cluster is findable by shape rather than by reading each label.
     BoxWithConstraints(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
         // A 600dp-wide window (large phone landscape, tablet, unfolded foldable) has room
-        // for two rows, which removes the scroll entirely on those devices.
-        val twoRows = maxWidth >= 600.dp
+        // for two rows. Each remains scrollable at large font scales and narrow split widths.
+        // Reserve the controls before the weighted terminal is measured. When the IME
+        // is open, even landscape uses one row so the keyboard cannot crowd keys out.
+        val twoRows = maxWidth >= 600.dp && !WindowInsets.isImeVisible
+        val toolbarHeight = if (twoRows) 120.dp else 64.dp
 
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().height(toolbarHeight).padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -495,50 +496,50 @@ private fun KeyToolbar(
                 onClick = onShowKeyboard,
             )
 
-            val primary: @Composable () -> Unit = {
-                ToolKey("Ctrl", active = modifiers.ctrl, toggle = true) {
+            val primary: LazyListScope.() -> Unit = {
+                item { ToolKey("Ctrl", active = modifiers.ctrl, toggle = true) {
                     session.terminalInput.toggle(TerminalModifier.CTRL); onTerminalFocus()
-                }
-                ToolKey("Alt", active = modifiers.alt, toggle = true) {
+                } }
+                item { ToolKey("Alt", active = modifiers.alt, toggle = true) {
                     session.terminalInput.toggle(TerminalModifier.ALT); onTerminalFocus()
-                }
-                ToolKey("Shift", active = modifiers.shift, toggle = true) {
+                } }
+                item { ToolKey("Shift", active = modifiers.shift, toggle = true) {
                     session.terminalInput.toggle(TerminalModifier.SHIFT); onTerminalFocus()
-                }
-                ToolKey("Esc") { press(TerminalKey.ESCAPE) }
-                ToolKey("Tab") { press(TerminalKey.TAB) }
-                ToolKey(stringResource(R.string.snippets_short)) { onSnippets() }
-                ToolKey(stringResource(R.string.agent_short)) { onAgents() }
-                ToolKey("⚡") { onPortForward() }
-                ToolKey(
+                } }
+                item { ToolKey("Esc") { press(TerminalKey.ESCAPE) } }
+                item { ToolKey("Tab") { press(TerminalKey.TAB) } }
+                item { ToolKey(stringResource(R.string.snippets_short)) { onSnippets() } }
+                item { ToolKey(stringResource(R.string.agent_short)) { onAgents() } }
+                item { ToolKey("⚡") { onPortForward() } }
+                item { ToolKey(
                     stringResource(R.string.compose_short),
                     active = composeActive,
                     toggle = true,
-                ) { onCompose() }
-                ToolKey("^C", contentDescription = stringResource(R.string.terminal_key_interrupt)) {
+                ) { onCompose() } }
+                item { ToolKey("^C", contentDescription = stringResource(R.string.terminal_key_interrupt)) {
                     session.pressControl('C'); onTerminalFocus()
-                }
-                ToolKey("^D", contentDescription = stringResource(R.string.terminal_key_eof)) {
+                } }
+                item { ToolKey("^D", contentDescription = stringResource(R.string.terminal_key_eof)) {
                     session.pressControl('D'); onTerminalFocus()
-                }
-                ToolKey("^L", contentDescription = stringResource(R.string.terminal_key_clear)) {
+                } }
+                item { ToolKey("^L", contentDescription = stringResource(R.string.terminal_key_clear)) {
                     session.pressControl('L'); onTerminalFocus()
-                }
-                ToolKey("↑", contentDescription = stringResource(R.string.terminal_key_up)) { press(TerminalKey.UP) }
-                ToolKey("↓", contentDescription = stringResource(R.string.terminal_key_down)) { press(TerminalKey.DOWN) }
-                ToolKey("←", contentDescription = stringResource(R.string.terminal_key_left)) { press(TerminalKey.LEFT) }
-                ToolKey("→", contentDescription = stringResource(R.string.terminal_key_right)) { press(TerminalKey.RIGHT) }
+                } }
+                item { ToolKey("↑", contentDescription = stringResource(R.string.terminal_key_up)) { press(TerminalKey.UP) } }
+                item { ToolKey("↓", contentDescription = stringResource(R.string.terminal_key_down)) { press(TerminalKey.DOWN) } }
+                item { ToolKey("←", contentDescription = stringResource(R.string.terminal_key_left)) { press(TerminalKey.LEFT) } }
+                item { ToolKey("→", contentDescription = stringResource(R.string.terminal_key_right)) { press(TerminalKey.RIGHT) } }
             }
 
-            val secondary: @Composable () -> Unit = {
-                ToolKey("|") { type("|") }
-                ToolKey("/") { type("/") }
-                ToolKey("-") { type("-") }
-                ToolKey("~") { type("~") }
-                ToolKey("Home") { press(TerminalKey.HOME) }
-                ToolKey("End") { press(TerminalKey.END) }
-                ToolKey("PgUp") { press(TerminalKey.PAGE_UP) }
-                ToolKey("PgDn") { press(TerminalKey.PAGE_DOWN) }
+            val secondary: LazyListScope.() -> Unit = {
+                item { ToolKey("|") { type("|") } }
+                item { ToolKey("/") { type("/") } }
+                item { ToolKey("-") { type("-") } }
+                item { ToolKey("~") { type("~") } }
+                item { ToolKey("Home") { press(TerminalKey.HOME) } }
+                item { ToolKey("End") { press(TerminalKey.END) } }
+                item { ToolKey("PgUp") { press(TerminalKey.PAGE_UP) } }
+                item { ToolKey("PgDn") { press(TerminalKey.PAGE_DOWN) } }
             }
 
             if (twoRows) {
@@ -546,12 +547,12 @@ private fun KeyToolbar(
                     Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { primary() }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { secondary() }
+                    LazyRow(Modifier.fillMaxWidth().height(48.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), content = primary)
+                    LazyRow(Modifier.fillMaxWidth().height(48.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), content = secondary)
                 }
             } else {
-                Row(
-                    Modifier.weight(1f).horizontalScroll(rememberStartAlignedScrollState()),
+                LazyRow(
+                    Modifier.weight(1f).height(48.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     primary()
@@ -560,34 +561,6 @@ private fun KeyToolbar(
             }
         }
     }
-}
-
-/**
- * A horizontal scroll state that starts at the layout's own start edge.
- *
- * `horizontalScroll` always begins at offset 0, which is the **left** edge. Under RTL the
- * left edge is the *end* of the content, so a Persian user opened the terminal to a
- * toolbar already scrolled past its own first keys: Ctrl, Alt and Shift sat off-screen to
- * the right and could not be reached without scrolling backwards, which nothing on screen
- * suggested was possible.
- *
- * Aligned once, on the first layout that reports a scrollable width. Re-aligning on every
- * later measurement would yank the row out from under anyone who had scrolled it — and,
- * because the row keeps measuring as it settles, would also move a key after the user had
- * already reached for it.
- */
-@Composable
-private fun rememberStartAlignedScrollState(): ScrollState {
-    val state = rememberScrollState()
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    var aligned by remember { mutableStateOf(false) }
-    LaunchedEffect(isRtl, state.maxValue) {
-        if (isRtl && !aligned && state.maxValue > 0) {
-            aligned = true
-            state.scrollTo(state.maxValue)
-        }
-    }
-    return state
 }
 
 @Composable
@@ -633,6 +606,7 @@ private fun ToolKey(
                 ) else Modifier.clickable(
                     interactionSource = interactions,
                     indication = null,
+                    role = Role.Button,
                     onClick = press,
                 ),
             )

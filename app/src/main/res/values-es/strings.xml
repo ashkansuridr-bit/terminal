@@ -267,26 +267,26 @@
     <string name="settings_transfers_wifi_only">Transferir solo por Wi-Fi</string>
     <string name="settings_transfers_wifi_only_summary">Las transferencias esperan mientras se usan datos móviles</string>
     <string name="agent_install_title">Instalar un agente de programación</string>
-    <string name="agent_install_body">Esto se ejecuta en el servidor conectado. Léelo antes de ejecutarlo; nada se ejecuta que no hayas visto.</string>
+    <string name="agent_install_body">This previews installation commands only. Downloaded installer bodies and package contents are not reviewed; execution trusts upstream sources.</string>
     <string name="agent_which">¿Qué agente?</string>
     <string name="agent_package_manager">Gestor de paquetes del servidor</string>
     <string name="agent_pm_skip">Desconocido — omitir</string>
     <string name="agent_install_tmux">Instalar tmux junto con él</string>
     <string name="agent_install_tmux_why">Sin él, la sesión del agente muere con la conexión</string>
     <string name="agent_project_dir">Directorio del proyecto (opcional)</string>
-    <string name="agent_review_script">El script que se ejecutará</string>
+    <string name="agent_review_script">Installation wrapper (downloaded body is not shown)</string>
     <string name="agent_run_install">Ejecutar la instalación</string>
     <string name="agent_launch">Iniciar el agente en tmux</string>
     <string name="agent_short">Agente</string>
     <string name="agent_key_saved">Llave guardada</string>
     <string name="agent_key_save_failed">No se pudo guardar la llave</string>
     <string name="agent_key_missing">No hay llave almacenada para este agente</string>
-    <string name="agent_key_injected">Llave configurada para esta sesión</string>
+    <string name="agent_key_injected">Isolated tmux launch request succeeded; agent authentication is not verified.</string>
     <string name="agent_key_title">Llave API</string>
     <string name="agent_key_hint">Se mantiene en el mismo cofre cifrado que tus secretos SSH</string>
     <string name="agent_key_scope_host">Solo para este servidor</string>
     <string name="agent_key_save">Guardar llave</string>
-    <string name="agent_key_inject">Configurar la llave en esta sesión</string>
+    <string name="agent_key_inject">Launch securely with key</string>
     <string name="agent_key_stored">Llave almacenada</string>
     <string name="compose_title">Modo conversación</string>
     <string name="compose_hint">Enter agrega una línea; envía con el botón</string>
@@ -382,4 +382,6 @@
     <string name="xfer_integrity_mismatch">El archivo transferido no coincide con el original; llegó incompleto o dañado.</string>
     <string name="xfer_not_enough_remote_space">No hay espacio suficiente en el servidor.</string>
     <string name="notif_cancel_transfers">Cancelar transferencias</string>
+    <string name="agent_secure_launch_consent">Send the key through separate SSH stdin to the agent environment, without changing the current shell. Start and attach to a fresh isolated tmux session in the home directory. The server and agent can access the key. Both tmux and the agent must already be installed. Continue?</string>
+    <string name="agent_key_launch_failed">Secure launch failed. Check the connection and that tmux and the agent are installed.</string>
 </resources>

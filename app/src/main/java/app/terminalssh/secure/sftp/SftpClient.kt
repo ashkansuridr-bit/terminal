@@ -60,6 +60,148 @@ class SftpClient(private val session: Session) : AutoCloseable {
         channel().put(source, RemotePath.normalize(remotePath), monitor, mode)
     }
 
+    /** Fail-closed editor/provider replacement. Never truncates the destination on failure.
+     * Servers without OpenSSH atomic rename support cannot save edits through this path.
+     * There is no SFTP compare-and-swap: another writer can still race after beforeCommit.
+     */
+    fun atomicUpload(
+        source: InputStream,
+        remotePath: String,
+        beforeCommit: () -> Unit = {},
+        onProgress: (Long) -> Unit = {},
+    ) {
+        val target = RemotePath.normalize(remotePath)
+        val sftp = channel()
+        requirePrivateStagingDirectory(target)
+        val attrs = try { sftp.lstat(target) } catch (failure: SftpException) {
+            if (failure.id == ChannelSftp.SSH_FX_NO_SUCH_FILE) null else throw failure
+        }
+        if (attrs != null && (attrs.isDir || attrs.isLink)) {
+            throw java.io.IOException("Atomic replacement requires a regular file")
+        }
+        val protocol = object : AtomicRemoteWrite.Protocol {
+            override fun supportsAtomicReplace() = sftp.getExtension("posix-rename@openssh.com") == "1"
+            override fun write(path: String, input: InputStream) {
+                // Empty stage first: restrict its mode before sending potentially private content.
+                byteArrayOf().inputStream().use {
+                    sftp.put(it, path, ProgressMonitor(0L) {}, ChannelSftp.OVERWRITE)
+                }
+                sftp.chmod(0x180, path) // 0600
+                val privateStage = sftp.lstat(path)
+                check(!privateStage.isDir && !privateStage.isLink &&
+                    (privateStage.permissions and 0x1FF) == 0x180) { "Unsafe upload staging permissions" }
+                sftp.put(input, path, ProgressMonitor(0L, onProgress), ChannelSftp.OVERWRITE)
+                attrs?.let { original ->
+                    val staged = sftp.lstat(path)
+                    // Renaming a new inode must not silently change POSIX ownership.
+                    if (staged.getUId() != original.getUId()) sftp.chown(original.getUId(), path)
+                    if (staged.getGId() != original.getGId()) sftp.chgrp(original.getGId(), path)
+                    sftp.chmod(original.permissions and 0xFFF, path)
+                    val prepared = sftp.lstat(path)
+                    check(prepared.getUId() == original.getUId() && prepared.getGId() == original.getGId() &&
+                        (prepared.permissions and 0xFFF) == (original.permissions and 0xFFF)) {
+                        "Could not preserve remote file permissions"
+                    }
+                }
+            }
+            override fun size(path: String) = sftp.stat(path).size
+            override fun digest(path: String) = sftp.get(path).use { SyncComparison.sha256(it) }
+            override fun rename(from: String, to: String) { sftp.rename(from, to) }
+            override fun delete(path: String) { sftp.rm(path) }
+        }
+        AtomicRemoteWrite.replace(protocol, source, target, beforeCommit)
+    }
+
+    /** Set restrictive permissions before any content is streamed into private staging. */
+    fun preparePrivateStaging(remotePath: String, create: Boolean) {
+        val path = RemotePath.normalize(remotePath)
+        val sftp = channel()
+        if (create) {
+            check(!exists(path)) { "Upload staging already exists" }
+            sftp.put(java.io.ByteArrayInputStream(byteArrayOf()), path, ChannelSftp.OVERWRITE)
+        }
+        val before = sftp.lstat(path)
+        check(!before.isLink && !before.isDir) { "Upload staging is not a regular file" }
+        sftp.chmod(0x180, path) // 0600, before source bytes enter the remote file.
+        val after = sftp.lstat(path)
+        check(!after.isLink && !after.isDir && (after.permissions and 0x1FF) == 0x180) {
+            "Upload staging is not private"
+        }
+    }
+
+    /** POSIX baseline: refuse sibling staging where another group/other user may swap entries.
+     * Server ACLs and a malicious server cannot be proven safe by these permission bits.
+     */
+    fun requirePrivateStagingDirectory(remotePath: String) {
+        val parent = channel().lstat(RemotePath.parent(RemotePath.normalize(remotePath)))
+        check(parent.isDir && !parent.isLink && (parent.permissions and 0x12) == 0) {
+            "Atomic save requires a directory without group or other write permission"
+        }
+    }
+
+    fun regularFileSize(remotePath: String): Long {
+        val attrs = channel().lstat(RemotePath.normalize(remotePath))
+        check(!attrs.isDir && !attrs.isLink) { "Transfer staging is not a regular file" }
+        return attrs.size
+    }
+
+    fun requireAtomicReplace() {
+        check(channel().getExtension("posix-rename@openssh.com") == "1") { "Atomic replacement is unsupported" }
+    }
+
+    /** Commits an already verified resumable sibling; never falls back to delete+rename. */
+    fun commitStagedUpload(stagedPath: String, remotePath: String, beforeCommit: () -> Unit) {
+        requirePrivateStagingDirectory(remotePath)
+        val sftp = channel()
+        check(sftp.getExtension("posix-rename@openssh.com") == "1") { "Atomic replacement is unsupported" }
+        val target = RemotePath.normalize(remotePath)
+        val attrs = try { sftp.lstat(target) } catch (failure: SftpException) {
+            if (failure.id == ChannelSftp.SSH_FX_NO_SUCH_FILE) null else throw failure
+        }
+        check(attrs == null || (!attrs.isDir && !attrs.isLink)) { "Upload target is not a regular file" }
+        val staged = RemotePath.normalize(stagedPath)
+        val stagedAttrs = sftp.lstat(staged)
+        check(!stagedAttrs.isDir && !stagedAttrs.isLink) { "Upload staging is not a regular file" }
+        attrs?.let { original ->
+            if (stagedAttrs.getUId() != original.getUId()) sftp.chown(original.getUId(), staged)
+            if (stagedAttrs.getGId() != original.getGId()) sftp.chgrp(original.getGId(), staged)
+            sftp.chmod(original.permissions and 0xFFF, staged)
+            val prepared = sftp.lstat(staged)
+            check(prepared.getUId() == original.getUId() && prepared.getGId() == original.getGId() &&
+                (prepared.permissions and 0xFFF) == (original.permissions and 0xFFF)) {
+                "Could not preserve remote file permissions"
+            }
+        }
+        beforeCommit()
+        sftp.rename(staged, target)
+    }
+
+    /** Exact byte fingerprint; stat/read/stat rejects concurrent changes during capture. */
+    fun editFingerprint(remotePath: String): EditFingerprint {
+        val path = RemotePath.normalize(remotePath)
+        val before = channel().lstat(path)
+        if (before.isDir || before.isLink) throw java.io.IOException("Not a regular editable file")
+        val hash = sha256(path).joinToString("") { "%02x".format(it) }
+        val after = channel().lstat(path)
+        if (before.size != after.size || before.mTime != after.mTime || after.isLink || after.isDir) {
+            throw java.io.IOException("Remote file changed while reading")
+        }
+        return EditFingerprint(after.mTime.toLong(), after.size, hash)
+    }
+
+    /** Snapshot destination before a user-authorized replacement and recheck at commit. */
+    fun destinationGuard(remotePath: String): () -> Unit {
+        val expected = if (exists(remotePath)) editFingerprint(remotePath) else null
+        return {
+            if (expected != null) requireFingerprint(remotePath, expected)
+            else check(!exists(remotePath)) { "Upload destination appeared during staging" }
+        }
+    }
+
+    fun requireFingerprint(remotePath: String, expected: EditFingerprint) {
+        if (editFingerprint(remotePath) != expected) throw java.io.IOException("Remote edit conflict")
+    }
+
     /** Size in bytes, or [Transfer.UNKNOWN_SIZE] when the server will not say. */
     fun size(remotePath: String): Long =
         runCatching { channel().stat(RemotePath.normalize(remotePath)).size }
@@ -69,14 +211,37 @@ class SftpClient(private val session: Session) : AutoCloseable {
     fun mtime(remotePath: String): Long =
         channel().stat(RemotePath.normalize(remotePath)).mTime.toLong()
 
-    /**
-     * Whether [remotePath] currently exists on the server. A stat failure — including a
-     * genuine "not found" — reads as false; the caller only needs a yes/no for a
-     * pre-upload conflict check, not the reason.
-     */
-    fun exists(remotePath: String): Boolean =
-        runCatching { channel().stat(RemotePath.normalize(remotePath)); true }
-            .getOrDefault(false)
+    /** Streams remote content through SHA-256 without storing it or decoding it as text. */
+    fun sha256(remotePath: String): ByteArray =
+        channel().get(RemotePath.normalize(remotePath)).use { SyncComparison.sha256(it) }
+
+    /** Reads exactly the acknowledged prefix; a short remote file is a failure. */
+    fun sha256Prefix(remotePath: String, bytes: Long): ByteArray =
+        channel().get(RemotePath.normalize(remotePath)).use { ContentIdentity.prefix(it, bytes) }
+
+    /** Creates only explicitly missing directories; every other failure propagates. */
+    fun ensureDirectories(remotePath: String) {
+        var current = "/"
+        for (part in RemotePath.normalize(remotePath).split('/').filter { it.isNotEmpty() }) {
+            current = RemotePath.join(current, part)
+            val attrs = try {
+                channel().lstat(current)
+            } catch (failure: SftpException) {
+                if (failure.id != ChannelSftp.SSH_FX_NO_SUCH_FILE) throw failure
+                channel().mkdir(current)
+                channel().lstat(current)
+            }
+            check(attrs.isDir && !attrs.isLink) { "Sync parent is not a directory" }
+        }
+    }
+
+    /** Only an explicit SFTP not-found response authorizes treating a path as absent. */
+    fun exists(remotePath: String): Boolean = try {
+        channel().stat(RemotePath.normalize(remotePath))
+        true
+    } catch (failure: SftpException) {
+        if (failure.id == ChannelSftp.SSH_FX_NO_SUCH_FILE) false else throw failure
+    }
 
     fun delete(remotePath: String, isDirectory: Boolean) {
         val normalized = RemotePath.normalize(remotePath)
@@ -152,27 +317,20 @@ class SftpClient(private val session: Session) : AutoCloseable {
         return results
     }
 
-    /** Downloads a file's content as a UTF-8 string, capped at [maxBytes]. */
-    fun downloadText(remotePath: String, maxBytes: Long = 512_000): String {
-        val baos = java.io.ByteArrayOutputStream()
-        channel().get(RemotePath.normalize(remotePath)).use { stream ->
-            val buf = ByteArray(8192)
-            var remaining = maxBytes.toInt()
-            while (remaining > 0) {
-                val read = stream.read(buf, 0, minOf(buf.size, remaining))
-                if (read == -1) break
-                baos.write(buf, 0, read)
-                remaining -= read
-            }
-        }
-        return baos.toString(Charsets.UTF_8.name())
-    }
+    /** Preview only. Editor callers must inspect [downloadTextResult] for truncation. */
+    fun downloadText(remotePath: String, maxBytes: Long = MAX_EDIT_BYTES): String =
+        downloadTextResult(remotePath, maxBytes).content
 
-    /** Uploads text content as UTF-8 to a remote path. */
+    /** Reads one byte beyond the cap: server metadata alone cannot prove completeness. */
+    fun downloadTextResult(remotePath: String, maxBytes: Long = MAX_EDIT_BYTES): TextLoadResult =
+        channel().get(RemotePath.normalize(remotePath)).use { BoundedText.read(it, maxBytes) }
+
+    /** Text creation/replacement uses the same verified fail-closed write path. */
     fun uploadText(remotePath: String, text: String) {
+        val guard = destinationGuard(remotePath)
         val bytes = text.toByteArray(Charsets.UTF_8)
-        val monitor = ProgressMonitor(0L) { }
-        channel().put(bytes.inputStream(), RemotePath.normalize(remotePath), monitor, ChannelSftp.OVERWRITE)
+        try { bytes.inputStream().use { atomicUpload(it, remotePath, beforeCommit = guard) } }
+        finally { bytes.fill(0) }
     }
 
     /** The target of a symlink, or null when [remotePath] isn't one or it can't be read. */

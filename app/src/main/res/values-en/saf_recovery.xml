@@ -1,0 +1,8 @@
+<resources>
+    <string name="saf_recovery_title">Failed and interrupted saves</string>
+    <string name="saf_recovery_explanation">Local edits were retained. Reconnect to the same server, then review and retry the save.</string>
+    <string name="saf_recovery_empty">No pending saves.</string>
+    <string name="saf_recovery_retry">Retry save</string>
+    <string name="saf_recovery_confirm">Close every external editor using this file before continuing. This overwrites the current remote file with the retained local edit. Review any changes made on the server before continuing.</string>
+    <string name="saf_recovery_failed">Save could not be completed. The local edit is retained. Check the connection and server permissions.</string>
+</resources>

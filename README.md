@@ -138,7 +138,7 @@ sha256sum -c SHA256SUMS.txt --ignore-missing
 ### 🤖 وایب‌کدینگ
 - نصب **Claude Code**، **OpenCode** یا **Aider** روی سرور با چند ضربه
 - پیش‌نیازها بر اساس بسته‌مدیر سرور (apt / dnf / pacman / apk)
-- **اسکریپت قبل از اجرا کامل نمایش داده می‌شود** — هیچ `curl | bash` کوری
+- **دستور نصب قبل از اجرا نمایش داده می‌شود** — محتوای بسته یا اسکریپت دانلودشدهٔ ناشر در این پیش‌نمایش بررسی نمی‌شود
 - کلید API در همان Vault، با scope جداگانه برای هر سرور
 - tmux برای سشنی که با قطع اتصال نمی‌میرد
 
@@ -174,7 +174,7 @@ sha256sum -c SHA256SUMS.txt --ignore-missing
 | هیچ رازی از دستگاه خارج نمی‌شود | [`scripts/source_audit.py`](scripts/) و کد `AppViewModel` |
 | Host key واقعاً بررسی می‌شود | `KnownHostsVerifier` + ۴ تست واحد |
 | رازها از حافظه پاک می‌شوند | `ByteArray`/`CharArray` و `fill(0)` در `finally` |
-| کلیدهای API به history نمی‌روند | `AgentInstallScript.exportKeyCommand` + تست |
+| کلید API در متن فرمان قرار نمی‌گیرد | اجرای جداگانه با stdin؛ تست shell و آزمون SSH/tmux لازم است |
 | اسکریپت‌ها تزریق‌پذیر نیستند | ۲۴ تست روی shell quoting |
 
 </div>
@@ -283,7 +283,7 @@ cd terminal
 
 ### 🔜 در حال توسعه
 - [ ] Port forwarding (local، remote، SOCKS)
-- [ ] Jump host / bastion
+- [ ] Jump host / bastion — configured hops currently fail closed; no direct fallback.
 - [ ] Split terminal (افقی و عمودی)
 - [ ] جستجو در خروجی ترمینال
 - [ ] همگام‌سازی ابری رمزنگاری‌شده

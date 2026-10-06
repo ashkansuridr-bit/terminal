@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="transfer_persistence_failed">ذخیرهٔ صف انتقال ناموفق بود. تا رفع مشکل، بازیابی پس از بسته‌شدن برنامه تضمین نمی‌شود؛ فضای خالی دستگاه را بررسی کنید.</string>
+</resources>

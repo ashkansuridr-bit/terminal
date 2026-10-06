@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="transfer_persistence_failed">تعذّر حفظ قائمة النقل. لا يمكن ضمان استعادتها بعد إغلاق التطبيق؛ تحقّق من مساحة الجهاز.</string>
+</resources>

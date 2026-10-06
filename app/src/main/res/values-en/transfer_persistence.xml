@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="transfer_persistence_failed">Transfer queue could not be saved. Recovery after closing the app is not assured; check device storage.</string>
+</resources>

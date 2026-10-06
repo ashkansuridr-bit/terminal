@@ -34,6 +34,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import app.terminalssh.secure.ssh.KnownHostsVerifier
+import androidx.compose.runtime.rememberCoroutineScope
+import app.terminalssh.secure.settings.SettingsPersistenceException
+import app.terminalssh.secure.settings.SettingsPersistenceFailure
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,8 +74,21 @@ fun SettingsScreen(viewModel: AppViewModel) {
     val activity = LocalContext.current as? Activity
     val context = LocalContext.current
     val lockAvailability = remember { AppLock.availability(context) }
-    val known = remember { viewModel.knownHosts() }
+    var known by remember { mutableStateOf<List<KnownHostsVerifier.KnownHost>>(emptyList()) }
+    var knownLoading by remember { mutableStateOf(true) }
+    var knownFailed by remember { mutableStateOf(false) }
+    LaunchedEffect(viewModel) {
+        viewModel.knownHosts().fold(
+            onSuccess = { known = it },
+            onFailure = { knownFailed = true },
+        )
+        knownLoading = false
+    }
     val settingsStore = viewModel.settingsStore
+    val persistenceFailure by settingsStore.persistenceFailure.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    var resetting by remember { mutableStateOf(false) }
+    var applyingImport by remember { mutableStateOf(false) }
     var confirmResetAll by remember { mutableStateOf(false) }
     var pendingImport by remember { mutableStateOf<SettingsImportPreview?>(null) }
     val exportLauncher = rememberLauncherForActivityResult(
@@ -107,6 +128,10 @@ fun SettingsScreen(viewModel: AppViewModel) {
                 onSignOut = viewModel::signOutAccount,
             )
         }
+
+        OutlinedButton(onClick = {
+            context.startActivity(android.content.Intent(context, app.terminalssh.secure.sftp.FailedSaveActivity::class.java))
+        }) { Text(stringResource(R.string.saf_recovery_title)) }
 
         // Everything the schema knows about, with search, advanced mode, per-row reset
         // and changed markers — all generated rather than hand-written per setting.
@@ -161,7 +186,11 @@ fun SettingsScreen(viewModel: AppViewModel) {
             }
 
             Spacer(Modifier.height(12.dp))
-            Text(
+            if (knownFailed) {
+                Text(stringResource(R.string.trust_store_failed), color = Danger)
+            } else if (knownLoading) {
+                Text(stringResource(R.string.loading), color = TextSecondary)
+            } else Text(
                 stringResource(R.string.settings_known_hosts, known.size),
                 style = MaterialTheme.typography.labelLarge,
             )
@@ -197,12 +226,28 @@ fun SettingsScreen(viewModel: AppViewModel) {
         AlertDialog(
             onDismissRequest = { confirmResetAll = false },
             title = { Text(stringResource(R.string.settings_reset_all)) },
-            text = { Text(stringResource(R.string.settings_reset_all_confirm)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.settings_reset_all_confirm))
+                    persistenceFailure?.let { failure ->
+                        Text(stringResource(if (failure == SettingsPersistenceFailure.ROLLBACK_FAILED) {
+                            R.string.settings_persistence_uncertain
+                        } else R.string.settings_persistence_failed), color = Danger)
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(onClick = {
-                    settingsStore.resetAll()
-                    confirmResetAll = false
-                }) {
+                    resetting = true
+                    scope.launch {
+                        try {
+                            withContext(Dispatchers.IO) { settingsStore.resetAll() }
+                            confirmResetAll = false
+                        } catch (failure: SettingsPersistenceException) {
+                            // Keep confirmation open. The catalog reports the error.
+                        } finally { resetting = false }
+                    }
+                }, enabled = !resetting) {
                     Text(stringResource(R.string.settings_reset_all), color = Danger)
                 }
             },
@@ -220,6 +265,11 @@ fun SettingsScreen(viewModel: AppViewModel) {
             title = { Text(stringResource(R.string.settings_import_preview_title)) },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
+                    persistenceFailure?.let { failure ->
+                        Text(stringResource(if (failure == SettingsPersistenceFailure.ROLLBACK_FAILED) {
+                            R.string.settings_persistence_uncertain
+                        } else R.string.settings_persistence_failed), color = Danger)
+                    }
                     Text(
                         stringResource(
                             R.string.settings_import_preview_summary,
@@ -262,9 +312,15 @@ fun SettingsScreen(viewModel: AppViewModel) {
             },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.applySettingsImport(preview)
-                    pendingImport = null
-                }) {
+                    applyingImport = true
+                    scope.launch {
+                        try {
+                            if (withContext(Dispatchers.IO) { viewModel.applySettingsImport(preview) }) {
+                                pendingImport = null
+                            }
+                        } finally { applyingImport = false }
+                    }
+                }, enabled = !applyingImport && preview.invalidKeys.isEmpty() && preview.changes.isNotEmpty()) {
                     Text(stringResource(R.string.settings_import_apply))
                 }
             },

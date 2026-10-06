@@ -7,6 +7,8 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,6 +39,7 @@ import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -88,7 +91,35 @@ private const val SEARCH_APPEARS_AT = 5
 fun HostsScreen(
     viewModel: AppViewModel,
     onConnect: (HostProfile, CharArray?) -> Unit,
+    onTerminal: () -> Unit = {},
+    onFiles: () -> Unit = {},
 ) {
+    val metadataState by viewModel.hostMetadataState.collectAsStateWithLifecycle()
+    val recoveryExport = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri -> uri?.let { viewModel.exportRawHostMetadata(it) } }
+    if (metadataState != app.terminalssh.secure.vm.HostMetadataState.Ready) {
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Space.xl),
+            verticalArrangement = Arrangement.spacedBy(Space.md),
+        ) {
+            if (metadataState == app.terminalssh.secure.vm.HostMetadataState.Loading) {
+                CircularProgressIndicator()
+                Text(stringResource(R.string.host_metadata_loading))
+            } else {
+                Text(stringResource(R.string.host_metadata_failed), color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.host_metadata_recovery_detail))
+                TextButton(onClick = viewModel::reloadHostMetadata, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Text(stringResource(R.string.host_metadata_retry))
+                }
+                TextButton(
+                    onClick = { recoveryExport.launch("terminalssh-host-metadata-recovery.json") },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) { Text(stringResource(R.string.host_metadata_export)) }
+            }
+        }
+        return
+    }
     val hosts by viewModel.hosts.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
     val hostStates by viewModel.sessions.hostStates.collectAsStateWithLifecycle(emptyMap())
@@ -136,6 +167,10 @@ fun HostsScreen(
         ) {
             item(key = "header") {
                 ScreenHeader(hostCount = hosts.size, liveCount = hostStates.count { it.value.isLive })
+            }
+
+            if (!searching) item(key = "recovery-dashboard") {
+                RecoveryDashboard(viewModel, openHost, onTerminal, onFiles)
             }
 
             if (showSearch) {

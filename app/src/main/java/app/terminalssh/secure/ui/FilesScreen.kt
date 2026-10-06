@@ -42,7 +42,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     val sessions by viewModel.sessions.sessions.collectAsStateWithLifecycle()
-    val session = sessions.firstOrNull { it.state.value.isLive } ?: sessions.firstOrNull()
+    val activeId by viewModel.sessions.activeId.collectAsStateWithLifecycle()
+    val session = sessions.firstOrNull { it.id == activeId }
+        ?: sessions.firstOrNull { it.state.value.isLive } ?: sessions.firstOrNull()
 
     if (session == null) {
         NoSession(onGoToHosts)
@@ -60,6 +62,7 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     }
 
     val browser by sftp.browser.collectAsStateWithLifecycle()
+    val persistenceFailed by sftp.persistenceFailed.collectAsStateWithLifecycle()
     val transfers by sftp.queue.transfers.collectAsStateWithLifecycle()
     val transferHistory by sftp.queue.history.collectAsStateWithLifecycle()
     val uploadConflict by sftp.uploadConflict.collectAsStateWithLifecycle()
@@ -130,6 +133,13 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().navigationBarsPadding()) {
+        if (persistenceFailed) {
+            Text(
+                stringResource(R.string.transfer_persistence_failed),
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(16.dp),
+            )
+        }
         TransferStrip(
             transfers = transfers,
             history = transferHistory,
@@ -178,7 +188,7 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
             fetchFileText = sftp::downloadFileText,
             fetchFileTextForEdit = sftp::downloadFileTextForEdit,
             fetchFileBytes = sftp::downloadFileBytes,
-            onUploadEditedText = { path, text -> sftp.uploadFileText(path, text) },
+            onUploadEditedText = { path, text, force -> sftp.uploadFileText(path, text, force) },
             onUploadEditedTextChecked = sftp::checkFileTextConflict,
             onCompressSelected = { entries ->
                 scope.launch {

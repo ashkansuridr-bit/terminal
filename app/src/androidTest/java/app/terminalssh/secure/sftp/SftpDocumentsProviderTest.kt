@@ -82,6 +82,15 @@ class SftpDocumentsProviderTest {
         assertFalse(uri.toString().isEmpty())
     }
 
+    @Test fun childDocumentRequiresSameSessionAndPathBoundary() {
+        val provider = attachedProvider()
+        assertTrue(provider.isChildDocument("one::/a", "one::/a/file"))
+        assertFalse(provider.isChildDocument("one::/a", "one::/abc"))
+        assertTrue(provider.isChildDocument("one::/", "one::/anything"))
+        assertFalse(provider.isChildDocument("one::/a/b", "one::/a/bc"))
+        assertFalse(provider.isChildDocument("one::/a", "two::/a/file"))
+    }
+
     /** DocumentsProvider.attachInfo dereferences ProviderInfo.authority, so it must be real. */
     private fun attachedProvider(): SftpDocumentsProvider =
         SftpDocumentsProvider().apply {
@@ -100,6 +109,6 @@ class SftpDocumentsProviderTest {
         }
 
     private fun providerAuthority(): String =
-        // The debug build carries an applicationIdSuffix; the authority does not.
-        "app.terminalssh.secure.documents"
+        // Authority follows each installed variant, including preview/debug suffixes.
+        "${context.packageName}.documents"
 }

@@ -116,4 +116,48 @@ class AppViewModelHostTest {
             viewModel.closeSession(session.id)
         }
     }
+    @Test fun passwordReplacementUsesFreshReferenceAndDeletesOldCiphertext() {
+        val viewModel = AppViewModel(app)
+        val profile = HostProfile("replace", host = "127.0.0.1", username = "tester", auth = AuthMethod.Password(""))
+        assertTrue(viewModel.saveHost(profile, charArrayOf('o', 'l', 'd')))
+        val saved = viewModel.hosts.value.single()
+        val oldRef = (saved.auth as AuthMethod.Password).vaultRef
+        assertTrue(viewModel.saveHost(saved, charArrayOf('n', 'e', 'w')))
+        val newRef = (viewModel.hosts.value.single().auth as AuthMethod.Password).vaultRef
+        assertTrue(oldRef != newRef)
+        assertTrue(app.vault.get(oldRef, VaultAad.PASSWORD) == null)
+        val stored = requireNotNull(app.vault.get(newRef, VaultAad.PASSWORD))
+        try { assertArrayEquals(byteArrayOf(110, 101, 119), stored) } finally { stored.fill(0) }
+        assertTrue(app.hosts.pendingCredentialCleanup().isEmpty())
+    }
+
+    @Test fun authenticationChangesRetireOnlyUnreferencedHostSecrets() {
+        val viewModel = AppViewModel(app)
+        val profile = HostProfile("switch", host = "127.0.0.1", username = "tester", auth = AuthMethod.Password(""))
+        assertTrue(viewModel.saveHost(profile, charArrayOf('p')))
+        val saved = viewModel.hosts.value.single()
+        val oldRef = (saved.auth as AuthMethod.Password).vaultRef
+        assertTrue(viewModel.saveHost(saved.copy(auth = AuthMethod.PrivateKey("key")), null, charArrayOf('a')))
+        assertTrue(app.vault.get(oldRef, VaultAad.PASSWORD) == null)
+        val withPhrase = viewModel.hosts.value.single()
+        val oldPhrase = requireNotNull((withPhrase.auth as AuthMethod.PrivateKey).passphraseVaultRef)
+        val chars = charArrayOf('b')
+        assertTrue(viewModel.saveHost(withPhrase, null, chars))
+        assertTrue(chars.all { it == '\u0000' })
+        assertTrue(app.vault.get(oldPhrase, VaultAad.PASSPHRASE) == null)
+        val newPhrase = requireNotNull((viewModel.hosts.value.single().auth as AuthMethod.PrivateKey).passphraseVaultRef)
+        assertTrue(viewModel.saveHost(viewModel.hosts.value.single().copy(auth = AuthMethod.Password("")), charArrayOf('c')))
+        assertTrue(app.vault.get(newPhrase, VaultAad.PASSPHRASE) == null)
+    }
+
+    @Test fun startupRetriesCleanupRecordedBeforeInterruptedFreshSecretWrite() {
+        val ref = "interrupted-fresh-ref"
+        app.hosts.scheduleCredentialCleanup(app.terminalssh.secure.security.CredentialReference(ref, VaultAad.PASSWORD))
+        val bytes = byteArrayOf(97)
+        try { app.vault.put(ref, bytes, VaultAad.PASSWORD) } finally { bytes.fill(0) }
+        AppViewModel(app)
+        assertTrue(app.vault.get(ref, VaultAad.PASSWORD) == null)
+        assertTrue(app.hosts.pendingCredentialCleanup().isEmpty())
+    }
+
 }

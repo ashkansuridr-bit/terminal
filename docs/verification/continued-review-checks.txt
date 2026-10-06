@@ -1,0 +1,95 @@
+Source/tooling checks during continued adversarial review. Kotlin/Android compilation and runtime tests NOT RUN.
+
+## source
+exit=0
+PASS backup disabled
+PASS backup rules configured
+PASS data extraction configured
+PASS cleartext disabled
+PASS network config cleartext disabled
+PASS internet permission
+PASS launcher exported intentionally
+PASS target sdk 36
+PASS compile sdk 36
+PASS min sdk 26
+PASS release minification
+PASS release resource shrink
+PASS final version
+PASS final app id
+PASS namespace matches app id
+PASS external signing config
+PASS jsch pinned
+PASS agp pinned
+PASS kotlin pinned
+PASS activity compose pinned
+PASS no password String conversion
+PASS termlib pinned
+SOURCE_AUDIT_OK
+
+## market
+exit=0
+PASS final version name
+PASS version code
+PASS non-example application id
+PASS target sdk 36
+PASS market signing config
+PASS keystore path externalized
+PASS keystore password externalized
+PASS key alias externalized
+PASS key password externalized
+PASS privacy fa
+PASS privacy en
+PASS bazaar listing
+PASS data extraction rules
+PASS launcher icon
+MARKET_RELEASE_GATE_OK
+
+## loop2
+exit=0
+PASS no extra immutable String secret conversion
+PASS secure encoding utility wired
+PASS bounded private-key reader wired
+PASS private-key format check avoids immutable String decode
+PASS private-key metadata failure deletes vault secret
+PASS encrypted snippets use SNIPPET AAD
+PASS snippets stored as metadata only
+PASS snippet insertion never appends Enter
+PASS terminal exposes snippets without a fifth nav tab
+PASS version label follows BuildConfig
+PASS version bumped to 0.6.1
+LOOP2_GATE_OK
+
+## artifacts
+exit=0
+test_aab_manifest (test_release_artifacts.ArtifactValidationTest.test_aab_manifest) ... ok
+test_invalid_badging_fails (test_release_artifacts.ArtifactValidationTest.test_invalid_badging_fails) ... ok
+test_missing_artifact_fails (test_release_artifacts.ArtifactValidationTest.test_missing_artifact_fails) ... ok
+test_preview_requires_separate_package_and_suffix (test_release_artifacts.ArtifactValidationTest.test_preview_requires_separate_package_and_suffix) ... ok
+test_rejects_wrong_package_version_code_or_debuggable (test_release_artifacts.ArtifactValidationTest.test_rejects_wrong_package_version_code_or_debuggable) ... ok
+test_unsigned_rejects_every_signature_format (test_release_artifacts.ArtifactValidationTest.test_unsigned_rejects_every_signature_format) ... ok
+test_later_failure_does_not_publish_partial_artifacts (test_release_artifacts.PackagingFailureTest.test_later_failure_does_not_publish_partial_artifacts) ... ok
+test_missing_output_never_creates_artifact_manifest (test_release_artifacts.PackagingFailureTest.test_missing_output_never_creates_artifact_manifest) ... ok
+test_stale_output_is_rejected_before_inspection (test_release_artifacts.PackagingFailureTest.test_stale_output_is_rejected_before_inspection) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.011s
+
+OK
+
+## stdin
+exit=0
+PASS bash enabled: stdin preserved literally; no output/history leak
+PASS bash disabled: stdin preserved literally; no output/history leak
+PASS bash unset-HISTCONTROL: stdin preserved literally; no output/history leak
+PASS zsh enabled: stdin preserved literally; no output/history leak
+PASS zsh disabled: stdin preserved literally; no output/history leak
+PASS zsh unset-HISTCONTROL: stdin preserved literally; no output/history leak
+LIMIT: noninteractive local shell protocol only; SSH, tmux, interactive history and Android remain unverified.
+
+## whitespace
+exit=0
+
+
+Gradle baseline retry: exit 1 before project configuration. Gradle8.13 download: java.net.SocketException Network is unreachable. No requested Gradle task ran.
+
+All values XML parsed; locale duplicate string names and Kotlin resource references checked. These checks do not establish Android resource compilation.

@@ -15,8 +15,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import app.terminalssh.secure.settings.SettingsPersistenceException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,7 +46,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.selection.toggleable
 import app.terminalssh.secure.R
 import app.terminalssh.secure.settings.BoolSetting
 import app.terminalssh.secure.settings.ChoiceSetting
@@ -61,10 +71,31 @@ fun SettingRow(
     store: SettingsStore,
     optionLabel: (String) -> String,
 ) {
-    val changed = store.isChanged(spec)
+    val scope = rememberCoroutineScope()
+    var saving by remember(spec.key) { mutableStateOf(false) }
+    fun persist(onFailure: () -> Unit = {}, action: () -> Unit) {
+        if (saving) return
+        saving = true
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) { action() }
+            } catch (failure: SettingsPersistenceException) {
+                // Store restored the last state (or quarantined uncertain state).
+                // The catalog displays its durable persistence error.
+                onFailure()
+            } finally {
+                saving = false
+            }
+        }
+    }
+    val revision by store.revision.collectAsStateWithLifecycle()
+    val persistenceFailure by store.persistenceFailure.collectAsStateWithLifecycle()
+    val changed = remember(spec, revision, persistenceFailure) { store.isChanged(spec) }
     val title = stringResource(spec.titleRes)
     val resetLabel = stringResource(R.string.settings_reset_one)
-    val booleanValue = (spec as? BoolSetting)?.let(store::get)
+    val booleanValue = remember(spec, revision, persistenceFailure) {
+        (spec as? BoolSetting)?.let(store::get)
+    }
 
     Column(
         Modifier
@@ -73,26 +104,29 @@ fun SettingRow(
             // Long-press resets. Discoverability is the trade-off, so the changed marker
             // below doubles as the hint that there is something to go back from.
             .combinedClickable(
+                enabled = !saving,
                 onClick = {
                     if (spec is BoolSetting && booleanValue != null) {
-                        store.set(spec, !booleanValue)
+                        persist { store.set(spec, !booleanValue) }
                     }
                 },
                 onLongClick = {
                     if (changed) {
-                        store.reset(spec)
+                        persist { store.reset(spec) }
                     }
                 },
                 onLongClickLabel = resetLabel,
             )
             .then(
-                if (booleanValue != null) Modifier.clearAndSetSemantics {
+                if (spec is BoolSetting && booleanValue != null) Modifier.clearAndSetSemantics {
                     contentDescription = title
                     role = Role.Switch
                     toggleableState = ToggleableState(booleanValue)
                     onClick {
-                        store.set(spec, !booleanValue)
-                        true
+                        if (saving) false else {
+                            persist { store.set(spec, !booleanValue) }
+                            true
+                        }
                     }
                 } else Modifier,
             )
@@ -131,6 +165,7 @@ fun SettingRow(
                 Switch(
                     checked = value,
                     onCheckedChange = null,
+                    enabled = !saving,
                 )
             }
         }
@@ -140,14 +175,22 @@ fun SettingRow(
 
             is IntSetting -> {
                 val value = store.get(spec)
+                var draft by remember(value) { mutableStateOf(value.toFloat()) }
                 Text(
-                    intValueLabel(spec, value),
+                    intValueLabel(spec, spec.coerce(draft.roundToInt())),
                     style = MaterialTheme.typography.labelSmall,
                     color = TextSecondary,
                 )
                 Slider(
-                    value = value.toFloat(),
-                    onValueChange = { store.set(spec, it.roundToInt()) },
+                    value = draft,
+                    onValueChange = { draft = it },
+                    onValueChangeFinished = {
+                        val proposed = draft.roundToInt()
+                        persist(onFailure = { draft = store.get(spec).toFloat() }) {
+                            store.set(spec, proposed)
+                        }
+                    },
+                    enabled = !saving,
                     valueRange = spec.min.toFloat()..spec.max.toFloat(),
                     // Compose counts the gaps between stops, not the stops themselves.
                     // Hundreds of painted tick marks make large ranges (such as transfer
@@ -167,7 +210,8 @@ fun SettingRow(
                     spec.values.forEach { option ->
                         FilterChip(
                             selected = option == value,
-                            onClick = { store.set(spec, option) },
+                            onClick = { persist { store.set(spec, option) } },
+                            enabled = !saving,
                             label = {
                                 Text(optionLabel(option), style = MaterialTheme.typography.labelSmall)
                             },
@@ -182,9 +226,11 @@ fun SettingRow(
 
             is TextSetting -> {
                 val value = store.get(spec)
+                var draft by remember(value) { mutableStateOf(value) }
                 OutlinedTextField(
-                    value = value,
-                    onValueChange = { store.set(spec, it) },
+                    value = draft,
+                    onValueChange = { draft = it },
+                    enabled = !saving,
                     singleLine = true,
                     shape = MaterialTheme.shapes.small,
                     modifier = Modifier
@@ -192,8 +238,17 @@ fun SettingRow(
                         .heightIn(min = 56.dp)
                         .semantics { contentDescription = title },
                 )
+                if (draft != value) {
+                    TextButton(onClick = {
+                        val proposed = draft
+                        persist { store.set(spec, proposed) }
+                    }, enabled = !saving) {
+                        Text(stringResource(R.string.settings_save_change))
+                    }
+                }
             }
         }
+        if (saving) Text(stringResource(R.string.loading), color = TextSecondary)
     }
 }
 

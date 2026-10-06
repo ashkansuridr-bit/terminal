@@ -1,0 +1,8 @@
+<resources>
+    <string name="saf_recovery_title">ذخیره‌های ناموفق و قطع‌شده</string>
+    <string name="saf_recovery_explanation">ویرایش محلی حفظ شده است. به همان سرور وصل شوید، سپس ذخیره را بررسی و دوباره تلاش کنید.</string>
+    <string name="saf_recovery_empty">ذخیرهٔ معلقی وجود ندارد.</string>
+    <string name="saf_recovery_retry">تلاش دوباره برای ذخیره</string>
+    <string name="saf_recovery_confirm">پیش از ادامه همهٔ ویرایشگرهای خارجی این فایل را ببندید. این کار فایل فعلی سرور را با ویرایش محلی جایگزین می‌کند. ابتدا تغییرات احتمالی سرور را بررسی کنید.</string>
+    <string name="saf_recovery_failed">ذخیره انجام نشد. ویرایش محلی حفظ شده است. اتصال و مجوزهای سرور را بررسی کنید.</string>
+</resources>

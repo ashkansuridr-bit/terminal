@@ -20,7 +20,11 @@ checks = {
     "no extra immutable String secret conversion":
         "concatToString().encodeToByteArray()" not in all_text,
     "secure encoding utility wired":
-        "SecretEncoding.utf8(password)" in vm and "password?.let { SecretEncoding.utf8(it) }" in vm,
+        "storeFreshHostSecret(ref, password, VaultAad.PASSWORD)" in vm
+        and "storeFreshHostSecret(ref, passphrase, VaultAad.PASSPHRASE)" in vm
+        and "val bytes = SecretEncoding.utf8(secret)" in vm
+        and "finally {\n            bytes.fill(0)" in vm
+        and "password?.let { SecretEncoding.utf8(it) }" in vm,
     "bounded private-key reader wired":
         "SecretIo.readBounded(input, VaultLimits.MAX_PRIVATE_KEY_BYTES)" in vm,
     "private-key format check avoids immutable String decode":

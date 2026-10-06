@@ -20,15 +20,18 @@ class SessionRegistry {
 
     val active: SshSession? get() = _sessions.value.firstOrNull { it.id == _activeId.value }
 
+    @Synchronized
     fun add(session: SshSession) {
         _sessions.value = _sessions.value + session
         _activeId.value = session.id
     }
 
+    @Synchronized
     fun select(id: String) {
         if (_sessions.value.any { it.id == id }) _activeId.value = id
     }
 
+    @Synchronized
     fun close(id: String) {
         val session = _sessions.value.firstOrNull { it.id == id } ?: return
         session.destroy()
@@ -37,6 +40,7 @@ class SessionRegistry {
         if (_activeId.value == id) _activeId.value = remaining.lastOrNull()?.id
     }
 
+    @Synchronized
     fun closeAll() {
         _sessions.value.forEach { it.destroy() }
         _sessions.value = emptyList()

@@ -26,6 +26,8 @@
         android:enableOnBackInvokedCallback="true"
         android:theme="@style/AppTheme">
 
+        <activity android:name=".sftp.FailedSaveActivity" android:exported="false" />
+
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
@@ -66,7 +68,7 @@
         -->
         <provider
             android:name=".sftp.SftpDocumentsProvider"
-            android:authorities="app.terminalssh.secure.documents"
+            android:authorities="${applicationId}.documents"
             android:exported="true"
             android:grantUriPermissions="true"
             android:permission="android.permission.MANAGE_DOCUMENTS">

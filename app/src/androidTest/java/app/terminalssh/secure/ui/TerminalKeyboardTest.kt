@@ -10,6 +10,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Direction
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import app.terminalssh.secure.R
@@ -110,6 +112,45 @@ class TerminalKeyboardTest {
             device.findObject(By.desc(keyboardAction)).click()
             assertTrue(waitForIme(scenario, visible = true))
         }
+    }
+
+    @Test
+    fun toolbarReservesTouchTargetsAboveImeInPortraitAndLandscape() {
+        app.sessions.add(idleSession(id = "toolbar-measurement", title = "Toolbar measurement"))
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            val terminalTab = instrumentation.targetContext.getString(R.string.tab_terminal)
+            val keyboardAction = instrumentation.targetContext.getString(R.string.show_keyboard)
+            assertTrue(device.wait(Until.hasObject(By.text(terminalTab)), UI_TIMEOUT_MS))
+            device.findObject(By.text(terminalTab)).click()
+            assertTrue(device.wait(Until.hasObject(By.desc(keyboardAction)), UI_TIMEOUT_MS))
+            repeat(2) { orientation ->
+                if (orientation == 1) device.setOrientationLeft()
+                device.pressBack()
+                assertTrue(waitForIme(scenario, visible = false))
+                assertToolbarTouchTarget()
+                device.findObject(By.desc(keyboardAction)).click()
+                assertTrue(waitForIme(scenario, visible = true))
+                device.waitForIdle()
+                assertToolbarTouchTarget()
+                val ctrlBounds = device.findObject(By.text("Ctrl")).visibleBounds
+                scenario.onActivity { activity ->
+                    val imeHeight = WindowInsetsCompat.toWindowInsetsCompat(
+                        activity.window.decorView.rootWindowInsets,
+                    ).getInsets(WindowInsetsCompat.Type.ime()).bottom
+                    val location = IntArray(2)
+                    activity.window.decorView.getLocationOnScreen(location)
+                    val keyboardTop = location[1] + activity.window.decorView.height - imeHeight
+                    assertTrue("Toolbar must sit above IME", ctrlBounds.bottom <= keyboardTop)
+                }
+            }
+        }
+    }
+
+    private fun assertToolbarTouchTarget() {
+        val ctrl = device.wait(Until.findObject(By.text("Ctrl")), UI_TIMEOUT_MS)
+        val minimumPx = 48 * instrumentation.targetContext.resources.displayMetrics.density
+        assertTrue("Ctrl touch height must be at least 48dp", ctrl.visibleBounds.height() + 1 >= minimumPx)
+        assertTrue("Ctrl touch width must be at least 48dp", ctrl.visibleBounds.width() + 1 >= minimumPx)
     }
 
     @Test
@@ -270,8 +311,18 @@ class TerminalKeyboardTest {
             assertTrue(device.wait(Until.hasObject(By.text(terminalTab)), UI_TIMEOUT_MS))
             device.findObject(By.text(terminalTab)).click()
 
-            // Reveal the symbolic actions in the horizontally scrolling toolbar.
-            repeat(3) { device.swipe(900, 2100, 200, 2100, 20) }
+            // Scroll the actual toolbar bounds, not a fixed screen coordinate that
+            // misses it on small phones, tablets, landscape or when the IME is up.
+            val direction = if (terminalLayoutDirection(instrumentation.targetContext.resources.configuration.locales[0]) == LayoutDirection.Rtl) {
+                Direction.RIGHT
+            } else Direction.LEFT
+            val toolbar = device.findObjects(By.scrollable(true)).maxByOrNull { it.visibleBounds.bottom }
+            requireNotNull(toolbar) { "Terminal toolbar must expose scroll semantics" }
+            var attempts = 0
+            while (!device.hasObject(By.desc(endOfInput)) && attempts++ < 10) {
+                toolbar.scroll(direction, 0.8f)
+                device.waitForIdle()
+            }
             assertTrue(device.wait(Until.hasObject(By.desc(interrupt)), UI_TIMEOUT_MS))
             assertTrue(device.wait(Until.hasObject(By.desc(endOfInput)), UI_TIMEOUT_MS))
         }
