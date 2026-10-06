@@ -54,7 +54,7 @@ class TransferSchedulerTest {
         } finally { scheduler.close() }
     }
 
-    @Test fun networkWakeStartsHeldQueue() = runBlocking {
+    @Test fun networkWakeStartsHeldQueue() = runBlocking<Unit> {
         val queue = TransferQueue()
         var allowed = false
         val scheduler = TransferScheduler(this, queue, { allowed }) { queue.markCompleted(it.id) }
@@ -119,7 +119,7 @@ class TransferSchedulerTest {
         } finally { scheduler.close() }
     }
 
-    @Test fun concurrencyIncreaseStartsQueuedWorkWithoutRowChange() = runBlocking {
+    @Test fun concurrencyIncreaseStartsQueuedWorkWithoutRowChange() = runBlocking<Unit> {
         val queue = TransferQueue(1)
         val release = CompletableDeferred<Unit>()
         val twoStarted = CompletableDeferred<Unit>()
