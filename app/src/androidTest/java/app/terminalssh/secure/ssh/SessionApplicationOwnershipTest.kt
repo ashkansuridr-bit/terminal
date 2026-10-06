@@ -49,7 +49,7 @@ class SessionApplicationOwnershipTest {
                 replacement.closeSession(identity)
             }
             withTimeout(10_000) { app.sessions.sessions.first { open -> open.none { it.id == identity } } }
-            assertTrue(identity !in app.lifecycle.controllers)
+            assertTrue(!app.lifecycle.controllers.containsKey(identity))
             val file = TransferStatePaths.queueFile(app.filesDir, profile.id, identity)
             assertTrue("close must preserve pending work", file.isFile)
         } finally {

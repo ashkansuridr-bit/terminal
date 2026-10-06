@@ -34,7 +34,7 @@ These are source/tooling checks; no real APK/AAB was supplied to the inspectors.
 
 - Application ID: `app.terminalssh.secure`; preview adds `.preview`; debug adds `.debug`.
 - Source version: `0.6.1`, code `9`; preview suffix `-preview`.
-- Flavors: `market`, `gplay`; min SDK 26; compile/target SDK 36.
+- Flavors: `market`, `gplay`; min SDK 26; compile/target SDK 37 (Android 17, `platforms;android-37.0`).
 - Preview and release enable minification/resource shrinking.
 - Preview uses the test certificate. Market release only receives a production signer
   when every external signing variable exists; candidate workflow clears them explicitly.

@@ -5,6 +5,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import app.terminalssh.secure.TerminalApp
 import app.terminalssh.secure.model.AuthMethod
 import app.terminalssh.secure.model.HostProfile
+import app.terminalssh.secure.security.CredentialReference
 import app.terminalssh.secure.security.VaultAad
 import app.terminalssh.secure.ssh.SshSessionState
 import kotlinx.coroutines.flow.first
@@ -152,7 +153,7 @@ class AppViewModelHostTest {
 
     @Test fun startupRetriesCleanupRecordedBeforeInterruptedFreshSecretWrite() {
         val ref = "interrupted-fresh-ref"
-        app.hosts.scheduleCredentialCleanup(app.terminalssh.secure.security.CredentialReference(ref, VaultAad.PASSWORD))
+        app.hosts.scheduleCredentialCleanup(CredentialReference(ref, VaultAad.PASSWORD))
         val bytes = byteArrayOf(97)
         try { app.vault.put(ref, bytes, VaultAad.PASSWORD) } finally { bytes.fill(0) }
         AppViewModel(app)

@@ -11,7 +11,7 @@ command -v java >/dev/null || fail 'JDK 17 required'
 command -v keytool >/dev/null || fail 'keytool required'
 SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
 [ -n "$SDK_ROOT" ] || fail 'set ANDROID_SDK_ROOT or ANDROID_HOME'
-[ -f "$SDK_ROOT/platforms/android-36/android.jar" ] || fail 'Android platform 36 required'
+[ -f "$SDK_ROOT/platforms/android-37.0/android.jar" ] || [ -f "$SDK_ROOT/platforms/android-37/android.jar" ] || fail "Android platform 37 required"
 [ -x "$SDK_ROOT/build-tools/35.0.0/apksigner" ] || fail 'Build-tools 35.0.0 required'
 [ -x ./gradlew ] || fail 'executable Gradle wrapper required'
 [ -f gradle/wrapper/gradle-wrapper.jar ] || fail 'Gradle wrapper JAR required'

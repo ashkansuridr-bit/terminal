@@ -22,12 +22,12 @@ val testingMinifiedBuild = testBuildTypeName != "debug"
 
 android {
     namespace = "app.terminalssh.secure"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "app.terminalssh.secure"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 9
         versionName = "0.6.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

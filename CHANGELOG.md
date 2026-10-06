@@ -4,6 +4,18 @@
 
 These source changes are not a release or a claim of passing Android tests.
 
+- Android 17 (API 37): `compileSdk`/`targetSdk` raised from 36 to 37. Added the
+  `ACCESS_LOCAL_NETWORK` permission, requested at connect time only for LAN-looking hosts
+  (private IPv4, link-local/ULA IPv6, `.local`/`.lan`/`.home.arpa`/single-label names).
+  Release gates, CI SDK install and docs follow API 37; an advisory API 37 emulator entry
+  was added. AGP 8.13.2 warns it was tested only up to compile SDK 36.1.
+- Fixed compile errors found by the first real build: `FailedSaveActivity` shadowed its
+  `foreground` flag with `View.foreground`; `AgentSheet` used a non-existent
+  `TextFieldBuffer.delete`; two androidTest sources did not compile.
+- Added Russian, French and Spanish strings for the recovery/credential/lock screens.
+- CI: replaced `android-actions/setup-android@v3` (failed on missing `tools`) with the
+  runner's preinstalled SDK.
+
 - Settings writes/resets/imports now use checked commits, rollback and a durable
   write-intent marker; unresolved writes retain lock protection after reconstruction.
 - Trust acceptance/removal and vault clearing check persistence. Corrupt trust/policy

@@ -7,6 +7,13 @@
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <!--
+        Android 17 (API 37) runtime permission, in the "Nearby devices" group. Needed to
+        open SSH/SFTP connections to hosts on the local network. It is requested only when
+        the user connects to a LAN-looking host; remote servers never trigger the prompt.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+
+    <!--
         Normal permission, no runtime prompt. Read only to answer "is this connection
         metered?" for the Wi-Fi-only transfer setting; the app never inspects traffic.
     -->

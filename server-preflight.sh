@@ -19,7 +19,7 @@ echo "== Android SDK =="
 SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
 if [[ -n "$SDK" ]]; then
   echo "SDK=$SDK"
-  test -d "$SDK/platforms/android-36" && echo "android-36: OK" || echo "android-36: MISSING"
+  { test -d "$SDK/platforms/android-37.0" || test -d "$SDK/platforms/android-37"; } && echo "android-37: OK" || echo "android-37: MISSING"
   find "$SDK/build-tools" -maxdepth 2 -type f -name apksigner 2>/dev/null | tail -1 || true
 else
   echo "ANDROID_SDK_ROOT/ANDROID_HOME not set"

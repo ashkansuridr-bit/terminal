@@ -1,7 +1,8 @@
 # Release gate changes — validation status
 
 The workflow requires source audit, both flavor JVM/lint/debug builds, API 26 and
-API 36 instrumentation for debug and minified preview, then release candidate builds.
+API 36 instrumentation for debug and minified preview (API 37 / Android 17 runs as an
+advisory, non-blocking matrix entry), then release candidate builds.
 There is no publication job. GitHub permissions are read-only and candidates are only
 uploaded as private workflow artifacts, including on tag builds. Missing required market
 outputs fail packaging; a debug APK cannot substitute for a market output.

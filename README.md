@@ -22,7 +22,12 @@
 
 <br>
 
-<a href="https://github.com/ashkansuri/terminal-ssh/releases">
+> **وضعیت سورس (شاخهٔ `main`، نسخهٔ منتشرشده هنوز ۰.۶.۱):** تغییرات مرحلهٔ ۰.۷.۰ (ایمنی ذخیره و بازیابی،
+> صف انتقال پایدار، ذخیرهٔ اتمیک ویرایشگر، سازگاری با Android 17) روی `main` ادغام شده‌اند اما **هنوز
+> نسخهٔ نهایی‌شده نیستند**: تست‌های واحد و lint پاس می‌شوند، ولی تست روی دستگاه، تست واقعی SSH/SFTP
+> و امضای تولیدی انجام نشده است. جزئیات: [`docs/verification/0.7.0-progress.md`](docs/verification/0.7.0-progress.md).
+
+<a href="https://github.com/ashkansuridr-bit/terminal/releases">
 <img src="https://img.shields.io/badge/⬇_دانلود_آخرین_نسخه-0.6.1-3DDC84?style=for-the-badge&logo=android" alt="Download">
 </a>
 
@@ -70,7 +75,7 @@
 
 ### نسخهٔ آزمایشی — نصب مستقیم
 
-فایل‌های نسخهٔ ۰.۶.۱ به [صفحهٔ Releases](https://github.com/ashkansuri/terminal-ssh/releases)
+فایل‌های نسخهٔ ۰.۶.۱ به [صفحهٔ Releases](https://github.com/ashkansuridr-bit/terminal/releases)
 پیوست شده‌اند، نه به مخزن. پوشهٔ `releases/` فقط بایگانی نسخه‌های قدیمی است.
 
 ### وضعیت امضا — صادقانه
@@ -156,7 +161,9 @@ sha256sum -c SHA256SUMS.txt --ignore-missing
 - **العربية** — کامل با RTL
 
 ### 📱 سازگاری
-- **اندروید ۸.۰ (API 26) به بالا**
+- **اندروید ۸.۰ (API 26) تا اندروید ۱۷ (API 37)**؛ `compileSdk` و `targetSdk` هر دو ۳۷ هستند
+- اندروید ۱۷: اتصال به سرورهای شبکهٔ محلی (مثل `192.168.x.x` یا `*.local`) مجوز «دستگاه‌های اطراف»
+  (`ACCESS_LOCAL_NETWORK`) می‌خواهد؛ برنامه فقط هنگام اتصال به چنین آدرس‌هایی آن را درخواست می‌کند
 - چیدمان تطبیقی: از Galaxy Fold بستهٔ ۳۲۰dp تا تبلت ۱۲۸۰dp
 - محافظت bidi روی نسخه، آدرس سرور و اثر انگشت
 - شورتکات‌های لانچر برای ۴ سرور اخیر
@@ -207,7 +214,7 @@ AppViewModel ────────── Vault (AndroidKeyStore + AES-GCM)
 | ترمینال | termlib/libvterm (ConnectBot) |
 | امنیت | AndroidKeyStore + AES-256-GCM |
 | زبان | Kotlin 2.3.21 |
-| بیلد | AGP 8.13.2 + Gradle 8.13 |
+| بیلد | AGP 8.13.2 + Gradle 8.13 (هشدار: AGP 8.13.2 رسماً تا compile SDK 36.1 آزمایش شده؛ API 37 بدون خطا build می‌شود) |
 | فونت | Vazirmatn (فارسی) |
 
 [Architecture](docs/ARCHITECTURE.md) · [Design principles](docs/DESIGN_PRINCIPLES.md) ·
@@ -220,8 +227,11 @@ AppViewModel ────────── Vault (AndroidKeyStore + AES-GCM)
 <div dir="rtl">
 
 ```
-۲۰۷ تست واحد (JVM)  ·  ۱۵ تست روی دستگاه  ·  lint بدون خطا  ·  APK ۶.۴ مگابایت
+۵۳۳ تست واحد (JVM) برای هر flavor  ·  lint بدون خطا  ·  تست روی دستگاه: هنوز تأیید نشده
 ```
+
+تست‌های روی دستگاه (API 26 و 36 و آزمایشی 37) در CI تعریف شده‌اند ولی هنوز یک اجرای موفق ثبت نشده است.
+اعدادِ بالا خروجی واقعی `./gradlew testMarketDebugUnitTest testGplayDebugUnitTest lintMarketDebug lintGplayDebug` هستند.
 
 </div>
 
@@ -244,7 +254,7 @@ python3 scripts/market_release_gate.py
 
 ## ساخت از سورس
 
-پیش‌نیازها: **JDK 17**، **Android SDK 36**
+پیش‌نیازها: **JDK 17**، **Android SDK 37** (`platforms;android-37.0`)، `build-tools;35.0.0`
 
 ```sh
 git clone https://github.com/ashkansuridr-bit/terminal.git

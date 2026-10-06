@@ -1,6 +1,9 @@
 package app.terminalssh.secure.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -78,13 +81,36 @@ fun RootScreen(viewModel: AppViewModel, launchHostId: String? = null) {
         }
     }
 
-    val openTerminal: (HostProfile, CharArray?) -> Unit = { profile, password ->
+    val context = LocalContext.current
+    // Not rememberSaveable: a password must never enter saved-instance state.
+    var pendingConnect by remember { mutableStateOf<Pair<HostProfile, CharArray?>?>(null) }
+
+    val connectNow: (HostProfile, CharArray?) -> Unit = { profile, password ->
         try {
             viewModel.openSession(profile, password)
             tab = Tab.TERMINAL
         } catch (failure: HostMetadataUnavailableException) {
             // The ViewModel retains the storage failure and reports the localized error.
             // No new tab or connection is approved when metadata cannot be trusted.
+        }
+    }
+
+    // Android 17+: LAN hosts need ACCESS_LOCAL_NETWORK. Connect after the prompt whatever
+    // the answer; a denial surfaces as a normal connection error rather than a dead end.
+    val localNetworkLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { _ ->
+        val pending = pendingConnect
+        pendingConnect = null
+        if (pending != null) connectNow(pending.first, pending.second)
+    }
+
+    val openTerminal: (HostProfile, CharArray?) -> Unit = { profile, password ->
+        if (LocalNetworkAccess.shouldRequest(context, profile.host)) {
+            pendingConnect = profile to password
+            localNetworkLauncher.launch(LocalNetworkAccess.PERMISSION)
+        } else {
+            connectNow(profile, password)
         }
     }
 

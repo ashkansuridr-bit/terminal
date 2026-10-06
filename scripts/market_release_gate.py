@@ -9,7 +9,7 @@ required = {
     'final version name': 'versionName = "0.6.1"' in build,
     'version code': 'versionCode = 9' in build,
     'non-example application id': bool(re.search(r'applicationId = "(?!com\.example)[^"]+"', build)),
-    'target sdk 36': 'targetSdk = 36' in build,
+    'target sdk 37': 'targetSdk = 37' in build,
     'market signing config': 'marketRelease' in build,
     'keystore path externalized': 'TERMINAL_KEYSTORE_PATH' in build,
     'keystore password externalized': 'TERMINAL_KEYSTORE_PASSWORD' in build,

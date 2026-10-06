@@ -42,8 +42,8 @@ prompt‌های رنگی دقیقاً مثل دسکتاپ کار می‌کنند
 ssh, ترمینال, سرور, لینوکس, devops, sysadmin, sftp, امنیت
 
 ## نکات انتشار
-- نسخه: 0.3.1 (versionCode 4)
+- نسخه: 0.6.1 (versionCode 9)
 - حداقل Android: 8.0 (API 26)
-- Target SDK: 36
+- Target SDK: 37 (Android 17)
 - بدون تبلیغات و خرید درون‌برنامه‌ای
 - نیازمند اینترنت برای اتصال SSH
