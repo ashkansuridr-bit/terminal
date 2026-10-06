@@ -75,6 +75,11 @@
 
 ### نسخهٔ آزمایشی — نصب مستقیم
 
+**آخرین فایل قابل نصب** (امضای تست، یونیورسال، ۱۷٫۹ مگابایت):
+[`TerminalSSH-0.6.1-checkpoint-1f01a76-preview-TEST-SIGNED.apk`](releases/TerminalSSH-0.6.1-checkpoint-1f01a76-preview-TEST-SIGNED.apk)
+— نسخهٔ بدون امضا (`…market-UNSIGNED.apk`) نصب‌شدنی نیست و فقط برای امضا با کلید ناشر است.
+هر دو در پوشهٔ [`releases/`](releases/) هستند.
+
 فایل‌های نسخهٔ ۰.۶.۱ به [صفحهٔ Releases](https://github.com/ashkansuridr-bit/terminal/releases)
 پیوست شده‌اند، نه به مخزن. پوشهٔ `releases/` فقط بایگانی نسخه‌های قدیمی است.
 
