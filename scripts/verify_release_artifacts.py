@@ -102,7 +102,7 @@ def main():
         if output.exists():
             output.rmdir()
         stage.rename(output)
-        staging.cleanup()
+        # TemporaryDirectory removes the empty staging parent on context exit.
 
 
 

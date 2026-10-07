@@ -1,9 +1,3 @@
-bb9b2d2d11aede50c2d0e68273607c02f140d500fb1f90bf752d007e00b0654a  TerminalSSH-0.5.1-preview-arm64-v8a.apk
-742bf58699072200313c5151257d2783eb55f799b364df9f42e62f74aa174f25  TerminalSSH-0.5.1-preview-armeabi-v7a.apk
-648f1a2c077c51cffce174e8be26925fe34149f0dc8fcc8873af61a387de5d03  TerminalSSH-0.6.0-preview-arm64-v8a.apk
-4db9986be3381a56e2bce54548a598a18d02f57420373dc54eb042d23f308f48  TerminalSSH-0.6.0-preview-armeabi-v7a.apk
-6b7ea1442fe2ac453aa6bc0437ec25fb304e148c08b7969a2d1be67f92bd6deb  terminal-ssh-v0.6.0-arm64-DEBUG-0.5.1-NOT-FOR-PRODUCTION.apk
-66ab48c4f306bc4801e412ab1204f56e88caaba799f7eb363df8cd9b561df0d7  terminal-ssh-v0.6.0-armv7-DEBUG-0.5.1-NOT-FOR-PRODUCTION.apk
-996533c382eea74bab7a0ac760ca961fe312e01bf3f91e1ff45d50fe34680013  terminal-ssh-v0.6.0-universal-DEBUG-0.5.1-NOT-FOR-PRODUCTION.apk
-83fd55e31b432c77f92abad43a77cb6ca51ce1c4fab39e625ac292fbccc39e55  TerminalSSH-0.6.1-checkpoint-1f01a76-market-UNSIGNED.apk
-b3c9bb1182894e4211ef7af81834eba20ba421139d81e4385771eaa7a58724bd  TerminalSSH-0.6.1-checkpoint-1f01a76-preview-TEST-SIGNED.apk
+cba24142b7663d30ca8366d3cd73ed1a597acccb65928767917115b5e368e0cd  TerminalSSH-0.7.0-preview-TEST-SIGNED.apk
+5520f2a0297eb8b7e742345beb0ee436af9a43ae1a69761e5be3aa37fd364e97  TerminalSSH-0.7.0-market-UNSIGNED.apk
+cb74bb8f1ae91a49cd259303fd8ac73b4edafde30fccff5817f6dccc7d54ad56  TerminalSSH-0.7.0-market-UNSIGNED.aab

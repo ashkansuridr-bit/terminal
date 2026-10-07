@@ -82,6 +82,11 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     var actionError by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    // Resolved at composition: String.format chains need the template, and the coroutine
+    // callbacks below are not composable scope, so stringResource is unavailable there.
+    val syncSourceErrorText = stringResource(R.string.sftp_sync_source_error)
+    val syncFailedTemplate = stringResource(R.string.sftp_sync_failed)
+    val compressErrorText = stringResource(R.string.sftp_compress_error)
 
     val saveLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream"),
@@ -170,7 +175,7 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (failure: Exception) {
-                    syncSourceError = context.getString(R.string.sftp_sync_failed, failure.message ?: "")
+                    syncSourceError = String.format(syncFailedTemplate, failure.message ?: "")
                 }
             }
         }
@@ -242,7 +247,7 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                     } catch (failure: Exception) {
                         // The user asked for a zip and got a dead tap before; now the real
                         // reason is shown instead of being silently dropped.
-                        actionError = failure.message ?: context.getString(R.string.sftp_compress_error)
+                        actionError = failure.message ?: compressErrorText
                     }
                 }
             },
@@ -255,7 +260,7 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                     try {
                         val mirror = syncCacheDir
                         if (mirror == null) {
-                            syncSourceError = context.getString(R.string.sftp_sync_source_error)
+                            syncSourceError = syncSourceErrorText
                         } else {
                             // The checkbox decides whether DELETE_REMOTE on the plan runs.
                             val approved = if (deleteRemote) actions else actions.filter {
@@ -271,7 +276,7 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (failure: Exception) {
-                        syncSourceError = context.getString(R.string.sftp_sync_failed, failure.message ?: "")
+                        syncSourceError = String.format(syncFailedTemplate, failure.message ?: "")
                     }
                 }
             },
