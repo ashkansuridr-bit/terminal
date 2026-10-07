@@ -11,9 +11,9 @@
 [![Android CI](https://github.com/ashkansuridr-bit/terminal/actions/workflows/android-release.yml/badge.svg)](https://github.com/ashkansuridr-bit/terminal/actions/workflows/android-release.yml)
 [![Latest release](https://img.shields.io/github/v/release/ashkansuridr-bit/terminal?include_prereleases&sort=semver)](https://github.com/ashkansuridr-bit/terminal/releases)
 [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)](https://github.com/ashkansuridr-bit/terminal/releases)
-[![APK size](https://img.shields.io/badge/APK-6.4%20MB-blue)](releases/)
+[![APK size](https://img.shields.io/badge/APK-17.9%20MB-blue)](releases/)
 [![License](https://img.shields.io/github/license/ashkansuridr-bit/terminal)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-207%20unit%20%2B%2015%20instrumentation-brightgreen)](#کیفیت)
+[![Tests](https://img.shields.io/badge/tests-533%20unit%20per%20flavor-brightgreen)](#کیفیت)
 
 <br>
 
@@ -22,13 +22,14 @@
 
 <br>
 
-> **وضعیت سورس (شاخهٔ `main`، نسخهٔ منتشرشده هنوز ۰.۶.۱):** تغییرات مرحلهٔ ۰.۷.۰ (ایمنی ذخیره و بازیابی،
-> صف انتقال پایدار، ذخیرهٔ اتمیک ویرایشگر، سازگاری با Android 17) روی `main` ادغام شده‌اند اما **هنوز
-> نسخهٔ نهایی‌شده نیستند**: تست‌های واحد و lint پاس می‌شوند، ولی تست روی دستگاه، تست واقعی SSH/SFTP
-> و امضای تولیدی انجام نشده است. جزئیات: [`docs/verification/0.7.0-progress.md`](docs/verification/0.7.0-progress.md).
+> **وضعیت سورس (شاخهٔ `fix/0.7.0-release-hardening`):** نسخهٔ ۰.۷.۰ به‌صورت **کاندیدای انتشار** ساخته
+> شده است — گیت‌های استاتیک، ۵۳۳ تست واحد JVM برای هر flavor، lint هر دو flavor و بیلد هر چهار
+> variant پاس می‌شوند. تست روی دستگاه (instrumentation) در CI روی API 26/36/37 **مرجع تأیید** است و
+> وضعیت‌اش در دفتر پیگیری ثبت می‌شود؛ تست واقعی SSH/SFTP و امضای تولیدی هنوز انجام نشده است و هیچ
+> فایلی «آمادهٔ بازار» نیست. جزئیات: [`docs/verification/0.7.0-progress.md`](docs/verification/0.7.0-progress.md).
 
 <a href="https://github.com/ashkansuridr-bit/terminal/releases">
-<img src="https://img.shields.io/badge/⬇_دانلود_آخرین_نسخه-0.6.1-3DDC84?style=for-the-badge&logo=android" alt="Download">
+<img src="https://img.shields.io/badge/⬇_دانلود_آخرین_نسخه-0.7.0_TEST_SIGNED-3DDC84?style=for-the-badge&logo=android" alt="Download">
 </a>
 
 </div>
@@ -57,14 +58,14 @@
 | **نصب عامل کدنویسی روی سرور** | ✅ Claude/OpenCode/Aider | ❌ | ❌ |
 | **قفل بیومتریک** | ✅ | ✅ | ❌ |
 | **تشخیص فرمان خطرناک** | ✅ | ❌ | ❌ |
-| **حجم APK** | **۶.۴ MB** | ~۸۰ MB | ~۲۰ MB |
+| **حجم APK** | **~۱۸ MB** | ~۸۰ MB | ~۲۰ MB |
 | **متن‌باز** | ✅ Apache 2.0 | ❌ | ❌ |
 | **prise در بازار ایران** | ✅ | ❌ | ❌ |
 
 </div>
 
-> **صادقانه:** چیزهایی که **هنوز نداریم** — Mosh، port forwarding، jump host،
-> split terminal، و search in terminal output. در [نقشهٔ راه](docs/ROADMAP.md) فهرست شده‌اند.
+> **صادقانه:** چیزهایی که **هنوز نداریم** — Mosh، split terminal،
+> و search in terminal output. در [نقشهٔ راه](docs/ROADMAP.md) فهرست شده‌اند.
 >
 > **آمار SFTP:** ۲۵ از ۵۰ بهبود اعمال شده — resume واقعی، سرعت/ETA، چندانتخابی،
 > کپی راه‌دور، chmod UI، entry details، و aggregate progress.
@@ -75,13 +76,13 @@
 
 ### نسخهٔ آزمایشی — نصب مستقیم
 
-**آخرین فایل قابل نصب** (امضای تست، یونیورسال، ۱۷٫۹ مگابایت):
-[`TerminalSSH-0.6.1-checkpoint-1f01a76-preview-TEST-SIGNED.apk`](releases/TerminalSSH-0.6.1-checkpoint-1f01a76-preview-TEST-SIGNED.apk)
+**آخرین فایل قابل نصب** (امضای تست، یونیورسال، ۱۷.۹ مگابایت):
+[`TerminalSSH-0.7.0-preview-TEST-SIGNED.apk`](releases/TerminalSSH-0.7.0-preview-TEST-SIGNED.apk)
 — نسخهٔ بدون امضا (`…market-UNSIGNED.apk`) نصب‌شدنی نیست و فقط برای امضا با کلید ناشر است.
-هر دو در پوشهٔ [`releases/`](releases/) هستند.
+هر دو (و AAB بازار بدون امضا) در پوشهٔ [`releases/`](releases/) هستند؛ هویت و امضای آن‌ها
+پیش از ارائه ماشینی بررسی شده است (`scripts/verify_release_artifacts.py`).
 
-فایل‌های نسخهٔ ۰.۶.۱ به [صفحهٔ Releases](https://github.com/ashkansuridr-bit/terminal/releases)
-پیوست شده‌اند، نه به مخزن. پوشهٔ `releases/` فقط بایگانی نسخه‌های قدیمی است.
+فایل‌های نسخه‌های قدیمی‌تر همچنان به‌عنوان بایگانی در `releases/` و صفحهٔ Releases نگهداری می‌شوند.
 
 ### وضعیت امضا — صادقانه
 
@@ -232,10 +233,13 @@ AppViewModel ────────── Vault (AndroidKeyStore + AES-GCM)
 <div dir="rtl">
 
 ```
-۵۳۳ تست واحد (JVM) برای هر flavor  ·  lint بدون خطا  ·  تست روی دستگاه: هنوز تأیید نشده
+۵۳۳ تست واحد (JVM) برای هر flavor  ·  lint بدون خطا  ·  تست روی دستگاه: در جریان (CI مرجع)
 ```
 
-تست‌های روی دستگاه (API 26 و 36 و آزمایشی 37) در CI تعریف شده‌اند ولی هنوز یک اجرای موفق ثبت نشده است.
+تست‌های روی دستگاه (API 26 و 36 و آزمایشی 37) روی هر PR در GitHub Actions اجرا می‌شوند و همین CI
+**مرجع تأیید** است — ایمولاتور محلی روی این ماشین آزمایشی منابعی برای اجرای پایدار ندارد و هر خطای
+ایمولاتور/منابع در گزارش‌ها به‌عنوان INFRA ثبت می‌شود، نه شکست برنامه. وضعیت به‌روزِ هر نسخه در
+[`docs/verification/0.7.0-progress.md`](docs/verification/0.7.0-progress.md) ثبت است.
 اعدادِ بالا خروجی واقعی `./gradlew testMarketDebugUnitTest testGplayDebugUnitTest lintMarketDebug lintGplayDebug` هستند.
 
 </div>
