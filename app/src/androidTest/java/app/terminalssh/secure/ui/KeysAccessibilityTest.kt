@@ -61,6 +61,10 @@ class KeysAccessibilityTest {
             assertTrue("$delete height was ${bounds.height()}px", bounds.height() >= minimumPx)
 
             device.findObject(By.desc(delete)).click()
+            // Deleting a key asks for confirmation; the confirm button reuses the same
+            // label so a wrong finger never destroys a host's key.
+            assertTrue("delete confirmation dialog never appeared", device.wait(Until.hasObject(By.text(delete)), TIMEOUT_MS))
+            device.findObject(By.text(delete)).click()
             assertTrue(device.wait(Until.gone(By.desc(delete)), TIMEOUT_MS))
             assertFalse(app.hosts.keys().any { it.id == entry.id })
         }

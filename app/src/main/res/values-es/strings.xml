@@ -368,6 +368,8 @@
     <string name="sftp_sync_execute">Sincronizar ahora</string>
     <string name="sftp_sync_delete_remote">Eliminar archivos extra del servidor</string>
     <string name="sftp_sync_local_to_remote">Local → Servidor</string>
+    <string name="sftp_sync_source_error">Elija una carpeta local para explorar.</string>
+    <string name="sftp_sync_failed">Sincronización fallida: %1$s</string>
     <string name="port_forwarding">Reenvío de puertos</string>
     <string name="port_forward_local">Local (L)</string>
     <string name="port_forward_remote">Remoto (R)</string>
@@ -377,6 +379,9 @@
     <string name="port_forward_active">Activo</string>
     <string name="port_forward_add">Agregar reenvío</string>
     <string name="port_forward_type">Tipo de reenvío</string>
+    <string name="port_forward_listing">Reenvíos</string>
+    <string name="port_forward_state_pending">Pendiente</string>
+    <string name="port_forward_state_failed">Fallido</string>
     <string name="sftp_recursive_download_counting">Contando archivos en «%1$s»…</string>
     <string name="sftp_recursive_download_confirm_unknown">¿Descargar la carpeta «%1$s»? No se pudo determinar el número de archivos.</string>
     <string name="xfer_integrity_mismatch">El archivo transferido no coincide con el original; llegó incompleto o dañado.</string>

@@ -4,6 +4,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import app.terminalssh.secure.R
@@ -77,7 +78,10 @@ class HostListPresentationTest {
             )
 
             device.findObject(By.text(search)).click()
-            device.findObject(By.focused(true)).text = "zzzznotahost"
+            // The Compose editable field is an EditText; "focused" can race the IME on
+            // first tap, so target the editable node directly.
+            val input = device.wait(Until.findObject(By.clazz("android.widget.EditText")), TIMEOUT_MS)
+            input.text = "zzzznotahost"
 
             assertVisible(R.string.hosts_no_results_title)
             val clear = context.getString(R.string.hosts_clear_search)
@@ -106,8 +110,10 @@ class HostListPresentationTest {
     private fun assertReachable(stringRes: Int) {
         val text = context.getString(stringRes)
         if (device.wait(Until.hasObject(By.text(text)), SETTLE_MS)) return
+        val list = device.findObjects(By.scrollable(true)).maxByOrNull { it.visibleBounds.bottom }
         repeat(SCROLL_ATTEMPTS) {
-            device.swipe(
+            if (device.hasObject(By.text(text))) return
+            if (list != null) list.scroll(Direction.DOWN, 0.9f) else device.swipe(
                 device.displayWidth / 2,
                 (device.displayHeight * 0.7).toInt(),
                 device.displayWidth / 2,
@@ -115,9 +121,8 @@ class HostListPresentationTest {
                 12,
             )
             device.waitForIdle()
-            if (device.hasObject(By.text(text))) return
         }
-        assertTrue("\"$text\" was not reachable by scrolling the host list", false)
+        assertTrue("\"$text\" was not reachable by scrolling the host list", device.hasObject(By.text(text)))
     }
 
     private fun profile(
@@ -138,6 +143,6 @@ class HostListPresentationTest {
     private companion object {
         const val TIMEOUT_MS = 60_000L
         const val SETTLE_MS = 15_000L
-        const val SCROLL_ATTEMPTS = 5
+        const val SCROLL_ATTEMPTS = 8
     }
 }

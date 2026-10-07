@@ -33,6 +33,7 @@ class SettingsToggleAccessibilityTest {
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
                 device.findObject(By.text(settingsTab)).click()
+                device.scrollUntil { device.hasObject(By.desc(label)) }
                 assertTrue(device.wait(Until.hasObject(By.desc(label)), TIMEOUT_MS))
 
                 val toggle = device.findObject(By.desc(label))

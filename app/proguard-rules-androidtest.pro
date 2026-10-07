@@ -30,3 +30,13 @@
 -keep class kotlin.** { *; }
 -keep class kotlin.jvm.internal.** { *; }
 -dontwarn kotlin.**
+
+# The 26/36/37 instrumentation matrix runs the FULL suite against the minified preview,
+# not just KeyGenerationTest. The test APK is compiled against the app's original class
+# and member names; R8 renames anything only the shipped code references, so the suite
+# dies with NoSuchMethodError/NoSuchFieldError on renamed app classes (sessions, vault,
+# store, view-model, ...). Keep every app class by name and by member so androidTest can
+# address it. Only app code is exempted; third-party library shrinking and the real
+# preview/release R8 shape are untouched by this test-only file.
+-keep class app.terminalssh.secure.** { *; }
+-keep class app.terminalssh.secure.**$** { *; }

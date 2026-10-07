@@ -372,6 +372,8 @@
     <string name="sftp_sync_execute">مزامنة الآن</string>
     <string name="sftp_sync_delete_remote">حذف الملفات الإضافية من الخادم</string>
     <string name="sftp_sync_local_to_remote">محلي → خادم</string>
+    <string name="sftp_sync_source_error">اختر مجلدًا محليًا لمسحه ضوئيًا.</string>
+    <string name="sftp_sync_failed">فشلت المزامنة: %1$s</string>
     <string name="port_forwarding">إعادة توجيه المنافذ</string>
     <string name="port_forward_local">محلي (L)</string>
     <string name="port_forward_remote">بعيد (R)</string>
@@ -381,6 +383,9 @@
     <string name="port_forward_active">نشط</string>
     <string name="port_forward_add">إضافة إعادة توجيه</string>
     <string name="port_forward_type">نوع إعادة التوجيه</string>
+    <string name="port_forward_listing">إعادة توجيه المنافذ</string>
+    <string name="port_forward_state_pending">قيد الانتظار</string>
+    <string name="port_forward_state_failed">فشل</string>
     <string name="sftp_recursive_download_counting">جارٍ إحصاء ملفات المجلد «%1$s»…</string>
     <string name="sftp_recursive_download_confirm_unknown">هل تريد تنزيل المجلد «%1$s»؟ تعذّر تحديد عدد الملفات.</string>
     <string name="xfer_integrity_mismatch">الملف المنقول لا يطابق الأصل؛ وصل ناقصًا أو تالفًا.</string>

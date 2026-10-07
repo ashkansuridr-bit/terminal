@@ -51,6 +51,16 @@ class SshSession(
     @Volatile private var autoReconnect = true
     @Volatile private var keepAlive = keepAlive
 
+    // A write error is the difference between "your command ran" and "your keystrokes
+    // vanished into a socket that had already died". Never swallowed; the reader loop
+    // consumes it and surfaces it as the state the user actually sees.
+    @Volatile private var terminalWriteFailure: String? = null
+
+    // Keystrokes typed while a session is (re)connecting are held here and flushed to
+    // the new channel in order. Bounded so a wedged reconnect cannot grow memory; when
+    // the cap is hit further input is dropped and the disconnect path reports it.
+    private val pendingInput = BoundedPendingInput(MAX_BUFFERED_INPUT_BYTES)
+
     val terminalInput = TerminalInputController()
 
     val emulator: TerminalEmulator = TerminalEmulatorFactory.create(
@@ -97,6 +107,25 @@ class SshSession(
                 return
             }
             shell = opened
+            // Everything typed while (re)connecting goes to the fresh channel now, in
+            // FIFO order, before a new keystroke can overtake it on the same io thread.
+            val buffered = pendingInput.takeAll()
+            for (bytes in buffered) {
+                try {
+                    opened.output.write(bytes)
+                    opened.output.flush()
+                } catch (failure: Throwable) {
+                    terminalWriteFailure = failure.message ?: "terminal write failed"
+                    runCatching { opened.channel.disconnect() }
+                    break
+                } finally {
+                    bytes.fill(0)
+                }
+            }
+            buffered.forEach { it.fill(0) }
+            // Port forwards the user requested survive reconnects: a fresh SSH session
+            // has none, so re-establish them (and report failures truthfully).
+            reapplyForwards()
             _state.value = SshSessionState.Connected
             // A password only needs to stay decrypted in memory if reconnecting will
             // need it again; a saved host re-fetches it from the vault instead, so
@@ -132,8 +161,13 @@ class SshSession(
                 doConnect(gen, attempt + 1)
             } else {
                 clearPendingPassword()
+                val lost = pendingInput.clearBytes()
                 _state.value = SshSessionState.Failed(
-                    message = t.message ?: t.javaClass.simpleName,
+                    message = if (lost > 0) {
+                        "${t.message ?: t.javaClass.simpleName} · $lost bytes of typed input were lost"
+                    } else {
+                        t.message ?: t.javaClass.simpleName
+                    },
                     kind = ConnectionError.classify(t),
                 )
             }
@@ -148,8 +182,10 @@ class SshSession(
     }
 
     private fun startReader(open: JschSshClient.Shell, gen: Long) {
-        // Capture masking for this stream: toggling settings cannot expose a held prefix.
-        val masker = if (maskSecretsInOutput()) StreamingSecretMasker() else null
+        // Masking is re-read on every chunk, so toggling the setting while a session
+        // runs takes effect on the next line. Disabling first flushes the current
+        // masker: a half-seen secret prefix is suppressed in full, never exposed.
+        var masker: StreamingSecretMasker? = if (maskSecretsInOutput()) StreamingSecretMasker() else null
         val thread = Thread({
             val buffer = ByteArray(READ_BUFFER)
             try {
@@ -163,8 +199,31 @@ class SshSession(
                         }
                         val chunk = buffer.copyOf(read)
                         buffer.fill(0, 0, read)
+                        val enabledNow = maskSecretsInOutput()
+                        if (enabledNow && masker == null) {
+                            masker = StreamingSecretMasker()
+                        } else if (!enabledNow && masker != null) {
+                            // The tail is posted before this chunk, so output order is
+                            // preserved and the disabling boundary never leaks a held
+                            // candidate from the old stream.
+                            val tail = masker!!.finish()
+                            masker = null
+                            if (tail.isNotEmpty()) {
+                                val secured = tail.copyOf()
+                                tail.fill(0)
+                                main.post {
+                                    try {
+                                        if (gen == generation.get() && shell === open) {
+                                            emulator.writeInput(secured, 0, secured.size)
+                                        }
+                                    } finally {
+                                        secured.fill(0)
+                                    }
+                                }
+                            }
+                        }
                         val display = if (masker == null) chunk else {
-                            try { masker.accept(chunk) } finally { chunk.fill(0) }
+                            try { masker!!.accept(chunk) } finally { chunk.fill(0) }
                         }
                         main.post {
                             try {
@@ -193,6 +252,8 @@ class SshSession(
                 }
                 if (gen == generation.get()) {
                     shell = null
+                    val writeFailure = terminalWriteFailure
+                    terminalWriteFailure = null
                     // The remote end sends an exit-status when the shell process itself
                     // terminated (e.g. the user typed `exit`) — that is a deliberate
                     // close, not a dropped connection, and must not trigger a reconnect
@@ -201,11 +262,40 @@ class SshSession(
                     // without the remote side saying why, which is what reconnect exists
                     // for.
                     val remoteExitedCleanly = runCatching { open.channel.exitStatus }.getOrDefault(-1) >= 0
-                    if (autoReconnect && !remoteExitedCleanly && profile.maxReconnectAttempts > 0) {
-                        _state.value = SshSessionState.Reconnecting(1, profile.maxReconnectAttempts)
-                        io.execute { doConnect(gen, attempt = 0) }
-                    } else {
-                        _state.value = SshSessionState.Closed
+                    when {
+                        // Truthful terminal write failure: the user's keystrokes did not
+                        // reach the server. Reconnect when possible; otherwise show why.
+                        writeFailure != null -> {
+                            pendingInput.clear()
+                            if (autoReconnect && profile.maxReconnectAttempts > 0) {
+                                _portForwards.value = _portForwards.value.map {
+                                    it.copy(state = PortForwardState.PENDING, error = null)
+                                }
+                                _state.value = SshSessionState.Reconnecting(1, profile.maxReconnectAttempts)
+                                io.execute { doConnect(gen, attempt = 0) }
+                            } else {
+                                _portForwards.value = _portForwards.value.map {
+                                    it.copy(state = PortForwardState.FAILED, error = "session closed")
+                                }
+                                _state.value = SshSessionState.Failed(
+                                    message = writeFailure,
+                                    kind = ConnectionErrorKind.CONNECTION_LOST,
+                                )
+                            }
+                        }
+                        autoReconnect && !remoteExitedCleanly && profile.maxReconnectAttempts > 0 -> {
+                            _portForwards.value = _portForwards.value.map {
+                                it.copy(state = PortForwardState.PENDING, error = null)
+                            }
+                            _state.value = SshSessionState.Reconnecting(1, profile.maxReconnectAttempts)
+                            io.execute { doConnect(gen, attempt = 0) }
+                        }
+                        else -> {
+                            _portForwards.value = _portForwards.value.map {
+                                it.copy(state = PortForwardState.FAILED, error = "session closed")
+                            }
+                            _state.value = SshSessionState.Closed
+                        }
                     }
                 }
                 runCatching { open.close() }
@@ -217,17 +307,41 @@ class SshSession(
     }
 
     fun send(bytes: ByteArray) {
-        val current = shell ?: return
         val copy = bytes.copyOf()
-        io.execute {
-            try {
-                current.output.write(copy)
-                current.output.flush()
-            } catch (_: Throwable) {
-            } finally {
-                copy.fill(0)
+        val current = shell
+        when {
+            current != null -> io.execute { doWrite(current, copy) }
+            isBufferingInput() -> {
+                // Keep the keystroke for the channel that is being established rather
+                // than silently discarding it (the previous behaviour lost input typed
+                // during every reconnect).
+                if (!pendingInput.offer(copy)) {
+                    // Cap reached: hold what fits, drop the rest, and say so via the
+                    // terminal write-failure path once the session settles.
+                    terminalWriteFailure = "reconnect buffered too long — excess input dropped"
+                    copy.fill(0)
+                }
             }
+            else -> copy.fill(0)
         }
+    }
+
+    /** Writes to a live channel or records the real failure; never swallows it. */
+    private fun doWrite(current: JschSshClient.Shell, bytes: ByteArray) {
+        try {
+            current.output.write(bytes)
+            current.output.flush()
+        } catch (failure: Throwable) {
+            terminalWriteFailure = failure.message ?: "terminal write failed"
+            runCatching { current.channel.disconnect() }
+        } finally {
+            bytes.fill(0)
+        }
+    }
+
+    private fun isBufferingInput(): Boolean {
+        val s = _state.value
+        return s is SshSessionState.Connecting || s is SshSessionState.Reconnecting
     }
 
     fun send(text: String) = send(text.encodeToByteArray())
@@ -279,6 +393,10 @@ class SshSession(
         val open = shell
         shell = null
         clearPendingPassword()
+        pendingInput.clear()
+        _portForwards.value = _portForwards.value.map {
+            it.copy(state = PortForwardState.FAILED, error = "session ended")
+        }
         _state.value = SshSessionState.Closed
         if (open != null) io.execute { runCatching { open.close() } }
     }
@@ -357,47 +475,102 @@ class SshSession(
 
     // ---- port forwarding ----
 
+    enum class PortForwardState { PENDING, ACTIVE, FAILED }
+
     data class PortForward(
         val bindPort: Int,
         val host: String,
         val port: Int,
         val isLocal: Boolean,
-    )
+        val state: PortForwardState = PortForwardState.PENDING,
+        val error: String? = null,
+    ) {
+        /** Stable identity for the forward, independent of runtime state. */
+        val key: String get() = (if (isLocal) "L" else "R") + ":$bindPort"
+    }
 
     private val _portForwards = MutableStateFlow<List<PortForward>>(emptyList())
     val portForwards: StateFlow<List<PortForward>> = _portForwards.asStateFlow()
 
-    /** Creates a local port forward (L) on the [io] thread. */
+    /** Records the forward immediately and applies it to the live session if there is one. */
+    private fun pushForward(forward: PortForward) {
+        _portForwards.value = _portForwards.value + forward
+        applyForwardOnce(forward)
+    }
+
+    /** Creates a local port forward (L); failures surface as PENDING→FAILED, never vanish. */
     fun addLocalForward(bindPort: Int, host: String, port: Int) {
-        io.execute {
-            val s = shell?.session ?: return@execute
-            s.setPortForwardingL("127.0.0.1", bindPort, host, port)
-            _portForwards.value = _portForwards.value + PortForward(bindPort, host, port, isLocal = true)
-        }
+        pushForward(PortForward(bindPort, host, port, isLocal = true))
     }
 
-    /** Creates a remote port forward (R) on the [io] thread. */
+    /** Creates a remote port forward (R); failures surface as PENDING→FAILED, never vanish. */
     fun addRemoteForward(bindPort: Int, host: String, port: Int) {
+        pushForward(PortForward(bindPort, host, port, isLocal = false))
+    }
+
+    /** Applies one forward to the current session (no-op while not connected). */
+    private fun applyForwardOnce(forward: PortForward) {
         io.execute {
             val s = shell?.session ?: return@execute
-            s.setPortForwardingR("127.0.0.1", bindPort, host, port)
-            _portForwards.value = _portForwards.value + PortForward(bindPort, host, port, isLocal = false)
+            val outcome = runCatching { installForward(s, forward) }
+            updateForward(forward) { current ->
+                outcome.fold(
+                    onSuccess = { current.copy(state = PortForwardState.ACTIVE, error = null) },
+                    onFailure = { current.copy(state = PortForwardState.FAILED, error = sanitizedForwardError(it)) },
+                )
+            }
         }
     }
 
-    /** Removes a local port forward. */
-    fun removeLocalForward(bindPort: Int) {
+    /** Re-establishes every requested forward after (re)connect: the fresh session has none. */
+    private fun reapplyForwards() {
+        val targets = _portForwards.value
+        if (targets.isEmpty()) return
         io.execute {
-            shell?.session?.let { runCatching { it.delPortForwardingL("127.0.0.1", bindPort) } }
-            _portForwards.value = _portForwards.value.filterNot { it.bindPort == bindPort && it.isLocal }
+            val s = shell?.session ?: return@execute
+            for (forward in targets) {
+                val outcome = runCatching { installForward(s, forward) }
+                updateForward(forward) { current ->
+                    outcome.fold(
+                        onSuccess = { current.copy(state = PortForwardState.ACTIVE, error = null) },
+                        onFailure = { current.copy(state = PortForwardState.FAILED, error = sanitizedForwardError(it)) },
+                    )
+                }
+            }
         }
     }
 
-    /** Removes a remote port forward. */
-    fun removeRemoteForward(bindPort: Int) {
+    private fun installForward(session: com.jcraft.jsch.Session, forward: PortForward) {
+        if (forward.isLocal) {
+            session.setPortForwardingL("127.0.0.1", forward.bindPort, forward.host, forward.port)
+        } else {
+            session.setPortForwardingR("127.0.0.1", forward.bindPort, forward.host, forward.port)
+        }
+    }
+
+    private fun updateForward(target: PortForward, transform: (PortForward) -> PortForward) {
+        _portForwards.value = _portForwards.value.map { if (it.key == target.key) transform(it) else it }
+    }
+
+    /** JSch exceptions can embed paths and addresses; keep the readable essence only. */
+    private fun sanitizedForwardError(failure: Throwable): String =
+        failure.message?.substringBefore('\n')?.take(120) ?: "port forward failed"
+
+    /** Removes a local port forward (harmless if the current session never had it). */
+    fun removeLocalForward(bindPort: Int) = removeForward(PortForward(bindPort, "", 0, isLocal = true))
+
+    /** Removes a remote port forward (harmless if the current session never had it). */
+    fun removeRemoteForward(bindPort: Int) = removeForward(PortForward(bindPort, "", 0, isLocal = false))
+
+    private fun removeForward(forward: PortForward) {
         io.execute {
-            shell?.session?.let { runCatching { it.delPortForwardingR("127.0.0.1", bindPort) } }
-            _portForwards.value = _portForwards.value.filterNot { it.bindPort == bindPort && !it.isLocal }
+            shell?.session?.let { session ->
+                runCatching {
+                    if (forward.isLocal) session.delPortForwardingL("127.0.0.1", forward.bindPort)
+                    else session.delPortForwardingR("127.0.0.1", forward.bindPort)
+                }
+            }
+            _portForwards.value = _portForwards.value.filterNot { it.key == forward.key }
         }
     }
 
@@ -405,5 +578,58 @@ class SshSession(
         private const val INITIAL_ROWS = 24
         private const val INITIAL_COLS = 80
         private const val READ_BUFFER = 16 * 1024
+        private const val MAX_BUFFERED_INPUT_BYTES = 64 * 1024
+    }
+}
+
+/**
+ * Holds keystrokes produced while a session is (re)connecting, so a reconnect does not
+ * eat what the user typed. Bounded because a wedged reconnect must not grow memory
+ * without limit; when full, further input is refused and the disconnect path reports it.
+ */
+private class BoundedPendingInput(private val maxTotalBytes: Int) {
+
+    private val items = ArrayDeque<ByteArray>()
+    private var total = 0
+
+    /**
+     * Accepts a copy the caller already owns. On success the buffer owns [bytes] and
+     * zeroes it eventually; on refusal the caller must zero it, [bytes] is untouched.
+     */
+    @Synchronized
+    fun offer(bytes: ByteArray): Boolean {
+        if (bytes.isEmpty()) return true
+        if (total + bytes.size > maxTotalBytes) return false
+        items.addLast(bytes)
+        total += bytes.size
+        return true
+    }
+
+    /** Returns all buffered input in FIFO order and clears the queue of ownership. */
+    @Synchronized
+    fun takeAll(): ArrayDeque<ByteArray> {
+        val out = ArrayDeque<ByteArray>(items.size)
+        while (items.isNotEmpty()) out.addLast(items.removeFirst())
+        total = 0
+        return out
+    }
+
+    /** Zeroes and discards everything buffered; returns the number of bytes dropped. */
+    @Synchronized
+    fun clearBytes(): Int {
+        var dropped = 0
+        while (items.isNotEmpty()) {
+            val bytes = items.removeFirst()
+            dropped += bytes.size
+            bytes.fill(0)
+        }
+        total = 0
+        return dropped
+    }
+
+    @Synchronized
+    fun clear() {
+        while (items.isNotEmpty()) items.removeFirst().fill(0)
+        total = 0
     }
 }

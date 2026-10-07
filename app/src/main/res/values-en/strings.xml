@@ -368,6 +368,8 @@
     <string name="sftp_sync_execute">Sync now</string>
     <string name="sftp_sync_delete_remote">Delete extra files from server</string>
     <string name="sftp_sync_local_to_remote">Local → Server</string>
+    <string name="sftp_sync_source_error">Pick a local folder to scan for sync.</string>
+    <string name="sftp_sync_failed">Sync failed: %1$s</string>
     <string name="port_forwarding">Port forwarding</string>
     <string name="port_forward_local">Local (L)</string>
     <string name="port_forward_remote">Remote (R)</string>
@@ -377,6 +379,9 @@
     <string name="port_forward_active">Active</string>
     <string name="port_forward_add">Add port forward</string>
     <string name="port_forward_type">Forward type</string>
+    <string name="port_forward_listing">Port forwards</string>
+    <string name="port_forward_state_pending">Pending</string>
+    <string name="port_forward_state_failed">Failed</string>
     <string name="sftp_recursive_download_counting">Counting files in "%1$s"…</string>
     <string name="sftp_recursive_download_confirm_unknown">Download folder "%1$s"? The file count could not be determined.</string>
     <string name="xfer_integrity_mismatch">The transferred file does not match the original; it arrived incomplete or corrupted.</string>

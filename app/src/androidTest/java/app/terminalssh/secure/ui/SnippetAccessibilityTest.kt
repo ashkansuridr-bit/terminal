@@ -54,6 +54,12 @@ class SnippetAccessibilityTest {
 
             assertTrue(device.wait(Until.hasObject(By.text(terminalTab)), TIMEOUT_MS))
             device.findObject(By.text(terminalTab)).click()
+            // The snippets key is deep in the horizontal toolbar; scroll it into view
+            // (RTL rows start at the right edge, so the gesture mirrors).
+            val direction = terminalLayoutDirection(
+                instrumentation.targetContext.resources.configuration.locales[0],
+            )
+            device.scrollUntil(horizontalDirection = direction) { device.hasObject(By.text(snippets)) }
             assertTrue(device.wait(Until.hasObject(By.text(snippets)), TIMEOUT_MS))
             device.findObject(By.text(snippets)).click()
 

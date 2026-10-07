@@ -43,7 +43,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -268,12 +268,8 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
             PortForwardDialog(
                 existingForwards = forwards,
                 onAdd = { fwd ->
-                    scope.launch {
-                        try {
-                            if (fwd.isLocal) active.addLocalForward(fwd.bindPort, fwd.host, fwd.port)
-                            else active.addRemoteForward(fwd.bindPort, fwd.host, fwd.port)
-                        } catch (_: Exception) {}
-                    }
+                    if (fwd.isLocal) active.addLocalForward(fwd.bindPort, fwd.host, fwd.port)
+                    else active.addRemoteForward(fwd.bindPort, fwd.host, fwd.port)
                     portForwardOpen = false
                 },
                 onRemove = { fwd ->
@@ -353,6 +349,9 @@ private fun SessionTabs(
                         else MaterialTheme.colorScheme.surface,
                     )
                     .border(1.dp, if (selected) Turquoise.copy(alpha = 0.4f) else Stroke, RoundedCornerShape(12.dp))
+                    // A session tab is one accessible element: TalkBack reads its title,
+                    // selection state and close action together instead of three fragments.
+                    .semantics(mergeDescendants = true) {}
                     .selectable(
                         selected = selected,
                         role = Role.Tab,
@@ -583,19 +582,20 @@ private fun ToolKey(
         onClick()
     }
 
-    Text(
-        label,
-        style = MaterialTheme.typography.labelLarge,
-        color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+    Box(
+        contentAlignment = Alignment.Center,
         modifier = Modifier
+            .requiredSizeIn(minWidth = 48.dp, minHeight = 48.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(RoundedCornerShape(8.dp))
             .background(if (active) Turquoise else MaterialTheme.colorScheme.surfaceVariant)
-            .then(
-                if (contentDescription != null) Modifier.semantics {
-                    this.contentDescription = contentDescription
-                } else Modifier,
-            )
+            // One focusable element per key. Merging collapses label, description, click
+            // and toggle state onto the single 48dp node the user actually touches;
+            // otherwise screen readers (and UiAutomator) see a tiny text node with the
+            // label and a sibling click target with the state.
+            .semantics(mergeDescendants = true) {
+                if (contentDescription != null) this.contentDescription = contentDescription
+            }
             .then(
                 if (toggle) Modifier.toggleable(
                     value = active,
@@ -610,9 +610,14 @@ private fun ToolKey(
                     onClick = press,
                 ),
             )
-            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
             .padding(horizontal = 12.dp, vertical = 8.dp),
-    )
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+        )
+    }
 }
 
 private val LocalTerminalKeyHaptics = staticCompositionLocalOf { true }

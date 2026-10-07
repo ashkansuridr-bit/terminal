@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import app.terminalssh.secure.R
@@ -208,6 +209,10 @@ fun SettingRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     spec.values.forEach { option ->
+                        // FilterChip's 32dp default is below the 48dp touch target. The
+                        // accessibility label belongs to the whole chip, not to its label
+                        // text, so the node a screen reader lands on is also the one it
+                        // can actually tap.
                         FilterChip(
                             selected = option == value,
                             onClick = { persist { store.set(spec, option) } },
@@ -215,10 +220,12 @@ fun SettingRow(
                             label = {
                                 Text(optionLabel(option), style = MaterialTheme.typography.labelSmall)
                             },
-                            modifier = Modifier.semantics {
-                                role = Role.RadioButton
-                                contentDescription = optionLabel(option)
-                            },
+                            modifier = Modifier
+                                .defaultMinSize(minHeight = 48.dp)
+                                .semantics(mergeDescendants = true) {
+                                    role = Role.RadioButton
+                                    contentDescription = optionLabel(option)
+                                },
                         )
                     }
                 }

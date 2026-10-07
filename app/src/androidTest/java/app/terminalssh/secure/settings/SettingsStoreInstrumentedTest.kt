@@ -127,8 +127,11 @@ class SettingsStoreInstrumentedTest {
         assertEquals(listOf("future_key"), preview.unknownKeys)
         assertEquals(SettingsRegistry.theme.default, store.get(SettingsRegistry.theme))
 
-        assertEquals(1, store.applyImport(preview))
-        assertEquals("oled", store.get(SettingsRegistry.theme))
+        // All-or-nothing import contract: one invalid known value blocks the entire
+        // apply (the Settings UI disables Apply whenever invalidKeys is non-empty), so
+        // the import never partially mutates preferences.
+        assertNull(store.applyImport(preview))
+        assertEquals(SettingsRegistry.theme.default, store.get(SettingsRegistry.theme))
         assertEquals(SettingsRegistry.fontSize.default, store.get(SettingsRegistry.fontSize))
     }
 

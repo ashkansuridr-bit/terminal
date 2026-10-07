@@ -115,6 +115,13 @@ fun SftpBrowser(
     onSyncToRemote: ((RemoteEntry) -> Unit)? = null,
     onComputeSync: ((RemoteEntry) -> Unit)? = null,
     onExecuteSync: ((RemoteEntry, List<SftpController.SyncAction>, Boolean) -> Unit)? = null,
+    // The parent owns the (async) sync plan: the mirror source is chosen through SAF and
+    // plan computation can involve hashing whole trees, so it must not block the browser.
+    syncPlanTarget: RemoteEntry? = null,
+    syncPlanActions: List<SftpController.SyncAction>? = null,
+    onSyncPlanDismissed: () -> Unit = {},
+    syncSourceError: String? = null,
+    onSyncSourceErrorDismiss: () -> Unit = {},
     onToggleBookmark: ((String) -> Unit)? = null,
     isBookmarked: ((String) -> Boolean)? = null,
     onComputeFolderSize: ((String) -> Unit)? = null,
@@ -133,8 +140,6 @@ fun SftpBrowser(
     var editTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var previewTarget by remember { mutableStateOf<RemoteEntry?>(null) }
     var syncTarget by remember { mutableStateOf<RemoteEntry?>(null) }
-    var syncPlan by remember { mutableStateOf<List<SftpController.SyncAction>?>(null) }
-    var syncPlanDir by remember { mutableStateOf<RemoteEntry?>(null) }
     var selectionMode by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(setOf<String>()) }
     var deleteSelectedPrompt by remember { mutableStateOf(false) }
@@ -315,18 +320,31 @@ fun SftpBrowser(
         syncTarget = null
     }
 
-    syncPlan?.let { actions ->
-        val dir = syncPlanDir
-        if (dir != null) {
+    syncPlanTarget?.let { entry ->
+        val actions = syncPlanActions
+        if (actions != null) {
             SyncConfirmDialog(
                 actions = actions,
                 onConfirm = { deleteRemote ->
-                    onExecuteSync?.invoke(dir, actions, deleteRemote)
-                    syncPlan = null; syncPlanDir = null
+                    onExecuteSync?.invoke(entry, actions, deleteRemote)
+                    onSyncPlanDismissed()
                 },
-                onDismiss = { syncPlan = null; syncPlanDir = null },
+                onDismiss = onSyncPlanDismissed,
             )
         }
+    }
+
+    syncSourceError?.let { message ->
+        AlertDialog(
+            onDismissRequest = onSyncSourceErrorDismiss,
+            title = { Text(stringResource(R.string.sftp_sync_title)) },
+            text = { Text(message) },
+            confirmButton = {
+                TextButton(onClick = onSyncSourceErrorDismiss) {
+                    Text(stringResource(R.string.ok))
+                }
+            },
+        )
     }
 
     editTarget?.let { entry ->

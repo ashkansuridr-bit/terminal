@@ -43,28 +43,31 @@ class HostEditValidationTest {
     fun validationUsesActiveLocaleAndOnlySavesValidInput() {
         ActivityScenario.launch(MainActivity::class.java).use {
             val context = instrumentation.targetContext
-            val add = context.getString(R.string.hosts_add)
+            val newConnection = context.getString(R.string.home_new_connection)
             val save = context.getString(R.string.save)
             val hostLabel = context.getString(R.string.field_host)
             val portLabel = context.getString(R.string.field_port)
             val usernameLabel = context.getString(R.string.field_username)
+            val requiredError = context.getString(R.string.err_host_required)
+            val portRangeError = context.getString(R.string.err_port_range)
 
-            assertTrue(device.wait(Until.hasObject(By.text(add)), TIMEOUT_MS))
-            device.findObject(By.text(add)).click()
+            assertTrue(device.wait(Until.hasObject(By.text(newConnection)), TIMEOUT_MS))
+            device.findObject(By.text(newConnection)).click()
             assertTrue(device.wait(Until.hasObject(By.text(save)), TIMEOUT_MS))
 
             device.findObject(By.text(save)).click()
-            assertTrue(device.wait(Until.hasObject(By.text("Host and username are required")), TIMEOUT_MS))
+            assertTrue(device.wait(Until.hasObject(By.text(requiredError)), TIMEOUT_MS))
             assertTrue(app.hosts.hosts().none { host -> host.host == savedHost })
 
-            device.findObject(By.text(hostLabel)).setText(savedHost)
-            device.findObject(By.text(usernameLabel)).setText("tester")
-            device.findObject(By.text(portLabel)).setText("0")
+            // Each host field is named for accessibility (contentDescription = its label).
+            device.findObject(By.desc(hostLabel)).setText(savedHost)
+            device.findObject(By.desc(usernameLabel)).setText("tester")
+            device.findObject(By.desc(portLabel)).setText("0")
             device.findObject(By.text(save)).click()
-            assertTrue(device.wait(Until.hasObject(By.text("Port must be between 1 and 65535")), TIMEOUT_MS))
+            assertTrue(device.wait(Until.hasObject(By.text(portRangeError)), TIMEOUT_MS))
             assertTrue(app.hosts.hosts().none { host -> host.host == savedHost })
 
-            device.findObject(By.text(portLabel)).setText("22")
+            device.findObject(By.desc(portLabel)).setText("22")
             device.findObject(By.text(save)).click()
             assertTrue(device.wait(Until.gone(By.text(save)), TIMEOUT_MS))
             assertTrue(app.hosts.hosts().any { host ->

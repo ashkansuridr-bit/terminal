@@ -368,6 +368,8 @@
     <string name="sftp_sync_execute">اجرا</string>
     <string name="sftp_sync_delete_remote">حذف فایل‌های اضافی از سرور</string>
     <string name="sftp_sync_local_to_remote">محلی ← سرور</string>
+    <string name="sftp_sync_source_error">برای همگامسازی یک پوشهٔ محلی برای اسکن انتخاب کنید.</string>
+    <string name="sftp_sync_failed">همگامسازی ناموفق بود: %1$s</string>
     <string name="port_forwarding">ارسال پورت</string>
     <string name="port_forward_local">ارسال محلی (L)</string>
     <string name="port_forward_remote">ارسال راه دور (R)</string>
@@ -377,6 +379,9 @@
     <string name="port_forward_active">فعال</string>
     <string name="port_forward_add">افزودن ارسال پورت</string>
     <string name="port_forward_type">نوع ارسال</string>
+    <string name="port_forward_listing">جلوبرها</string>
+    <string name="port_forward_state_pending">در انتظار</string>
+    <string name="port_forward_state_failed">ناموفق</string>
     <string name="sftp_recursive_download_counting">در حال شمردن فایل‌های پوشهٔ «%1$s»…</string>
     <string name="sftp_recursive_download_confirm_unknown">آیا می‌خواهید پوشهٔ «%1$s» را دانلود کنید؟ تعداد فایل‌ها مشخص نشد.</string>
     <string name="xfer_integrity_mismatch">فایل منتقل‌شده با نسخهٔ اصلی یکی نیست؛ انتقال ناقص یا خراب بوده است.</string>

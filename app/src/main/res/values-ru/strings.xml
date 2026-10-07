@@ -370,6 +370,8 @@
     <string name="sftp_sync_execute">Синхронизировать</string>
     <string name="sftp_sync_delete_remote">Удалить лишние файлы с сервера</string>
     <string name="sftp_sync_local_to_remote">Локально → Сервер</string>
+    <string name="sftp_sync_source_error">Выберите локальную папку для сканирования.</string>
+    <string name="sftp_sync_failed">Синхронизация не удалась: %1$s</string>
     <string name="port_forwarding">Перенаправление портов</string>
     <string name="port_forward_local">Локальное (L)</string>
     <string name="port_forward_remote">Удалённое (R)</string>
@@ -379,6 +381,9 @@
     <string name="port_forward_active">Активно</string>
     <string name="port_forward_add">Добавить перенаправление</string>
     <string name="port_forward_type">Тип перенаправления</string>
+    <string name="port_forward_listing">Перенаправления портов</string>
+    <string name="port_forward_state_pending">Ожидание</string>
+    <string name="port_forward_state_failed">Сбой</string>
     <string name="sftp_recursive_download_counting">Подсчёт файлов в «%1$s»…</string>
     <string name="sftp_recursive_download_confirm_unknown">Скачать папку «%1$s»? Не удалось определить количество файлов.</string>
     <string name="xfer_integrity_mismatch">Переданный файл не совпадает с оригиналом: он получен неполным или повреждённым.</string>

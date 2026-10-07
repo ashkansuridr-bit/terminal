@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -33,7 +35,10 @@ import app.terminalssh.secure.sftp.RemoteEntry
 import app.terminalssh.secure.sftp.SftpController
 import app.terminalssh.secure.ui.theme.TextSecondary
 import app.terminalssh.secure.vm.AppViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * SFTP tab. Rides the currently selected terminal session rather than opening its own
@@ -69,6 +74,12 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     var pendingDownload by remember { mutableStateOf<RemoteEntry?>(null) }
     var pendingBatchDownload by remember { mutableStateOf<List<RemoteEntry>>(emptyList()) }
     var pendingFolderDownload by remember { mutableStateOf<RemoteEntry?>(null) }
+    var pendingSyncEntry by remember { mutableStateOf<RemoteEntry?>(null) }
+    var syncPlanTarget by remember { mutableStateOf<RemoteEntry?>(null) }
+    var syncPlanActions by remember { mutableStateOf<List<SftpController.SyncAction>?>(null) }
+    var syncSourceError by remember { mutableStateOf<String?>(null) }
+    var syncCacheDir by remember { mutableStateOf<java.io.File?>(null) }
+    var actionError by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -129,6 +140,39 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
         if (treeUri != null && entry != null) {
             app.terminalssh.secure.sftp.SafPermissions.takePersistableTree(context.contentResolver, treeUri)
             sftp.downloadFolder(entry.path, treeUri, entry.name)
+        }
+    }
+
+    // Sync: the user picks a *local* folder, it is mirrored into app-owned scratch space
+    // (the engine plans against real java.io.Files), and the preview dialog decides what
+    // actually gets uploaded. Failure anywhere in this chain is surfaced, never swallowed.
+    val syncSourceTreeLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { treeUri ->
+        val entry = pendingSyncEntry
+        pendingSyncEntry = null
+        if (treeUri != null && entry != null) {
+            app.terminalssh.secure.sftp.SafPermissions.takePersistableTree(context.contentResolver, treeUri)
+            scope.launch {
+                try {
+                    val mirror = withContext(Dispatchers.IO) {
+                        app.terminalssh.secure.sftp.SyncSourceMirror.mirrorTree(
+                            java.io.File(context.cacheDir, "sync-source"),
+                            context.contentResolver,
+                            treeUri,
+                            session.id,
+                        )
+                    }
+                    val actions = sftp.computeSyncPlan(mirror, entry.path, deleteRemote = true)
+                    syncCacheDir = mirror
+                    syncPlanTarget = entry
+                    syncPlanActions = actions
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (failure: Exception) {
+                    syncSourceError = context.getString(R.string.sftp_sync_failed, failure.message ?: "")
+                }
+            }
         }
     }
 
@@ -193,26 +237,74 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
             onCompressSelected = { entries ->
                 scope.launch {
                     try {
-                        val remotePath = sftp.compressSelection(entries, sftp.browser.value.path)
+                        sftp.compressSelection(entries, sftp.browser.value.path)
                         sftp.refresh()
-                    } catch (_: Exception) {}
+                    } catch (failure: Exception) {
+                        // The user asked for a zip and got a dead tap before; now the real
+                        // reason is shown instead of being silently dropped.
+                        actionError = failure.message ?: context.getString(R.string.sftp_compress_error)
+                    }
                 }
+            },
+            onComputeSync = { entry ->
+                pendingSyncEntry = entry
+                syncSourceTreeLauncher.launch(null)
             },
             onExecuteSync = { entry, actions, deleteRemote ->
                 scope.launch {
-                    // For now, sync from a cached local dir path
-                    // Full SAF integration requires more wiring
+                    try {
+                        val mirror = syncCacheDir
+                        if (mirror == null) {
+                            syncSourceError = context.getString(R.string.sftp_sync_source_error)
+                        } else {
+                            // The checkbox decides whether DELETE_REMOTE on the plan runs.
+                            val approved = if (deleteRemote) actions else actions.filter {
+                                it.kind != SftpController.SyncAction.Kind.DELETE_REMOTE
+                            }
+                            sftp.executeSyncPlan(mirror, entry.path, approved)
+                            withContext(Dispatchers.IO) {
+                                app.terminalssh.secure.sftp.SyncSourceMirror.wipe(mirror)
+                            }
+                            syncCacheDir = null
+                            sftp.refresh()
+                        }
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (failure: Exception) {
+                        syncSourceError = context.getString(R.string.sftp_sync_failed, failure.message ?: "")
+                    }
                 }
             },
             onToggleBookmark = sftp::toggleBookmark,
             isBookmarked = sftp::isBookmarked,
             onComputeFolderSize = sftp::computeFolderSize,
             folderSizes = sftp.folderSizes.collectAsStateWithLifecycle().value,
+            syncPlanTarget = syncPlanTarget,
+            syncPlanActions = syncPlanActions,
+            onSyncPlanDismissed = {
+                syncPlanTarget = null
+                syncPlanActions = null
+            },
+            syncSourceError = syncSourceError,
+            onSyncSourceErrorDismiss = { syncSourceError = null },
         )
     }
 
     uploadConflict?.let { conflict ->
         UploadConflictDialog(conflict = conflict, onResolve = sftp::resolveConflict)
+    }
+
+    actionError?.let { message ->
+        AlertDialog(
+            onDismissRequest = { actionError = null },
+            title = { Text(stringResource(R.string.sftp_compress_error)) },
+            text = { Text(message) },
+            confirmButton = {
+                TextButton(onClick = { actionError = null }) {
+                    Text(stringResource(R.string.ok))
+                }
+            },
+        )
     }
 }
 

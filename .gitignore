@@ -14,3 +14,5 @@ verification/out/
 keystore.properties
 release-keystore.properties
 .DS_Store
+
+__pycache__/

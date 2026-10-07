@@ -33,6 +33,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import app.terminalssh.secure.R
 import app.terminalssh.secure.model.AuthMethod
 import app.terminalssh.secure.model.Environment
@@ -267,7 +269,11 @@ private fun Field(
         keyboardOptions = KeyboardOptions(keyboardType = keyboard),
         visualTransformation = if (isPassword) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
         shape = MaterialTheme.shapes.small,
-        modifier = modifier.fillMaxWidth(),
+        // The label is drawn floating, not as a node text; name the field for
+        // screen readers and automation so "Host", "Port" etc. resolve to the input.
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = label },
     )
 }
 

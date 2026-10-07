@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -112,26 +113,53 @@ fun PortForwardDialog(
                     singleLine = true,
                 )
 
-                // Existing forwards
+                // Existing forwards — each shows its real runtime state, because a forward that
+                // failed to bind or died with the last reconnect must never look active.
                 if (existingForwards.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        stringResource(R.string.port_forward_active),
+                        stringResource(R.string.port_forward_listing),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
                     )
                     existingForwards.forEach { fwd ->
-                        Row(
-                            Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text(
-                                "${if (fwd.isLocal) "L" else "R"} ${fwd.bindPort} → ${fwd.host}:${fwd.port}",
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.weight(1f),
-                            )
-                            TextButton(onClick = { onRemove(fwd) }) {
-                                Text("✕", color = MaterialTheme.colorScheme.error)
+                        val stateLabel = when (fwd.state) {
+                            SshSession.PortForwardState.ACTIVE -> stringResource(R.string.port_forward_active)
+                            SshSession.PortForwardState.PENDING -> stringResource(R.string.port_forward_state_pending)
+                            SshSession.PortForwardState.FAILED -> stringResource(R.string.port_forward_state_failed)
+                        }
+                        val stateColor = when (fwd.state) {
+                            SshSession.PortForwardState.ACTIVE -> MaterialTheme.colorScheme.primary
+                            SshSession.PortForwardState.PENDING -> MaterialTheme.colorScheme.outline
+                            SshSession.PortForwardState.FAILED -> MaterialTheme.colorScheme.error
+                        }
+                        Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "${if (fwd.isLocal) "L" else "R"} ${fwd.bindPort} → ${fwd.host}:${fwd.port}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Text(
+                                    stateLabel,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = stateColor,
+                                )
+                                TextButton(onClick = { onRemove(fwd) }) {
+                                    Text("✕", color = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                            if (fwd.state == SshSession.PortForwardState.FAILED && fwd.error != null) {
+                                Text(
+                                    fwd.error,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+                                )
                             }
                         }
                     }

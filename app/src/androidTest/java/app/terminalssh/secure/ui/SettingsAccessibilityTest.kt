@@ -37,7 +37,9 @@ class SettingsAccessibilityTest {
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
                 device.findObject(By.text(settingsTab)).click()
-                assertTrue(device.wait(Until.hasObject(By.desc(oled)), TIMEOUT_MS))
+                // The palettes row can sit below the fold on small emulator screens.
+                device.scrollUntil { device.hasObject(By.desc(oled)) }
+                assertTrue(device.wait(Until.hasObject(By.desc(persianNeon)), TIMEOUT_MS))
 
                 val oledAction = device.findObject(By.desc(oled))
                 val minimumPx = (48 * instrumentation.targetContext.resources.displayMetrics.density).toInt()
@@ -68,6 +70,7 @@ class SettingsAccessibilityTest {
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
                 device.findObject(By.text(settingsTab)).click()
+                device.scrollUntil { device.hasObject(By.desc(fontSizeLabel)) }
                 assertTrue(device.wait(Until.hasObject(By.desc(fontSizeLabel)), TIMEOUT_MS))
 
                 val sliderNode = findNodeByDescription(
