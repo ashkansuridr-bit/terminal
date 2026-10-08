@@ -40,3 +40,16 @@
 # preview/release R8 shape are untouched by this test-only file.
 -keep class app.terminalssh.secure.** { *; }
 -keep class app.terminalssh.secure.**$** { *; }
+
+# The androidTest APK resolves its library dependencies out of the APP APK (it does not
+# bundle a second copy), against the original class names. R8 renames these library
+# classes when the app shrinks — kotlinx.coroutines.BuildersKt (launch/runBlocking used
+# all over the suite), androidx.lifecycle.ViewModelProvider (paste/session tests) and
+# androidx.core.view.WindowInsetsCompat (IME-related toolbox tests). Keeping the names
+# preserves the runtime resolution androidTest needs; shrinking of app code and of the
+# real preview/release shape is untouched by this test-only file.
+-keep class kotlinx.coroutines.** { *; }
+-dontwarn kotlinx.coroutines.**
+-keep class androidx.lifecycle.** { *; }
+-dontwarn androidx.lifecycle.**
+-keep class androidx.core.view.WindowInsetsCompat { *; }

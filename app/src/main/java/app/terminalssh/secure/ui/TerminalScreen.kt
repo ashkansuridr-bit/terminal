@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -69,10 +70,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -88,6 +95,7 @@ import app.terminalssh.secure.ui.theme.TextSecondary
 import app.terminalssh.secure.ui.theme.TerminalPalettes
 import app.terminalssh.secure.ui.theme.Turquoise
 import app.terminalssh.secure.vm.AppViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.connectbot.terminal.Terminal
 
@@ -178,24 +186,32 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
 
     val focusTerminal = {
         keyboardScope.launch {
-            terminalFocusRequester.requestFocus()
+            // termlib attaches the FocusRequester only once its embedded editor view is
+            // composed, so a tap that lands early can find it uninitialized and throw,
+            // aborting this coroutine before view focus is requested. Tolerate that and
+            // drive the real editor view directly below.
+            runCatching { terminalFocusRequester.requestFocus() }
+            // Give WindowManager a frame to publish the input connection, then make
+            // sure termlib's editor actually holds view focus (a single request can
+            // be dropped while the window is still attaching on slow devices).
             withFrameNanos { }
-            rootView.findTerminalInputView()?.requestFocus()
+            rootView.focusTerminalInputView()
         }
         Unit
     }
 
     val showKeyboard = {
         keyboardScope.launch {
-            terminalFocusRequester.requestFocus()
+            runCatching { terminalFocusRequester.requestFocus() }
             // Terminal is a custom editor. Let focus publish its input connection before
             // asking the IME to attach, otherwise rapid dismiss/reopen taps can be ignored.
             withFrameNanos { }
             // The actual input connection belongs to termlib's embedded Android View, not
-            // the surrounding Compose focus node. Target it directly when available.
+            // the surrounding Compose focus node. Target it directly when available,
+            // retrying the focus request across frames if the window is still attaching.
+            val editorFocused = rootView.focusTerminalInputView()
             val imeView = rootView.findTerminalInputView()
-            if (imeView != null) {
-                imeView.requestFocus()
+            if (editorFocused && imeView != null) {
                 val inputMethodManager = imeView.context
                     .getSystemService(InputMethodManager::class.java)
                 inputMethodManager.showSoftInput(imeView, InputMethodManager.SHOW_IMPLICIT)
@@ -209,19 +225,28 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     // imePadding lifts the toolbar to sit directly on the keyboard; navigationBarsPadding
     // only applies when the keyboard is down, since the IME already covers the nav bar.
     // Applying both unconditionally is what leaves a dead strip under the toolbar.
+    val imeVisible = WindowInsets.isImeVisible
+    // A phone in landscape with the keyboard up can leave only a sliver of height. The
+    // session tabs and connection strip are chrome the terminal can spare while typing;
+    // yielding them keeps the fixed-height key toolbar inside the ime-padded column
+    // instead of overflowing it and sliding under the keyboard.
+    val compactForIme = imeVisible &&
+        LocalConfiguration.current.screenHeightDp <= COMPACT_IME_HEIGHT_DP
     Column(
         Modifier
             .fillMaxSize()
             .imePadding()
-            .then(if (WindowInsets.isImeVisible) Modifier else Modifier.navigationBarsPadding()),
+            .then(if (imeVisible) Modifier else Modifier.navigationBarsPadding()),
     ) {
-        SessionTabs(
-            sessions = sessions,
-            activeId = activeId,
-            onSelect = viewModel.sessions::select,
-            onClose = viewModel::closeSession,
-        )
-        StatusBar(active)
+        if (!compactForIme) {
+            SessionTabs(
+                sessions = sessions,
+                activeId = activeId,
+                onSelect = viewModel.sessions::select,
+                onClose = viewModel::closeSession,
+            )
+            StatusBar(active)
+        }
         Box(Modifier.weight(1f).fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
             key(active.id, fontSize) {
                 Terminal(
@@ -322,7 +347,39 @@ private fun View.findTerminalInputView(): View? {
     return null
 }
 
+/**
+ * Requests focus on the embedded termlib editor, retrying across frames so a slow
+ * window attach cannot silently drop the request (the window keeps focus while the
+ * view tree is still settling). Returns whether the editor holds view focus.
+ */
+private suspend fun View.focusTerminalInputView(retries: Int = 6): Boolean {
+    repeat(retries) { attempt ->
+        val imeView = findTerminalInputView() ?: return false
+        // termlib gives its invisible editor a 1px frame so it can hold focus. Right
+        // after a BACK-dismissed keyboard that frame can collapse to zero height, and a
+        // zero-sized view is not allowed to take focus — which deadlocks the show-
+        // keyboard action (the editor can never regain focus, so the IME never returns).
+        // Restore a 1px frame before requesting focus.
+        if (imeView.width <= 0 || imeView.height <= 0) {
+            imeView.layout(
+                imeView.left,
+                imeView.top,
+                imeView.left + 1,
+                imeView.top + 1,
+            )
+        }
+        imeView.requestFocus()
+        if (imeView.isFocused) return true
+        if (attempt < retries - 1) delay(16)
+    }
+    return false
+}
+
 private const val TERMINAL_IME_VIEW_CLASS = "org.connectbot.terminal.ImeInputView"
+
+// Window height (dp) at or below which the terminal hides its session tabs and status
+// strip while the soft keyboard is up, so the key toolbar always clears the keyboard.
+private const val COMPACT_IME_HEIGHT_DP = 480
 
 @Composable
 private fun SessionTabs(
@@ -349,19 +406,42 @@ private fun SessionTabs(
                         else MaterialTheme.colorScheme.surface,
                     )
                     .border(1.dp, if (selected) Turquoise.copy(alpha = 0.4f) else Stroke, RoundedCornerShape(12.dp))
-                    // A session tab is one accessible element: TalkBack reads its title,
-                    // selection state and close action together instead of three fragments.
-                    .semantics(mergeDescendants = true) {}
-                    .selectable(
-                        selected = selected,
-                        role = Role.Tab,
-                        onClick = { onSelect(session.id) },
-                    )
-                    .padding(start = 12.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                    .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
             ) {
                 StatusDot(state)
                 Spacer(Modifier.width(8.dp))
-                Text(session.title, style = MaterialTheme.typography.labelLarge)
+                // One accessible element per tab: this box defines the whole title area as a
+                // single node carrying the text together with selection state and the
+                // reuse action (the inner label Text stays purely visual), matching the
+                // settings-row pattern. The close action remains its own 48dp target
+                // ("Close session …") next to it.
+                Box(
+                    contentAlignment = Alignment.CenterStart,
+                    modifier = Modifier
+                        .defaultMinSize(minHeight = 48.dp)
+                        .selectable(
+                            selected = selected,
+                            role = Role.Tab,
+                            onClick = { onSelect(session.id) },
+                        )
+                        .clearAndSetSemantics {
+                            // One node per tab: the announced name is the description,
+                            // and selected state rides on the same node. Putting the
+                            // title in `text` semantics instead split a bare text child
+                            // off the control and (like the toggle keys above) hid the
+                            // description from the accessibility tree.
+                            this.contentDescription = session.title
+                            this.selected = selected
+                            role = Role.Tab
+                            onClick {
+                                onSelect(session.id)
+                                true
+                            }
+                        }
+                        .padding(horizontal = 4.dp, vertical = 12.dp),
+                ) {
+                    Text(session.title, style = MaterialTheme.typography.labelLarge)
+                }
                 Icon(
                     Icons.Outlined.Close,
                     contentDescription = closeDescription,
@@ -582,6 +662,10 @@ private fun ToolKey(
         onClick()
     }
 
+    val labelStyle = MaterialTheme.typography.labelLarge.copy(
+        color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+    )
+
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -589,12 +673,15 @@ private fun ToolKey(
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(RoundedCornerShape(8.dp))
             .background(if (active) Turquoise else MaterialTheme.colorScheme.surfaceVariant)
-            // One focusable element per key. Merging collapses label, description, click
-            // and toggle state onto the single 48dp node the user actually touches;
-            // otherwise screen readers (and UiAutomator) see a tiny text node with the
-            // label and a sibling click target with the state.
-            .semantics(mergeDescendants = true) {
-                if (contentDescription != null) this.contentDescription = contentDescription
+            // One named, stateful target per key: the announced description (defaulting
+            // to the printed label) lives on the same box that carries the click and
+            // toggle state, so screen readers and UiAutomator can find the real 48dp
+            // target by name. The printed label stays as a passive child node for
+            // visible-text lookups. (Trying to clear-and-define the whole key as one
+            // node instead made the a11y layer merge the entire toolbar into a single
+            // unreadable button, so the label stays a real Text underneath.)
+            .semantics {
+                this.contentDescription = contentDescription ?: label
             }
             .then(
                 if (toggle) Modifier.toggleable(
@@ -609,14 +696,9 @@ private fun ToolKey(
                     role = Role.Button,
                     onClick = press,
                 ),
-            )
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            ),
     ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelLarge,
-            color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-        )
+        Text(label, style = labelStyle, maxLines = 1, overflow = TextOverflow.Clip)
     }
 }
 
