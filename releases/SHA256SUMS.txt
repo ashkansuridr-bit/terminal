@@ -1,3 +1,3 @@
-cba24142b7663d30ca8366d3cd73ed1a597acccb65928767917115b5e368e0cd  TerminalSSH-0.7.0-preview-TEST-SIGNED.apk
-5520f2a0297eb8b7e742345beb0ee436af9a43ae1a69761e5be3aa37fd364e97  TerminalSSH-0.7.0-market-UNSIGNED.apk
-cb74bb8f1ae91a49cd259303fd8ac73b4edafde30fccff5817f6dccc7d54ad56  TerminalSSH-0.7.0-market-UNSIGNED.aab
+0eee610fefb7b4da6b51d0fa35c42647719341ff748204e6decd710cb5c3d6e0  TerminalSSH-0.7.0-preview-TEST-SIGNED.apk
+cb77c6b93299e6274dbb3d007bec44ebff009bee4d1df47a28fc2d782b036fe0  TerminalSSH-0.7.0-market-UNSIGNED.apk
+2fcdab5865ca4d5151766ab331152127b57560272939052340536ea2ece6137d  TerminalSSH-0.7.0-market-UNSIGNED.aab
