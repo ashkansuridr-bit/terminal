@@ -36,7 +36,7 @@ checks={
      if (root/src).exists()
      for p in (root/src).rglob('*.kt')
  ),
- 'termlib pinned':'org.connectbot:termlib:0.1.0' in build,
+ 'termlib pinned':'org.connectbot:termlib:0.2.1' in build,
 }
 for name,ok in checks.items():
     print(('PASS' if ok else 'FAIL'), name)
