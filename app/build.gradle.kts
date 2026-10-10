@@ -161,9 +161,14 @@ dependencies {
     // and signing to these lightweight BC APIs. This must be a runtime dependency: without
     // it the UI advertises Ed25519 on API 33+ but generation fails with NoClassDefFoundError.
     implementation("org.bouncycastle:bcprov-jdk18on:1.85")
-    implementation("org.connectbot:termlib:0.1.0")
+    implementation("org.connectbot:termlib:0.2.1")
 
-    implementation(platform("androidx.compose:compose-bom:2024.09.03"))
+    // termlib 0.2.x pulls a transitive Compose BOM that resolves to Compose 1.12.x,
+    // whose artifacts demand AGP 9. termlib's bidi/shaping code only uses platform
+    // APIs (android.icu.text.Bidi, android.graphics.text) plus stable Compose runtime,
+    // so pin the whole Compose line to 1.11.4 (the version termlib 0.2.x builds against
+    // and the newest this AGP supports) with an enforced platform.
+    implementation(enforcedPlatform("androidx.compose:compose-bom:2026.06.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.animation:animation")
