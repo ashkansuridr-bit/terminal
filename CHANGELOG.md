@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased — implementation awaiting Android verification
+## 0.7.1 — Persian/Arabic terminal shaping
 
-These source changes are not a release or a claim of passing Android tests.
+Test-signed preview and unsigned market candidates. No production signing.
 
 - Terminal: fixed Persian/Arabic text being jumbled. `org.connectbot:termlib` was
   upgraded 0.1.0 → 0.2.1; the pinned 0.1.0 had no complex-script support and drew each
@@ -12,6 +12,11 @@ These source changes are not a release or a claim of passing Android tests.
   (API 31+), the version of the platform API termlib uses; older devices keep the legacy
   renderer. The app now pins the Compose line to 1.11.4 with an `enforcedPlatform` BOM,
   because termlib 0.2.x pulls a transitive Compose BOM whose artifacts require AGP 9.
+
+## Unreleased — implementation awaiting Android verification
+
+These source changes are not a release or a claim of passing Android tests.
+
 - Android 17 (API 37): `compileSdk`/`targetSdk` raised from 36 to 37. Added the
   `ACCESS_LOCAL_NETWORK` permission, requested at connect time only for LAN-looking hosts
   (private IPv4, link-local/ULA IPv6, `.local`/`.lan`/`.home.arpa`/single-label names).

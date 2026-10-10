@@ -23,16 +23,16 @@
 
 <br>
 
-> **وضعیت نسخهٔ ۰.۷.۰ (کاندیدای انتشار):** روی شاخهٔ `main` ادغام شده —
-> گیت‌های استاتیک، ۵۳۳ تست واحد JVM برای هر flavor، lint هر دو flavor و بیلد هر چهار
-> variant پاس می‌شوند. تست دستگاهی `TerminalKeyboardTest` روی شبیه‌ساز **۹ از ۹ پاس** شده
-> و ماتریس CI روی API 26/36/37 **مرجع تأیید** است؛ هر خطای شبیه‌ساز یا کمبود منابع به‌عنوان
-> **INFRA** ثبت می‌شود، نه شکست برنامه. تست واقعی SSH/SFTP و **امضای تولیدی** هنوز انجام
-> نشده است و هیچ فایلی «آمادهٔ بازار» نیست. جزئیات: [`VERIFICATION_REPORT_0.7.0.md`](VERIFICATION_REPORT_0.7.0.md) و
+> **وضعیت نسخهٔ ۰.۷.۱ (کاندیدای انتشار):** روی شاخهٔ `main` — گیت‌های استاتیک،
+> تست‌های واحد JVM هر flavor، lint هر دو flavor و بیلد هر چهار variant پاس می‌شوند.
+> این نسخه رفع اشکال **نمایش فارسی/عربی در ترمینال** است
+> (`org.connectbot:termlib` از 0.1.0 به 0.2.1). تست واقعی SSH/SFTP و **امضای تولیدی**
+> هنوز انجام نشده است و هیچ فایلی «آمادهٔ بازار» نیست. جزئیات:
+> [`VERIFICATION_REPORT_0.7.0.md`](VERIFICATION_REPORT_0.7.0.md) و
 > [`docs/verification/0.7.0-progress.md`](docs/verification/0.7.0-progress.md).
 
 <a href="https://github.com/ashkansuridr-bit/terminal/releases">
-<img src="https://img.shields.io/badge/⬇_دانلود_آخرین_نسخه-0.7.0_TEST_SIGNED-3DDC84?style=for-the-badge&logo=android" alt="Download">
+<img src="https://img.shields.io/badge/⬇_دانلود_آخرین_نسخه-0.7.1_TEST_SIGNED-3DDC84?style=for-the-badge&logo=android" alt="Download">
 </a>
 
 </div>
@@ -80,7 +80,7 @@
 ### نسخهٔ آزمایشی — نصب مستقیم
 
 **آخرین فایل قابل نصب** (امضای تست، یونیورسال، ۱۷.۹ مگابایت):
-[`TerminalSSH-0.7.0-preview-TEST-SIGNED.apk`](releases/TerminalSSH-0.7.0-preview-TEST-SIGNED.apk)
+[`TerminalSSH-0.7.1-preview-TEST-SIGNED.apk`](releases/TerminalSSH-0.7.1-preview-TEST-SIGNED.apk)
 — نسخهٔ بدون امضا (`…market-UNSIGNED.apk`) نصب‌شدنی نیست و فقط برای امضا با کلید ناشر است.
 هر دو (و AAB بازار بدون امضا) در پوشهٔ [`releases/`](releases/) هستند؛ هویت و امضای آن‌ها
 پیش از ارائه ماشینی بررسی شده است (`scripts/verify_release_artifacts.py`).
@@ -110,7 +110,7 @@ cd releases && sha256sum -c SHA256SUMS.txt
 
 گزارش‌های تأیید:
 [`VERIFICATION_REPORT_0.7.0.md`](VERIFICATION_REPORT_0.7.0.md) ·
-[`releases/VERIFIED_ARTIFACTS_0.7.0.md`](releases/VERIFIED_ARTIFACTS_0.7.0.md) ·
+[`releases/VERIFIED_ARTIFACTS_0.7.1.md`](releases/VERIFIED_ARTIFACTS_0.7.1.md) ·
 [`releases/SHA256SUMS.txt`](releases/SHA256SUMS.txt)
 
 ---
