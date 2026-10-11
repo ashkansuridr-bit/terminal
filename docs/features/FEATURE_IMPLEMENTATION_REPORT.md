@@ -143,6 +143,19 @@ Tests: 4 classes, green.
 
 Tests: 6 classes, green (incl. the new `agents/TmuxWindowsTest`).
 
+### Batch I — Pure cores for the two blocked transport features (`8e5088e`)
+
+Both features stay blocked on a transport that does not exist, so the risky half is refused
+rather than faked: `JschSshClient` still throws `JumpHostUnavailable` for a jump host, and the
+emulator still renders one buffer. Only the planning/geometry half is added, tested.
+
+| Feature | File(s) | What it does |
+| --- | --- | --- |
+| F035 Jump chain | `ssh/JumpChain.kt` | Parses an OpenSSH `ProxyJump` value (comma-separated `[user@]host[:port]`, bracketed IPv6, the literal `none`) into ordered hops, caps the depth at 8, and plans one local forward per hop. Hop grammar reused from `QuickConnect`; opens no socket. |
+| F031 Pane layout | `terminal/PaneLayout.kt` | Binary split tree over pane ids: split/close keep the tree valid (close collapses the sibling, last pane protected, cap 6), resize clamps the divider, next/prev focus wraps. |
+
+Tests: 2 classes, green (`JumpChainTest`, `PaneLayoutTest`). Status stays `BLOCKED` for both.
+
 ## 4. Security posture of the new code
 
 - **No untrusted data is concatenated into a shell.** Shell roots, search patterns, systemd
@@ -173,13 +186,13 @@ model:      QuickConnectTest, HostFilterTest, HostIconsTest, ConnectionInfoTest,
             CursorAppearanceTest, WorkspaceStateTest
 ui:         ConnectionStatusTest
 terminal:   TerminalSearchTest, TerminalBookmarksTest, TerminalLinksTest,
-            CommandHistoryTest, OutputExportTest, BroadcastInputTest
+            CommandHistoryTest, OutputExportTest, BroadcastInputTest, PaneLayoutTest
 tools:      ServerResourcesTest, ProcessListTest, SystemdUnitsTest, DockerContainersTest,
             GitStatusTest, NetworkPortsTest, LogBufferTest, RunbookTest
 sftp:       HexPreviewTest, RemoteFinderTest, TransferPlanTest, TransferQueuePolicyTest,
             FolderSizeBudgetTest, IntegrityStatusTest, ConflictBatchPolicyTest,
             TransferBatchControlTest
-ssh:        ConnectionDiagnosticsTest, PortForwardSpecTest
+ssh:        ConnectionDiagnosticsTest, PortForwardSpecTest, JumpChainTest
 security:   PortableBackupTest
 storage:    KnownHostsFormatTest, SshConfigNotesTest
 agents:     TmuxWindowsTest
@@ -227,7 +240,10 @@ failure.
   green because of pre-existing device-only failures that are byte-identical before and after
   this work.
 - **No signed release.** The production signing keystore is not available.
-- **F031, F035, F049** are genuinely blocked/deferred; see the checkpoint doc for reasons.
+- **F031, F035, F049** remain blocked/deferred as features; see the checkpoint doc for reasons.
+  For F031 and F035 the pure planning/geometry core is now implemented and tested
+  (`terminal/PaneLayout.kt`, `ssh/JumpChain.kt`), so the remaining work is the transport half
+  only — the second terminal buffer, and the jump-host tunnel chain.
 - **No feature is left in a partial state.** The six former `NEEDS_IMPROVEMENT` items
   (F006, F009, F032, F033, F036, F038) now each have a pure engine; what remains for them is
   UI wiring, the same as every other engine on this branch.
@@ -235,7 +251,7 @@ failure.
 ## 7. How to verify
 
 1. `git -C /root/work/terminal-features log --oneline` shows the feature commits on top of
-   `origin/main@f675bb1` (the last one is `1c14668`).
+   `origin/main@f675bb1` (the last one is `8e5088e`).
 2. Run the unit-test command above — expect `BUILD SUCCESSFUL`.
 3. Read `FEATURE_STATUS.json` for the per-feature status and artifacts.
 4. Run `lintMarketDebug` and `assembleMarketDebug` (one task per invocation) to confirm the

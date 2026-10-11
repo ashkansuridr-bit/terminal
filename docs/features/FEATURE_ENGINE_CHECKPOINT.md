@@ -101,8 +101,8 @@ Kill stale Gradle daemons before a run if the host is tight on memory
 
 | Feature | Blocker |
 | --- | --- |
-| F031 split panes | Needs terminal-emulator pane infrastructure; not available in the current engine wiring. |
-| F035 multi-hop ProxyJump | JSch has no native ProxyJump; needs a local port-forward tunnel chain plus independent hop auth and host-key verification. High risk; deferred rather than half-built. |
+| F031 split panes | The emulator renders a single buffer, so panes cannot be shown. The pure geometry is done (`terminal/PaneLayout.kt`, tested); the second-buffer transport is the blocker. |
+| F035 multi-hop ProxyJump | JSch has no native ProxyJump; it needs a local port-forward tunnel chain plus independent hop auth and host-key verification. High risk; not half-built. The pure planner is done (`ssh/JumpChain.kt`, tested) and opens no socket. |
 | F049 Mosh | Requires a native UDP implementation and server-side install; out of scope for a JVM-only change. |
 
 ### Environment blockers
@@ -139,7 +139,7 @@ termlib 0.2.1 work: `SettingsToggleAccessibilityTest`, `SettingsAccessibilityTes
 4. Run `lintMarketDebug` then `assembleMarketDebug` (one task per invocation) once the UI lands.
 5. Do **not** merge to `main` or publish without explicit permission.
 
-## Latest batch (commit `1c14668`)
+## Batch H (commit `1c14668`) — the six former partial items, closed as engines
 
 The six former `NEEDS_IMPROVEMENT` features were closed as pure engines so no host is left
 without a testable core:
@@ -159,3 +159,22 @@ without a testable core:
 
 Verification for this batch: the six new test classes are green under a package-filtered
 `testMarketDebugUnitTest`; `lintMarketDebug` and `assembleMarketDebug` both `BUILD SUCCESSFUL`.
+
+## Batch I (commit `8e5088e`) — pure cores for the two blocked transport features
+
+Both features remain genuinely blocked on a transport that does not exist, so the risky half
+is still refused rather than faked: `JschSshClient` keeps throwing `JumpHostUnavailable` for a
+jump host, and the emulator still renders one buffer. What lands here is the planning/geometry
+half, tested and ready for the transport to consume.
+
+- F035 `ssh/JumpChain.kt` — parses an OpenSSH `ProxyJump` value (comma-separated
+  `[user@]host[:port]`, bracketed IPv6, the literal `none`) into ordered hops, caps the depth at
+  8, and plans one local forward per hop for the eventual tunnel chain. The hop grammar is
+  reused from `QuickConnect` rather than copied, and **no socket is opened**.
+- F031 `terminal/PaneLayout.kt` — a binary split tree over pane ids. `split`/`close` keep the
+  tree valid (close collapses the sibling, the last pane cannot be closed, cap 6), `resize`
+  clamps the divider so neither side can vanish, and next/prev focus wraps and always lands on
+  a real pane.
+
+Their `FEATURE_STATUS.json` entries stay `BLOCKED`; the artifacts/evidence fields record the
+engine as groundwork, not as a finished feature. New tests: `JumpChainTest`, `PaneLayoutTest`.
