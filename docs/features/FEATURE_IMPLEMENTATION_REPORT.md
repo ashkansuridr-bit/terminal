@@ -3,7 +3,7 @@
 - **Branch:** `feature/terminal-50-tools` (base `origin/main@f675bb1`)
 - **Worktree:** `/root/work/terminal-features`
 - **Scope of this run:** Phases A–E of the 50-feature request (`F001`–`F050`)
-- **Commits:** `9fdb91e`, `5aa2621`, `882abc2`, `da80eb1`, `0629b0e`
+- **Commits:** `9fdb91e`, `5aa2621`, `882abc2`, `da80eb1`, `0629b0e`, `f6a31f0`
 - **Machine status:** [`FEATURE_STATUS.json`](FEATURE_STATUS.json) · **Resume notes:** [`FEATURE_ENGINE_CHECKPOINT.md`](FEATURE_ENGINE_CHECKPOINT.md)
 
 ---
@@ -14,7 +14,7 @@ Of the 50 requested features:
 
 | Outcome | Count |
 | --- | --- |
-| Engine implemented here + JVM unit-tested (`IMPLEMENTED_NOT_TESTED`) | **30** |
+| Engine implemented here + JVM unit-tested (`IMPLEMENTED_NOT_TESTED`) | **32** |
 | Already complete on `main`, audited not rebuilt (`EXISTS_VERIFIED`) | 5 |
 | Pre-existing partial support, recorded as follow-up (`NEEDS_IMPROVEMENT`) | 12 |
 | Blocked with a technical reason (`BLOCKED`) | 2 |
@@ -110,6 +110,15 @@ Tests: 5 classes, green.
 
 Tests: 6 classes, green.
 
+### Batch F — Tab layout and folder-size budgeting (`f6a31f0`)
+
+| Feature | File(s) | What it does |
+| --- | --- | --- |
+| F019 Tab layout | `model/TabLayout.kt` | Rename (trim/cap/reject blank), pin/unpin with a stable pinned-first invariant, reorder, close, selection-after-close (next then previous). |
+| F024 Folder size budget | `sftp/FolderSizeBudget.kt` | Entry- and wall-clock-bounded, cancellable walk tracker that reports why it stopped; quoted/validated `du -sk` total + per-child parsers. |
+
+Tests: 2 classes, green.
+
 ## 4. Security posture of the new code
 
 - **No untrusted data is concatenated into a shell.** Shell roots, search patterns, systemd
@@ -135,12 +144,14 @@ New JVM unit-test classes added on this branch (all green when run together):
 
 ```
 model:      QuickConnectTest, HostFilterTest, HostIconsTest, ConnectionInfoTest,
-            SnippetTemplateTest, SnippetLibraryTest, KeyToolbarConfigTest, SessionNotificationTest
+            SnippetTemplateTest, SnippetLibraryTest, KeyToolbarConfigTest,
+            SessionNotificationTest, TabLayoutTest
 terminal:   TerminalSearchTest, TerminalBookmarksTest, TerminalLinksTest,
             CommandHistoryTest, OutputExportTest, BroadcastInputTest
 tools:      ServerResourcesTest, ProcessListTest, SystemdUnitsTest, DockerContainersTest,
             GitStatusTest, NetworkPortsTest, LogBufferTest, RunbookTest
-sftp:       HexPreviewTest, RemoteFinderTest, TransferPlanTest, TransferQueuePolicyTest
+sftp:       HexPreviewTest, RemoteFinderTest, TransferPlanTest, TransferQueuePolicyTest,
+            FolderSizeBudgetTest
 ssh:        ConnectionDiagnosticsTest
 security:   PortableBackupTest
 storage:    KnownHostsFormatTest
@@ -163,7 +174,7 @@ Result: `BUILD SUCCESSFUL`.
 
 ## 6. What was **not** done (honest limitations)
 
-- **No UI wiring.** The 30 implemented features are engines with green unit tests. The Compose
+- **No UI wiring.** The 32 implemented features are engines with green unit tests. The Compose
   screens/flows that call them are not built in this run, so a user cannot yet reach most of
   them. This is why none are marked `VERIFIED`.
 - **No device/emulator verification.** The AVD image was deleted and the emulator fails with
@@ -172,8 +183,8 @@ Result: `BUILD SUCCESSFUL`.
   this work.
 - **No signed release.** The production signing keystore is not available.
 - **F031, F035, F049** are genuinely blocked/deferred; see the checkpoint doc for reasons.
-- **12 features** remain partial on `main` (F006, F009, F019, F021, F023, F024, F028, F032,
-  F033, F036, F038, F040) and were intentionally left as recorded follow-ups.
+- **10 features** remain partial on `main` (F006, F009, F021, F023, F028, F032, F033, F036,
+  F038, F040) and were intentionally left as recorded follow-ups.
 
 ## 7. How to verify
 

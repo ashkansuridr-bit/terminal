@@ -10,7 +10,7 @@ Full narrative: [`FEATURE_IMPLEMENTATION_REPORT.md`](FEATURE_IMPLEMENTATION_REPO
 | Worktree | `/root/work/terminal-features` |
 | Branch | `feature/terminal-50-tools` |
 | Base | `origin/main@f675bb1` |
-| Commits | `9fdb91e`, `5aa2621`, `882abc2`, `da80eb1`, `0629b0e` |
+| Commits | `9fdb91e`, `5aa2621`, `882abc2`, `da80eb1`, `0629b0e`, `f6a31f0` |
 | Pushed | No (nothing pushed; no PR opened) |
 | Shared tree | `/root/work/terminal` is a **different** worktree owned by the Codex agent — do not touch it |
 
@@ -51,9 +51,9 @@ Kill stale Gradle daemons before a run if the host is tight on memory
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| `IMPLEMENTED_NOT_TESTED` | 30 | Engine implemented here, JVM unit tests green, **UI wiring / device E2E not done** |
+| `IMPLEMENTED_NOT_TESTED` | 32 | Engine implemented here, JVM unit tests green, **UI wiring / device E2E not done** |
 | `EXISTS_VERIFIED` | 5 | Already complete on `main`; audited, not rebuilt |
-| `NEEDS_IMPROVEMENT` | 12 | Partial on `main`; untouched here (recorded as follow-up) |
+| `NEEDS_IMPROVEMENT` | 10 | Partial on `main`; untouched here (recorded as follow-up) |
 | `BLOCKED` | 2 | F031 split panes, F035 multi-hop ProxyJump |
 | `DEFERRED_WITH_REASON` | 1 | F049 Mosh |
 | `VERIFIED` (end-to-end) | 0 | No emulator/SSH server available on the host |
@@ -62,17 +62,18 @@ Kill stale Gradle daemons before a run if the host is tight on memory
 > JVM tests, but nothing is marked `VERIFIED` because the Compose UI path and a real device
 > have not been exercised.
 
-## What is implemented (30 features)
+## What is implemented (32 features)
 
 - **Host utilities:** F001 QuickConnect, F003 HostFilter, F005 HostIcons + `iconKey`
-  persistence, F007 ConnectionInfo, F017 SnippetTemplate, F018 SnippetLibrary.
+  persistence, F007 ConnectionInfo, F010 KeyToolbarConfig, F017 SnippetTemplate,
+  F018 SnippetLibrary, F019 TabLayout, F020 SessionNotification.
 - **Terminal engines:** F011 TerminalSearch, F012 search navigator, F013 TerminalBookmarks,
-  F014 OutputExport, F015 TerminalLinks, F016 CommandHistory.
+  F014 OutputExport, F015 TerminalLinks, F016 CommandHistory, F034 BroadcastInput.
 - **Server tools:** F041 ServerResources, F042 LogBuffer, F043 ProcessList, F044 SystemdUnits,
   F045 DockerContainers, F046 GitStatus, F047 NetworkPorts, F050 Runbook.
-- **Security / SFTP / SSH:** F025 RemoteFinder, F026 HexPreview, F029 TransferQueuePolicy,
-  F037 KnownHostsFormat, F039 ConnectionDiagnostics, F048 PortableBackup, F022 TransferPlan,
-  F010 KeyToolbarConfig, F020 SessionNotification, F034 BroadcastInput.
+- **Security / SFTP / SSH:** F022 TransferPlan, F024 FolderSizeBudget, F025 RemoteFinder,
+  F026 HexPreview, F029 TransferQueuePolicy, F037 KnownHostsFormat, F039 ConnectionDiagnostics,
+  F048 PortableBackup.
 
 ## Design rules followed
 
