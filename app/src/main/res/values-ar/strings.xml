@@ -345,6 +345,8 @@
     <string name="sftp_preview">معاينة</string>
     <string name="sftp_preview_image">معاينة الصورة</string>
     <string name="sftp_preview_text">معاينة النص</string>
+    <string name="sftp_preview_binary">ملف ثنائي — يتم العرض بنظام ست عشري</string>
+    <string name="sftp_preview_truncated">يتم عرض عيّنة محدودة من الملف</string>
     <string name="sftp_file_type_image">صورة</string>
     <string name="sftp_file_type_video">فيديو</string>
     <string name="sftp_file_type_audio">صوت</string>

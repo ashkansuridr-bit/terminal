@@ -69,6 +69,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.terminalssh.secure.R
+import app.terminalssh.secure.sftp.BytePreview
+import app.terminalssh.secure.sftp.PreviewContent
 import app.terminalssh.secure.sftp.RemoteEntry
 import app.terminalssh.secure.sftp.RemotePath
 import app.terminalssh.secure.sftp.SftpController
@@ -109,6 +111,7 @@ fun SftpBrowser(
     fetchFileText: (suspend (String) -> Result<String>)? = null,
     fetchFileTextForEdit: (suspend (String) -> Result<Pair<String, Long>>)? = null,
     fetchFileBytes: (suspend (String) -> Result<ByteArray>)? = null,
+    fetchPreviewBytes: (suspend (String) -> Result<BytePreview>)? = null,
     onUploadEditedText: (suspend (String, String, Boolean) -> Result<Unit>)? = null,
     onUploadEditedTextChecked: (suspend (String) -> Result<Boolean>)? = null,
     onCompressSelected: (List<RemoteEntry>) -> Unit = {},
@@ -371,6 +374,7 @@ fun SftpBrowser(
         } else {
             RemoteTextPreview(
                 entry = entry,
+                fetchPreviewBytes = fetchPreviewBytes,
                 fetchFileText = fetchFileText,
                 onDismiss = { previewTarget = null },
             )
@@ -957,23 +961,32 @@ private fun RemoteTextEditor(
 @Composable
 private fun RemoteTextPreview(
     entry: RemoteEntry,
+    fetchPreviewBytes: (suspend (String) -> Result<BytePreview>)?,
     fetchFileText: (suspend (String) -> Result<String>)?,
     onDismiss: () -> Unit,
 ) {
     var loading by remember { mutableStateOf(true) }
-    var content by remember { mutableStateOf("") }
+    var view by remember { mutableStateOf<PreviewContent.View?>(null) }
 
     LaunchedEffect(entry.path) {
         loading = true
-        val result = fetchFileText?.invoke(entry.path)
-        result?.onSuccess { text -> content = text }
+        val bytes = fetchPreviewBytes?.invoke(entry.path)
+        if (bytes != null && bytes.isSuccess) {
+            val preview = bytes.getOrThrow()
+            view = PreviewContent.of(preview.bytes, sourceTruncated = preview.truncated)
+        } else if (fetchFileText != null) {
+            // Callers that only expose the text fetch still get a preview.
+            fetchFileText.invoke(entry.path).onSuccess { text ->
+                view = PreviewContent.View.Text(text, false, text.toByteArray(Charsets.UTF_8).size)
+            }
+        }
         loading = false
     }
 
-    TextPreviewDialog(
+    FilePreviewDialog(
         fileName = entry.name,
         isLoading = loading,
-        content = content,
+        view = view,
         onDismiss = onDismiss,
     )
 }

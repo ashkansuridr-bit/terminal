@@ -325,6 +325,15 @@ class SftpClient(private val session: Session) : AutoCloseable {
     fun downloadTextResult(remotePath: String, maxBytes: Long = MAX_EDIT_BYTES): TextLoadResult =
         channel().get(RemotePath.normalize(remotePath)).use { BoundedText.read(it, maxBytes) }
 
+    /**
+     * Bounded byte sample for the read-only preview (F026). [downloadText] cannot be reused
+     * because decoding throws the bytes away before binary detection can run.
+     */
+    fun downloadPreview(
+        remotePath: String,
+        maxBytes: Long = HexPreview.DEFAULT_MAX_BYTES.toLong(),
+    ): BytePreview = channel().get(RemotePath.normalize(remotePath)).use { BoundedText.readBytes(it, maxBytes) }
+
     /** Text creation/replacement uses the same verified fail-closed write path. */
     fun uploadText(remotePath: String, text: String) {
         val guard = destinationGuard(remotePath)

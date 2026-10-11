@@ -237,6 +237,7 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
             fetchFileText = sftp::downloadFileText,
             fetchFileTextForEdit = sftp::downloadFileTextForEdit,
             fetchFileBytes = sftp::downloadFileBytes,
+            fetchPreviewBytes = { path -> sftp.downloadPreviewBytes(path) },
             onUploadEditedText = { path, text, force -> sftp.uploadFileText(path, text, force) },
             onUploadEditedTextChecked = sftp::checkFileTextConflict,
             onCompressSelected = { entries ->

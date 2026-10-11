@@ -26,8 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import app.terminalssh.secure.R
+import app.terminalssh.secure.sftp.PreviewContent
 
 /**
  * In-app text editor for small remote files (#36).
@@ -156,14 +158,17 @@ fun ImagePreviewDialog(
 }
 
 /**
- * Text preview dialog for remote files (#39).
- * Shows the first N KB of a file for quick inspection without downloading.
+ * Read-only preview dialog for remote files (#39 / F026).
+ *
+ * Renders the bounded sample as text, or as a hex dump when the bytes are not text. A binary
+ * decoded as text is a wall of replacement characters that hides whether the read itself was
+ * sound, so the view is chosen from the bytes rather than assumed.
  */
 @Composable
-fun TextPreviewDialog(
+fun FilePreviewDialog(
     fileName: String,
     isLoading: Boolean,
-    content: String,
+    view: PreviewContent.View?,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -180,14 +185,45 @@ fun TextPreviewDialog(
                 if (isLoading) {
                     CircularProgressIndicator(modifier = Modifier.fillMaxWidth().padding(32.dp))
                 } else {
-                    SelectionContainer {
+                    when (view) {
+                        is PreviewContent.View.Hex -> {
+                            Text(
+                                stringResource(R.string.sftp_preview_binary),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            SelectionContainer {
+                                Text(
+                                    view.lines.joinToString("\n"),
+                                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(300.dp)
+                                        .verticalScroll(rememberScrollState()),
+                                )
+                            }
+                        }
+                        is PreviewContent.View.Text -> {
+                            SelectionContainer {
+                                Text(
+                                    view.text,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(300.dp)
+                                        .verticalScroll(rememberScrollState()),
+                                )
+                            }
+                        }
+                        null -> Text(stringResource(R.string.sftp_preview))
+                    }
+                    if (view?.truncated == true) {
+                        Spacer(Modifier.height(6.dp))
                         Text(
-                            content,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(300.dp)
-                                .verticalScroll(rememberScrollState()),
+                            stringResource(R.string.sftp_preview_truncated),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }

@@ -514,6 +514,13 @@ class SftpController(
             }
         }
 
+    /** Bounded byte sample for the read-only file preview (F026). */
+    suspend fun downloadPreviewBytes(
+        remotePath: String,
+        maxBytes: Long = HexPreview.DEFAULT_MAX_BYTES.toLong(),
+    ): Result<BytePreview> =
+        runCatching { withContext(Dispatchers.IO) { client().downloadPreview(remotePath, maxBytes) } }
+
     /** Downloads a remote text file's content (for the in-app editor / preview). */
     suspend fun downloadFileText(remotePath: String, maxBytes: Long = 512_000): Result<String> =
         runCatching { withContext(Dispatchers.IO) { client().downloadText(remotePath, maxBytes) } }

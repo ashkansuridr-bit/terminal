@@ -343,6 +343,8 @@
     <string name="sftp_preview">Предпросмотр</string>
     <string name="sftp_preview_image">Просмотр изображения</string>
     <string name="sftp_preview_text">Просмотр текста</string>
+    <string name="sftp_preview_binary">Двоичный файл — показан шестнадцатеричный дамп</string>
+    <string name="sftp_preview_truncated">Показана ограниченная часть файла</string>
     <string name="sftp_file_type_image">Изображение</string>
     <string name="sftp_file_type_video">Видео</string>
     <string name="sftp_file_type_audio">Аудио</string>
