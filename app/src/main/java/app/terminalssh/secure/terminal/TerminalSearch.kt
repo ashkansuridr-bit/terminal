@@ -1,5 +1,7 @@
 package app.terminalssh.secure.terminal
 
+import java.util.regex.Pattern
+
 /**
  * Search over terminal scrollback (F011/F012).
  *
@@ -25,17 +27,18 @@ object TerminalSearch {
         maxMatches: Int = MAX_MATCHES,
     ): List<Match> {
         if (query.isEmpty() || maxMatches <= 0) return emptyList()
-        val needle = if (caseSensitive) query else query.lowercase()
+        // Match against the original text. Lower-casing the haystack first can change its
+        // length for some characters ('İ' -> "i̇"), which made the recorded offsets point
+        // past the line and slice the wrong characters (or throw). A case-insensitive regex
+        // reports offsets in the original coordinates, and UNICODE_CASE is required so
+        // non-ASCII scripts (Cyrillic, Greek) still match case-insensitively.
+        val flags = if (caseSensitive) 0 else Pattern.CASE_INSENSITIVE or Pattern.UNICODE_CASE
+        val pattern = Pattern.compile(Pattern.quote(query), flags).toRegex()
         val out = ArrayList<Match>()
         for ((index, line) in lines.withIndex()) {
-            val haystack = if (caseSensitive) line else line.lowercase()
-            var from = 0
-            while (from <= haystack.length - needle.length) {
-                val at = haystack.indexOf(needle, from)
-                if (at < 0) break
-                out += Match(index, at, at + needle.length)
+            for (match in pattern.findAll(line)) {
+                out += Match(index, match.range.first, match.range.last + 1)
                 if (out.size >= maxMatches) return out
-                from = at + needle.length
             }
         }
         return out

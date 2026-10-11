@@ -69,4 +69,31 @@ class TerminalSearchTest {
         assertEquals(null, nav.previous())
         assertEquals(0, nav.position)
     }
+
+    @Test fun caseInsensitiveSearchKeepsOffsetsInTheOriginalLine() {
+        // 'İ' lower-cases to a two-code-point sequence, so offsets computed on a lowered
+        // copy used to land outside the line. They must stay valid on the original text.
+        val line = "İstanbul"
+        val match = TerminalSearch.findAll(listOf(line), "i").single()
+        assertEquals(0, match.start)
+        assertEquals(1, match.end)
+        assertEquals("İ", line.substring(match.start, match.end))
+    }
+
+    @Test fun highlightNeverSlicesPastTheLineOnUnicodeFolding() {
+        // A query that folds to more code points than the source must not throw.
+        val runs = TerminalSearch.highlight("İ", "i̇")
+        assertEquals("İ", runs.joinToString("") { it.text })
+    }
+
+    @Test fun nonAsciiScriptsStillMatchCaseInsensitively() {
+        // Cyrillic upper/lower case is not covered by ASCII-only case folding.
+        assertEquals(1, TerminalSearch.findAll(listOf("Привет"), "привет").size)
+        assertEquals(1, TerminalSearch.findAll(listOf("ΠΑΛΙΑ"), "παλια").size)
+    }
+
+    @Test fun regexMetacharactersInTheQueryAreLiteral() {
+        assertEquals(1, TerminalSearch.findAll(listOf("a.b"), ".").size)
+        assertTrue(TerminalSearch.findAll(listOf("axb"), ".").isEmpty())
+    }
 }
