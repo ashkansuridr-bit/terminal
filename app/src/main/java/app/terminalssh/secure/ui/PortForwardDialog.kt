@@ -171,8 +171,10 @@ fun PortForwardDialog(
                 onClick = {
                     val bind = bindPort.toIntOrNull() ?: return@TextButton
                     val dest = destPort.toIntOrNull() ?: return@TextButton
-                    if (host.isBlank()) return@TextButton
-                    onAdd(SshSession.PortForward(bind, host, dest, isLocal))
+                    if (host.isBlank() || bind !in 1..65535 || dest !in 1..65535) return@TextButton
+                    val duplicate = existingForwards.any { it.isLocal == isLocal && it.bindPort == bind }
+                    if (duplicate) return@TextButton
+                    onAdd(SshSession.PortForward(bind, host.trim(), dest, isLocal))
                 },
             ) {
                 Text(stringResource(R.string.ok))

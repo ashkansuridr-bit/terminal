@@ -1,15 +1,12 @@
 # Bugfix Loop Checkpoint
 
-- Date: 2026-10-11
-- Branch: `fix/stability-bugfix-loop`
-- Base commit: `f675bb1`
-- Last reviewed commit: `5a8ec2d`
-- Bugs reviewed: BUG-014, BUG-015, BUG-016, BUG-017, BUG-018, BUG-019, BUG-020, BUG-042 (code review)
-- Fixed: BUG-016, BUG-017, BUG-018, BUG-019, BUG-020
-- Verified: compile/build and diff checks; runtime SFTP/SAF blocked without device and SSH server
-- Blocked: instrumentation, API matrix, real SSH/SFTP integration, crash reproduction (no device/logcat/server)
-- Current focus: baseline build/test completion and lifecycle/foreground-service audit
-- Root causes addressed: swallowed SFTP listing errors; recursive chmod traversal without visited/symlink guard; silent SAF document creation skips; missing remote folder creation
-- Files changed: `app/src/main/java/app/terminalssh/secure/sftp/SftpController.kt`
-- Tests: `./gradlew test --no-daemon` (running/completion to be recorded), `./gradlew :app:assembleMarketDebug --no-daemon` PASS, `./gradlew :app:compileMarketDebugKotlin --no-daemon` pending
-- Next step: finish compile/test polling, run lint/available variants, inspect remaining high-risk paths, update final status matrix
+- Date: 2026-10-12
+- Branch: `fix/0.7.2-instrumentation-reliability`
+- Last reviewed commit: pending next commit
+- Reviewed: BUG-014..020, BUG-021, BUG-022, BUG-023, BUG-024, BUG-025, BUG-026, BUG-027, BUG-028, BUG-029, BUG-030, BUG-032, BUG-033, BUG-042, BUG-044, BUG-045, BUG-051, BUG-054
+- Fixed in current branch: SFTP fail-closed traversal/SAF/upload handling; SSH exec result handling; share/compression cleanup; snippet cleanup journal; foreground-service start failures; port/reconnect validation; port-forward range/duplicate validation; termlib NOTICE version.
+- Verified: `./gradlew :app:compileMarketDebugKotlin` PASS; prior `testMarketDebugUnitTest` PASS; MarketDebug assemble PASS.
+- Blocked: instrumentation/device matrix (AVD system image missing), real SSH/SFTP integration, production signing secrets, crash log reproduction.
+- CI: verify job passed; instrumentation jobs failed; release job skipped. See GitHub Actions history.
+- Current focus: remaining lifecycle, LocalShell, UI/accessibility and documentation audit.
+- Next step: commit port-forward validation, run JVM tests, then produce complete 55-item classification table.
