@@ -195,3 +195,22 @@ dashboard promised a read it could not yet perform:
 
 Both were already `IMPLEMENTED_NOT_TESTED`; their `FEATURE_STATUS.json` evidence is extended,
 counts unchanged. New tests: `SystemdUnitsLogsTest` (3), `DockerContainerReadTest` (5).
+
+## Batch K (commit `8b94781`) — a real bug in the F011/F012 search
+
+Reviewing the engines for the RTL/non-ASCII requirement turned up a genuine correctness bug,
+not a missing operation. `TerminalSearch.findAll` lower-cased the whole haystack before
+`indexOf`, and `String.lowercase()` can **change a string's length** (e.g. `İ` → `i` + U+0307, a
+two-code-point sequence). A match located on the lowered copy then produced an `end` index that
+pointed past the original line, so `highlight()` sliced the wrong characters or threw
+`StringIndexOutOfBoundsException` on an ordinary-looking query.
+
+- Fixed by matching the **original** text with `Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE`
+  (`Pattern.quote` keeps the query literal, exactly as before), so offsets stay in original
+  coordinates and non-ASCII scripts keep matching case-insensitively — the `ru` locale matters
+  here, and ASCII-only case folding would have silently broken Cyrillic/Greek search.
+- `TerminalSearchTest` gained 4 cases (offset correctness on `İ`, no slice past the line,
+  Cyrillic + Greek case folding, metacharacters are literal); the class is now 13 tests, green.
+
+This is a bug fix inside an existing feature, so the status stays `IMPLEMENTED_NOT_TESTED`
+(the search bar is still not wired on device); only the F011/F012 evidence now records the fix.

@@ -171,6 +171,20 @@ and quoting helpers.
 Tests: 2 classes, green (`SystemdUnitsLogsTest` 3, `DockerContainerReadTest` 5). Both features
 stay `IMPLEMENTED_NOT_TESTED` (UI still unverified); only their evidence fields are extended.
 
+### Batch K — a real bug in the F011/F012 terminal search (`8b94781`)
+
+Auditing for the RTL/non-ASCII requirement found a correctness bug rather than a missing
+operation. `TerminalSearch.findAll` lower-cased the haystack and ran `indexOf` on the lowered
+copy; because `String.lowercase()` can change length (`İ` → `i` + U+0307), the resulting `end`
+offset could exceed the original line, making `highlight()` slice the wrong text or throw
+`StringIndexOutOfBoundsException`.
+
+The matcher now runs on the original text (`Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE`,
+with `Pattern.quote` keeping the query literal), so offsets are original-coordinate and
+non-ASCII scripts keep matching case-insensitively. `TerminalSearchTest` is now 13 tests
+(+4: offset correctness, no slice past the line, Cyrillic/Greek folding, literal metacharacters).
+Status stays `IMPLEMENTED_NOT_TESTED`; the F011/F012 evidence records the fix.
+
 ## 4. Security posture of the new code
 
 - **No untrusted data is concatenated into a shell.** Shell roots, search patterns, systemd
@@ -237,6 +251,7 @@ Result: `BUILD SUCCESSFUL`.
 | `ssh`/`security`/`storage` unit tests | same, filtered | `BUILD SUCCESSFUL` |
 | Batch H unit tests | same, six filters (`ui`/`model`/`agents`/`ssh`/`storage`) | `BUILD SUCCESSFUL` |
 | Batch J unit tests | same, filter `app.terminalssh.secure.tools.*` | `BUILD SUCCESSFUL` (`SystemdUnitsLogsTest` 3, `DockerContainerReadTest` 5) |
+| Batch K unit tests | same, filter `app.terminalssh.secure.terminal.*` | `BUILD SUCCESSFUL` (`TerminalSearchTest` 13, incl. 4 Unicode cases) |
 | Android lint (Market) | `lintMarketDebug` | `BUILD SUCCESSFUL` |
 | Market debug APK | `assembleMarketDebug` | `BUILD SUCCESSFUL` |
 | Gplay flavor compiles | `compileGplayDebugKotlin` | `BUILD SUCCESSFUL` |
