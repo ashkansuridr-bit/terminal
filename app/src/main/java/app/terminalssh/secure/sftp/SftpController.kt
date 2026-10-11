@@ -1064,6 +1064,27 @@ class SftpController(
     fun clearFinished() = queue.clearFinished()
 
     /**
+     * Batch actions over the live queue (F023). Which items each one may touch is decided by
+     * [TransferBatchControl], so the buttons and the action can never disagree.
+     */
+    fun pauseAll() {
+        TransferBatchControl.idsFor(queue.pending, TransferBatchControl.Action.PAUSE).forEach(::pause)
+    }
+
+    fun resumeAll() {
+        TransferBatchControl.idsFor(queue.pending, TransferBatchControl.Action.RESUME).forEach(::resume)
+    }
+
+    /** Re-queues failures that are safe to retry — never an integrity mismatch. */
+    fun retryFailed() {
+        TransferBatchControl.idsFor(queue.pending, TransferBatchControl.Action.RETRY).forEach(::resume)
+    }
+
+    fun cancelAll() {
+        TransferBatchControl.idsFor(queue.pending, TransferBatchControl.Action.CANCEL).forEach(::cancel)
+    }
+
+    /**
      * Starts the next transfer if the queue allows one; re-entrant and cheap.
      * Adaptive concurrency: launches up to maxConcurrent transfers in parallel,
      * each on its own SFTP channel for true parallel I/O.

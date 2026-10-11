@@ -185,6 +185,10 @@
     <string name="sftp_resume">Продолжить</string>
     <string name="sftp_cancel">Отмена</string>
     <string name="sftp_clear_finished">Очистить завершённые</string>
+    <string name="sftp_pause_all">Приостановить все</string>
+    <string name="sftp_resume_all">Возобновить все</string>
+    <string name="sftp_retry_failed">Повторить неудачные</string>
+    <string name="sftp_cancel_all">Отменить все</string>
     <string name="sftp_downloaded">Загружено</string>
     <string name="sftp_conflict_title">Файл уже существует</string>
     <string name="sftp_conflict_body">Файл «%1$s» уже существует в этом расположении на сервере. Что сделать?</string>

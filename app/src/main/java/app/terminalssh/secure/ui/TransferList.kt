@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.terminalssh.secure.R
 import app.terminalssh.secure.sftp.Transfer
+import app.terminalssh.secure.sftp.TransferBatchControl
 import app.terminalssh.secure.sftp.TransferDirection
 import app.terminalssh.secure.sftp.TransferState
 import app.terminalssh.secure.ui.theme.Stroke
@@ -67,6 +68,10 @@ fun TransferStrip(
     onResume: (String) -> Unit,
     onCancel: (String) -> Unit,
     onClearFinished: () -> Unit,
+    onPauseAll: () -> Unit = {},
+    onResumeAll: () -> Unit = {},
+    onRetryFailed: () -> Unit = {},
+    onCancelAll: () -> Unit = {},
 ) {
     var showHistory by remember { mutableStateOf(false) }
 
@@ -109,6 +114,13 @@ fun TransferStrip(
             val live = transfers.filterNot { it.state.isTerminal }
             if (live.size > 1) {
                 AggregateSummary(live)
+                BatchActions(
+                    actions = TransferBatchControl.availableActions(live),
+                    onPauseAll = onPauseAll,
+                    onResumeAll = onResumeAll,
+                    onRetryFailed = onRetryFailed,
+                    onCancelAll = onCancelAll,
+                )
             }
 
             if (transfers.isNotEmpty()) {
@@ -194,6 +206,56 @@ private fun AggregateSummary(live: List<Transfer>) {
         style = MaterialTheme.typography.labelSmall,
         color = TextSecondary,
     )
+}
+
+/**
+ * Batch buttons for the live queue (F023).
+ *
+ * Which buttons exist is decided by [TransferBatchControl.availableActions] — the same pure
+ * rule the controller's `pauseAll`/`resumeAll`/`retryFailed`/`cancelAll` act on — so a button
+ * can never be shown for an action that would touch nothing, and the label always matches what
+ * will actually happen (notably: an integrity mismatch is never retried).
+ */
+@Composable
+private fun BatchActions(
+    actions: List<TransferBatchControl.Action>,
+    onPauseAll: () -> Unit,
+    onResumeAll: () -> Unit,
+    onRetryFailed: () -> Unit,
+    onCancelAll: () -> Unit,
+) {
+    if (actions.isEmpty()) return
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        actions.forEach { action ->
+            TextButton(
+                onClick = {
+                    when (action) {
+                        TransferBatchControl.Action.PAUSE -> onPauseAll()
+                        TransferBatchControl.Action.RESUME -> onResumeAll()
+                        TransferBatchControl.Action.RETRY -> onRetryFailed()
+                        TransferBatchControl.Action.CANCEL -> onCancelAll()
+                    }
+                },
+            ) {
+                Text(
+                    stringResource(action.labelRes()),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (action == TransferBatchControl.Action.CANCEL) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                )
+            }
+        }
+    }
+}
+
+private fun TransferBatchControl.Action.labelRes(): Int = when (this) {
+    TransferBatchControl.Action.PAUSE -> R.string.sftp_pause_all
+    TransferBatchControl.Action.RESUME -> R.string.sftp_resume_all
+    TransferBatchControl.Action.RETRY -> R.string.sftp_retry_failed
+    TransferBatchControl.Action.CANCEL -> R.string.sftp_cancel_all
 }
 
 @Composable

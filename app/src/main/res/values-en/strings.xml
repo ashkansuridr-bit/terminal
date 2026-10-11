@@ -184,6 +184,10 @@
     <string name="sftp_resume">Resume</string>
     <string name="sftp_cancel">Cancel</string>
     <string name="sftp_clear_finished">Clear finished</string>
+    <string name="sftp_pause_all">Pause all</string>
+    <string name="sftp_resume_all">Resume all</string>
+    <string name="sftp_retry_failed">Retry failed</string>
+    <string name="sftp_cancel_all">Cancel all</string>
     <string name="sftp_downloaded">Downloaded</string>
     <string name="sftp_conflict_title">File already exists</string>
     <string name="sftp_conflict_body">A file named "%1$s" already exists at this location on the server. What should happen?</string>

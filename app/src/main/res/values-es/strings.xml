@@ -183,6 +183,10 @@
     <string name="sftp_resume">Reanudar</string>
     <string name="sftp_cancel">Cancelar</string>
     <string name="sftp_clear_finished">Limpiar completadas</string>
+    <string name="sftp_pause_all">Pausar todo</string>
+    <string name="sftp_resume_all">Reanudar todo</string>
+    <string name="sftp_retry_failed">Reintentar los fallidos</string>
+    <string name="sftp_cancel_all">Cancelar todo</string>
     <string name="sftp_downloaded">Descargado</string>
     <string name="sftp_conflict_title">El archivo ya existe</string>
     <string name="sftp_conflict_body">Ya existe un archivo llamado "%1$s" en esta ubicación del servidor. ¿Qué debería hacerse?</string>

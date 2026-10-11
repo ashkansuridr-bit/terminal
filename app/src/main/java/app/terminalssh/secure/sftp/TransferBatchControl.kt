@@ -29,6 +29,13 @@ object TransferBatchControl {
         actionable(transfers, action).map { it.id }
 
     /**
+     * Which batch buttons are worth showing for [transfers], in a stable order. A button that
+     * would touch nothing is not offered, so the strip never shows a control that does nothing.
+     */
+    fun availableActions(transfers: List<Transfer>): List<Action> =
+        Action.entries.filter { actionable(transfers, it).isNotEmpty() }
+
+    /**
      * Whether "Retry failed" should offer this item.
      *
      * A corrupt transfer is never retried: re-running it hides the corruption. Everything

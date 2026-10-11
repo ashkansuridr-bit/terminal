@@ -109,4 +109,35 @@ class TransferBatchControlTest {
         assertFalse(TransferBatchControl.hasFailures(listOf(transfer("a", TransferState.COMPLETED))))
         assertTrue(TransferBatchControl.hasFailures(listOf(transfer("a", TransferState.FAILED))))
     }
+
+    @Test fun availableActionsOnlyListsUsefulButtons() {
+        assertEquals(emptyList(), TransferBatchControl.availableActions(emptyList()))
+
+        val items = listOf(
+            transfer("a", TransferState.RUNNING),
+            transfer("b", TransferState.FAILED, TransferErrorKind.CONNECTION_LOST, attempts = 1),
+            transfer("c", TransferState.COMPLETED),
+        )
+        // RUNNING offers pause + cancel; FAILED offers resume + retry + cancel; COMPLETED offers
+        // nothing; so every action has at least one target here.
+        assertEquals(
+            listOf(
+                TransferBatchControl.Action.PAUSE,
+                TransferBatchControl.Action.RESUME,
+                TransferBatchControl.Action.RETRY,
+                TransferBatchControl.Action.CANCEL,
+            ),
+            TransferBatchControl.availableActions(items),
+        )
+    }
+
+    @Test fun aFinishedBatchOffersNoBatchActions() {
+        val items = listOf(transfer("a", TransferState.COMPLETED), transfer("b", TransferState.CANCELLED))
+        assertEquals(emptyList(), TransferBatchControl.availableActions(items))
+    }
+
+    @Test fun anIntegrityMismatchLeavesRetryUnavailable() {
+        val items = listOf(transfer("a", TransferState.FAILED, TransferErrorKind.INTEGRITY_MISMATCH, attempts = 1))
+        assertFalse(TransferBatchControl.availableActions(items).contains(TransferBatchControl.Action.RETRY))
+    }
 }

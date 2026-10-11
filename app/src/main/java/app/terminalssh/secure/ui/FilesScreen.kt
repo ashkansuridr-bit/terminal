@@ -196,6 +196,10 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
             onResume = sftp::resume,
             onCancel = sftp::cancel,
             onClearFinished = sftp::clearFinished,
+            onPauseAll = sftp::pauseAll,
+            onResumeAll = sftp::resumeAll,
+            onRetryFailed = sftp::retryFailed,
+            onCancelAll = sftp::cancelAll,
         )
         SftpBrowser(
             state = browser,

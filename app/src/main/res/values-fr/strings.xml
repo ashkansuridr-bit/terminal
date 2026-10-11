@@ -183,6 +183,10 @@
     <string name="sftp_resume">Reprendre</string>
     <string name="sftp_cancel">Annuler</string>
     <string name="sftp_clear_finished">Effacer les terminés</string>
+    <string name="sftp_pause_all">Tout mettre en pause</string>
+    <string name="sftp_resume_all">Tout reprendre</string>
+    <string name="sftp_retry_failed">Réessayer les échecs</string>
+    <string name="sftp_cancel_all">Tout annuler</string>
     <string name="sftp_downloaded">Téléchargé</string>
     <string name="sftp_conflict_title">Le fichier existe déjà</string>
     <string name="sftp_conflict_body">Un fichier nommé «\u202f%1$s\u202f» existe déjà à cet emplacement sur le serveur. Que souhaitez-vous faire\u2009?</string>
