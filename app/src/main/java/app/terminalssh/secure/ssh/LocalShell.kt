@@ -30,6 +30,8 @@ class LocalShell(private val context: Context) {
         val running: Boolean = false,
         val cwd: String = "",
         val pid: Int = 0,
+        val columns: Int = 80,
+        val rows: Int = 24,
     )
 
     private val _state = MutableStateFlow(ShellState())
@@ -137,7 +139,10 @@ class LocalShell(private val context: Context) {
 
     /** Sends a signal to resize the terminal. */
     fun resize(columns: Int, rows: Int) {
-        // Local shell doesn't have PTY, but we track dimensions for future use.
+        require(columns in 1..500 && rows in 1..500) { "terminal dimensions out of range" }
+        _state.value = _state.value.copy(columns = columns, rows = rows)
+        // This process intentionally has no PTY; dimensions are retained so a future
+        // PTY-backed implementation can apply them without changing the UI contract.
     }
 
     /** Stops the shell and cleans up. */
