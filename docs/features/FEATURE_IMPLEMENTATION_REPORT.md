@@ -185,6 +185,22 @@ non-ASCII scripts keep matching case-insensitively. `TerminalSearchTest` is now 
 (+4: offset correctness, no slice past the line, Cyrillic/Greek folding, literal metacharacters).
 Status stays `IMPLEMENTED_NOT_TESTED`; the F011/F012 evidence records the fix.
 
+### Batch L — first real UI wiring: the F036 port-forward dialog (`c4003d8`)
+
+The port-forward dialog is the first screen actually connected to an engine. It was chosen
+because it is reachable from the terminal menu and has no instrumentation test, so the change
+cannot silently break the on-device suite. It used to parse its fields inline and do nothing when
+a value was bad, and never used `PortForwardSpec`.
+
+| Piece | File(s) | What it does |
+| --- | --- | --- |
+| Form decision | `ui/PortForwardForm.kt` | `evaluate(...)` returns `(spec \| problemKey \| warningKey, canAdd)`: range/host validation, same-kind bind-port conflict (identical rule allowed), privileged-port warning; `reasonRes()` maps keys to strings. |
+| Dialog | `ui/PortForwardDialog.kt` | Shows the localized reason/warning inline and disables Add unless usable; passes the trimmed, validated host to the SSH layer. |
+| Strings | `values*` (7 locales) | `forward_error_bind_port/target_port/host/conflict`, `forward_warning_privileged`. |
+
+Tests: `PortForwardFormTest` (9), green. This batch touches Compose, so it is
+compile/lint/assemble-verified but **not device-rendered**; F036 stays `IMPLEMENTED_NOT_TESTED`.
+
 ## 4. Security posture of the new code
 
 - **No untrusted data is concatenated into a shell.** Shell roots, search patterns, systemd
@@ -252,6 +268,7 @@ Result: `BUILD SUCCESSFUL`.
 | Batch H unit tests | same, six filters (`ui`/`model`/`agents`/`ssh`/`storage`) | `BUILD SUCCESSFUL` |
 | Batch J unit tests | same, filter `app.terminalssh.secure.tools.*` | `BUILD SUCCESSFUL` (`SystemdUnitsLogsTest` 3, `DockerContainerReadTest` 5) |
 | Batch K unit tests | same, filter `app.terminalssh.secure.terminal.*` | `BUILD SUCCESSFUL` (`TerminalSearchTest` 13, incl. 4 Unicode cases) |
+| Batch L unit tests | same, filter `app.terminalssh.secure.ui.PortForwardFormTest` | `BUILD SUCCESSFUL` (9 tests) |
 | Android lint (Market) | `lintMarketDebug` | `BUILD SUCCESSFUL` |
 | Market debug APK | `assembleMarketDebug` | `BUILD SUCCESSFUL` |
 | Gplay flavor compiles | `compileGplayDebugKotlin` | `BUILD SUCCESSFUL` |

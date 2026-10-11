@@ -214,3 +214,24 @@ pointed past the original line, so `highlight()` sliced the wrong characters or 
 
 This is a bug fix inside an existing feature, so the status stays `IMPLEMENTED_NOT_TESTED`
 (the search bar is still not wired on device); only the F011/F012 evidence now records the fix.
+
+## Batch L (commit `c4003d8`) — first real UI wiring: F036 port-forward dialog
+
+The port-forward dialog was the first place to connect an engine to a screen, chosen because it
+is reachable (the terminal's overflow menu) and has **no** instrumentation test, so a UI change
+here cannot silently break the on-device suite. It parsed its fields inline and did nothing when
+a value was bad, so "Add" looked broken with no explanation, and `PortForwardSpec` was unused.
+
+- New pure `ui/PortForwardForm.kt`: `evaluate(kind, bind, host, target, existing)` returns
+  `(spec | problemKey | warningKey, canAdd)`. It validates ranges/host, detects a second rule on
+  the same local port (re-adding the identical rule is allowed), and warns on privileged ports.
+  `reasonRes()` maps engine keys to string resources.
+- `PortForwardDialog` shows the reason/warning inline and disables Add unless the rule is usable;
+  the host handed to the SSH layer is the trimmed, validated one.
+- Five strings (`forward_error_*`, `forward_warning_privileged`) added to **all seven** locale
+  files; `lintMarketDebug` fails with `MissingTranslation` otherwise, which is how the missing
+  es/fr/ru keys surfaced.
+- Tests: `PortForwardFormTest` (9), green.
+
+Unlike earlier batches this touches Compose, so it is compile/lint/assemble-verified but **not
+device-rendered**; F036 stays `IMPLEMENTED_NOT_TESTED`.
