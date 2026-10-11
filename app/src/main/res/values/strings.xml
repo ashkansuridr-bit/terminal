@@ -189,6 +189,7 @@
     <string name="sftp_conflict_body">فایلی با نام «%1$s» در این مسیر از قبل روی سرور وجود دارد. چه کاری انجام شود؟</string>
     <string name="sftp_conflict_overwrite">جایگزینی</string>
     <string name="sftp_conflict_rename">تغییر نام</string>
+    <string name="sftp_conflict_apply_all">اعمال روی همهٔ فایل‌های باقی‌مانده در این دسته</string>
     <string name="sftp_conflict_skip">رد شدن</string>
     <string name="sftp_new_folder_title">پوشهٔ جدید</string>
     <string name="sftp_delete_confirm_title">حذف شود؟</string>

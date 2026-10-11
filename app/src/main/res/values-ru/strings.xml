@@ -190,6 +190,7 @@
     <string name="sftp_conflict_body">Файл «%1$s» уже существует в этом расположении на сервере. Что сделать?</string>
     <string name="sftp_conflict_overwrite">Перезаписать</string>
     <string name="sftp_conflict_rename">Переименовать</string>
+    <string name="sftp_conflict_apply_all">Применить ко всем оставшимся файлам в этой партии</string>
     <string name="sftp_conflict_skip">Пропустить</string>
     <string name="sftp_new_folder_title">Новая папка</string>
     <string name="sftp_delete_confirm_title">Удалить?</string>

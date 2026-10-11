@@ -189,6 +189,7 @@
     <string name="sftp_conflict_body">A file named "%1$s" already exists at this location on the server. What should happen?</string>
     <string name="sftp_conflict_overwrite">Overwrite</string>
     <string name="sftp_conflict_rename">Rename</string>
+    <string name="sftp_conflict_apply_all">Apply to all remaining files in this batch</string>
     <string name="sftp_conflict_skip">Skip</string>
     <string name="sftp_new_folder_title">New folder</string>
     <string name="sftp_delete_confirm_title">Delete this?</string>

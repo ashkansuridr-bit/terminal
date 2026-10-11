@@ -192,6 +192,7 @@
     <string name="sftp_conflict_body">يوجد ملف يحمل الاسم «%1$s» في هذا المسار على الخادم. ما الإجراء المطلوب؟</string>
     <string name="sftp_conflict_overwrite">الاستبدال</string>
     <string name="sftp_conflict_rename">إعادة التسمية</string>
+    <string name="sftp_conflict_apply_all">تطبيق على كل الملفات المتبقية في هذه الدفعة</string>
     <string name="sftp_conflict_skip">التخطّي</string>
     <string name="sftp_new_folder_title">مجلّد جديد</string>
     <string name="sftp_delete_confirm_title">هل تريد الحذف؟</string>

@@ -188,6 +188,7 @@
     <string name="sftp_conflict_body">Un fichier nommé «\u202f%1$s\u202f» existe déjà à cet emplacement sur le serveur. Que souhaitez-vous faire\u2009?</string>
     <string name="sftp_conflict_overwrite">Écraser</string>
     <string name="sftp_conflict_rename">Renommer</string>
+    <string name="sftp_conflict_apply_all">Appliquer à tous les fichiers restants de ce lot</string>
     <string name="sftp_conflict_skip">Ignorer</string>
     <string name="sftp_new_folder_title">Nouveau dossier</string>
     <string name="sftp_delete_confirm_title">Supprimer ceci\u2009?</string>

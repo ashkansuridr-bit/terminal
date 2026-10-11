@@ -296,7 +296,10 @@ fun FilesScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     }
 
     uploadConflict?.let { conflict ->
-        UploadConflictDialog(conflict = conflict, onResolve = sftp::resolveConflict)
+        UploadConflictDialog(
+            conflict = conflict,
+            onResolve = { resolution, applyToAll -> sftp.resolveConflict(resolution, applyToAll) },
+        )
     }
 
     actionError?.let { message ->

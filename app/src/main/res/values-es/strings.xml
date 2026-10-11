@@ -188,6 +188,7 @@
     <string name="sftp_conflict_body">Ya existe un archivo llamado "%1$s" en esta ubicación del servidor. ¿Qué debería hacerse?</string>
     <string name="sftp_conflict_overwrite">Sobrescribir</string>
     <string name="sftp_conflict_rename">Renombrar</string>
+    <string name="sftp_conflict_apply_all">Aplicar a todos los archivos restantes de este lote</string>
     <string name="sftp_conflict_skip">Omitir</string>
     <string name="sftp_new_folder_title">Nueva carpeta</string>
     <string name="sftp_delete_confirm_title">¿Eliminar esto?</string>
