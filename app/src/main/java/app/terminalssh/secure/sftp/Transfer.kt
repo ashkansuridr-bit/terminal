@@ -95,6 +95,14 @@ data class Transfer(
     val canResume: Boolean get() = state == TransferState.PAUSED || state == TransferState.FAILED
     val canCancel: Boolean get() = !state.isTerminal
 
+    /**
+     * True only when the transfer finished *and* a post-transfer SHA-256 comparison ran and
+     * matched (F028). A merely finished transfer is never proven, so no display may imply a
+     * check mark for it.
+     */
+    val integrityProven: Boolean
+        get() = state == TransferState.COMPLETED && integrity == IntegrityStatus.State.VERIFIED
+
     companion object {
         const val UNKNOWN_SIZE = -1L
         const val MAX_ATTEMPTS = 3

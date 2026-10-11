@@ -2,6 +2,7 @@ package app.terminalssh.secure.sftp
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -49,6 +50,22 @@ class TransferQueueTest {
         queue.enqueue(transfer("b"))
         queue.markCompleted("b", integrity = IntegrityStatus.State.MISMATCH)
         assertEquals(IntegrityStatus.State.MISMATCH, queue.byId("b").integrity)
+    }
+
+    @Test fun onlyACompletedAndVerifiedTransferIsProven() {
+        val base = transfer("a")
+        assertFalse(
+            base.copy(integrity = IntegrityStatus.State.VERIFIED).integrityProven,
+            "a transfer that has not finished cannot be proven",
+        )
+        assertFalse(
+            base.copy(state = TransferState.COMPLETED).integrityProven,
+            "a finished transfer with no comparison is not proven",
+        )
+        assertTrue(
+            base.copy(state = TransferState.COMPLETED, integrity = IntegrityStatus.State.VERIFIED)
+                .integrityProven,
+        )
     }
 
     @Test fun progressNeverWalksBackwards() {
