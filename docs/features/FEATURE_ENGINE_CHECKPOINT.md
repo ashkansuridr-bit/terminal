@@ -277,3 +277,22 @@ for exactly this but nothing ever handed it bytes — the text path had already 
 
 Tests: `PreviewContentTest` (8) and `BoundedTextReadBytesTest` (6), green. UI is still **not
 device-rendered**, so F026 stays `IMPLEMENTED_NOT_TESTED`.
+
+## Batch O (commit `3248694`) — F023 batch transfer controls
+
+The queue had per-row pause/resume/cancel only, so a forty-file folder transfer had to be
+triaged one row at a time. `TransferBatchControl` already encoded which items each batch action
+may touch, but nothing called it, and there were no batch buttons.
+
+- `TransferBatchControl.availableActions(transfers)` returns the actions worth offering, in a
+  stable order, so the strip never renders a button that would do nothing.
+- `SftpController.pauseAll/resumeAll/retryFailed/cancelAll` resolve ids through that same engine
+  over `queue.pending`. `retryFailed` maps onto `resume`, which already re-queues `FAILED` items;
+  an integrity mismatch is excluded by the engine, not by the caller remembering to.
+- `TransferStrip` shows a batch row (only when more than one item is live) whose buttons *are*
+  `availableActions(...)`; Cancel is tinted as destructive.
+- `FilesScreen` passes the four callbacks; strings `sftp_pause_all` / `sftp_resume_all` /
+  `sftp_retry_failed` / `sftp_cancel_all` in all six locales.
+
+Tests: `TransferBatchControlTest` 8 → 11 (a finished batch offers nothing; an integrity mismatch
+never offers retry). UI is **not device-rendered**, so F023 stays `IMPLEMENTED_NOT_TESTED`.

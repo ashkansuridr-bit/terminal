@@ -233,6 +233,21 @@ sample is not text.
 Tests: `PreviewContentTest` (8), `BoundedTextReadBytesTest` (6), green. Rendering is still **not
 device-verified**, so F026 stays `IMPLEMENTED_NOT_TESTED`.
 
+### Batch O — F023 batch transfer controls (`3248694`)
+
+Per-row pause/resume/cancel existed, but a large folder transfer had to be triaged row by row,
+and `TransferBatchControl` was never called.
+
+| Piece | File(s) | What it does |
+| --- | --- | --- |
+| Availability rule | `sftp/TransferBatchControl.kt` | `availableActions(transfers)`: which batch actions are worth offering, in a stable order. |
+| Actions | `sftp/SftpController.kt` | `pauseAll` / `resumeAll` / `retryFailed` / `cancelAll` over `queue.pending`, each resolving ids through the engine (`retryFailed` reuses `resume`). |
+| UI | `ui/TransferList.kt`, `ui/FilesScreen.kt` | `TransferStrip` shows a batch row (only when >1 item is live) whose buttons *are* `availableActions(...)`; Cancel tinted destructive. |
+| Strings | `values*` (6 locales) | `sftp_pause_all`, `sftp_resume_all`, `sftp_retry_failed`, `sftp_cancel_all`. |
+
+Tests: `TransferBatchControlTest` 8 → 11. UI is **not device-rendered**, so F023 stays
+`IMPLEMENTED_NOT_TESTED`.
+
 ## 4. Security posture of the new code
 
 - **No untrusted data is concatenated into a shell.** Shell roots, search patterns, systemd
@@ -303,6 +318,7 @@ Result: `BUILD SUCCESSFUL`.
 | Batch L unit tests | same, filter `app.terminalssh.secure.ui.PortForwardFormTest` | `BUILD SUCCESSFUL` (9 tests) |
 | Batch M unit tests | same, filter `app.terminalssh.secure.ui.*` (compile check; no new test) | `BUILD SUCCESSFUL` |
 | Batch N unit tests | same, filter `app.terminalssh.secure.sftp.PreviewContentTest` + `BoundedTextReadBytesTest` | `BUILD SUCCESSFUL` (8 + 6 tests) |
+| Batch O unit tests | same, filter `app.terminalssh.secure.sftp.TransferBatchControlTest` | `BUILD SUCCESSFUL` (11 tests) |
 | Android lint (Market) | `lintMarketDebug` | `BUILD SUCCESSFUL` |
 | Market debug APK | `assembleMarketDebug` | `BUILD SUCCESSFUL` |
 | Gplay flavor compiles | `compileGplayDebugKotlin` | `BUILD SUCCESSFUL` |
