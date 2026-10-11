@@ -108,6 +108,9 @@ Kill stale Gradle daemons before a run if the host is tight on memory
 - **No production signing keystore**, so no market-signed release artifact was produced.
 - **Shared host memory** (~3.9 GB) with the Codex agent running Gradle concurrently; builds
   are kept memory-lean and run one task at a time.
+- **A single all-tests `testMarketDebugUnitTest` run was OOM-killed on this host** (the kernel
+  killed an unrelated ZCode editor process under global OOM). Verification was therefore done
+  with package-filtered runs, which are green; re-run the full suite on CI or a roomier host.
 
 ## Known pre-existing CI failures (not caused by this branch)
 

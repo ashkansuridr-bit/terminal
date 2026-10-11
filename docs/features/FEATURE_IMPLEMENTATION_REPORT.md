@@ -172,6 +172,21 @@ ANDROID_HOME=/root/android-sdk ./gradlew --no-daemon \
 
 Result: `BUILD SUCCESSFUL`.
 
+### Verification actually performed on this host
+
+| Check | Command (memory-lean) | Result |
+| --- | --- | --- |
+| Package-filtered unit tests | `testMarketDebugUnitTest` for `model/sftp/terminal/tools` | `BUILD SUCCESSFUL` (422 tests in `model`+`sftp`) |
+| `ssh`/`security`/`storage` unit tests | same, filtered | `BUILD SUCCESSFUL` |
+| Android lint (Market) | `lintMarketDebug` | `BUILD SUCCESSFUL` |
+| Market debug APK | `assembleMarketDebug` | `BUILD SUCCESSFUL` |
+| Gplay flavor compiles | `compileGplayDebugKotlin` | `BUILD SUCCESSFUL` |
+
+A single all-tests `testMarketDebugUnitTest` run was **OOM-killed by the host** (global OOM under
+~3.9 GB shared with the Codex agent), so the full suite was not observed in one shot; the
+package-filtered runs above are the evidence. This is an infrastructure limit, not a test
+failure.
+
 ## 6. What was **not** done (honest limitations)
 
 - **No UI wiring.** The 32 implemented features are engines with green unit tests. The Compose
