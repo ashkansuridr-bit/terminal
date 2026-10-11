@@ -216,6 +216,23 @@ No new JVM test: the remembered-decision rule is already covered by `ConflictBat
 and the rest is Compose. Verified by test compile + lint + assemble only; **not device-rendered**,
 so F021 stays `IMPLEMENTED_NOT_TESTED`.
 
+### Batch N — F026 binary/hex file preview, end to end (`cd7cbc5`)
+
+The preview always decoded to text, so a binary was a wall of replacement characters and
+`HexPreview` never received bytes. This batch supplies bounded bytes and renders hex when the
+sample is not text.
+
+| Piece | File(s) | What it does |
+| --- | --- | --- |
+| Bounded bytes | `sftp/BoundedText.kt` | `BytePreview` + `readBytes()`: bounded to `MAX_EDIT_BYTES`, reads one byte past the cap so truncation is proven, keeps the bytes. |
+| Fetch | `sftp/SftpClient.kt`, `sftp/SftpController.kt` | `downloadPreview` / `downloadPreviewBytes`, default cap 64 KiB. |
+| Decision | `sftp/PreviewContent.kt` | `of(bytes, maxBytes, sourceTruncated) -> View.Text \| View.Hex` via `HexPreview`; shared `truncated` flag. |
+| Dialog | `ui/FilePreviewDialogs.kt`, `ui/SftpScreen.kt`, `ui/FilesScreen.kt` | `FilePreviewDialog` renders text or a monospace hex dump with a binary label and bounded-sample note; `fetchPreviewBytes` threaded through; falls back to the text fetch. |
+| Strings | `values*` (6 locales) | `sftp_preview_binary`, `sftp_preview_truncated` (French apostrophe escaped for aapt2). |
+
+Tests: `PreviewContentTest` (8), `BoundedTextReadBytesTest` (6), green. Rendering is still **not
+device-verified**, so F026 stays `IMPLEMENTED_NOT_TESTED`.
+
 ## 4. Security posture of the new code
 
 - **No untrusted data is concatenated into a shell.** Shell roots, search patterns, systemd
@@ -285,6 +302,7 @@ Result: `BUILD SUCCESSFUL`.
 | Batch K unit tests | same, filter `app.terminalssh.secure.terminal.*` | `BUILD SUCCESSFUL` (`TerminalSearchTest` 13, incl. 4 Unicode cases) |
 | Batch L unit tests | same, filter `app.terminalssh.secure.ui.PortForwardFormTest` | `BUILD SUCCESSFUL` (9 tests) |
 | Batch M unit tests | same, filter `app.terminalssh.secure.ui.*` (compile check; no new test) | `BUILD SUCCESSFUL` |
+| Batch N unit tests | same, filter `app.terminalssh.secure.sftp.PreviewContentTest` + `BoundedTextReadBytesTest` | `BUILD SUCCESSFUL` (8 + 6 tests) |
 | Android lint (Market) | `lintMarketDebug` | `BUILD SUCCESSFUL` |
 | Market debug APK | `assembleMarketDebug` | `BUILD SUCCESSFUL` |
 | Gplay flavor compiles | `compileGplayDebugKotlin` | `BUILD SUCCESSFUL` |

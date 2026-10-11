@@ -254,3 +254,26 @@ passed `applyToAll = true`, so a folder upload re-asked the same question once p
 No new JVM test is added: the remembered-decision rule is already covered by
 `ConflictBatchPolicyTest`, and the remaining work is Compose. Verified by test compile, lint and
 assemble only; **not device-rendered**, so F021 stays `IMPLEMENTED_NOT_TESTED`.
+
+## Batch N (commit `cd7cbc5`) — F026 binary/hex preview, end to end
+
+The read-only preview always decoded to text, so a binary file rendered as a wall of replacement
+characters with no way to tell a genuine U+FFFD from a corrupted read. `HexPreview` was written
+for exactly this but nothing ever handed it bytes — the text path had already destroyed them.
+
+- `BoundedText.readBytes` returns a read-only `BytePreview`, bounded like `read` (one byte past
+  the cap so truncation is *proven*) but keeping the bytes.
+- `SftpClient.downloadPreview` / `SftpController.downloadPreviewBytes` expose a bounded sample,
+  defaulting to `HexPreview.DEFAULT_MAX_BYTES` (64 KiB) rather than the 16 MiB image cap.
+- New pure `sftp/PreviewContent.kt`: `of(bytes, maxBytes, sourceTruncated) -> View.Text |
+  View.Hex`, using `HexPreview`'s detection and dump, with a shared `truncated` flag.
+- `ui/FilePreviewDialogs.kt`: `FilePreviewDialog` replaces `TextPreviewDialog` and renders text
+  or a monospace hex dump, plus a binary label and an honest "bounded sample" note.
+- `SftpScreen.RemoteTextPreview` now fetches bytes (falling back to the text fetch for callers
+  that still only provide that), threaded via a new `fetchPreviewBytes` parameter from
+  `FilesScreen`, bound to the capped controller call.
+- Strings `sftp_preview_binary` / `sftp_preview_truncated` in all six locales; the French
+  apostrophe is escaped (`d\'un`) — aapt2 rejects it otherwise, which is how it surfaced.
+
+Tests: `PreviewContentTest` (8) and `BoundedTextReadBytesTest` (6), green. UI is still **not
+device-rendered**, so F026 stays `IMPLEMENTED_NOT_TESTED`.
