@@ -14,9 +14,9 @@ Of the 50 requested features:
 
 | Outcome | Count |
 | --- | --- |
-| Engine implemented here + JVM unit-tested (`IMPLEMENTED_NOT_TESTED`) | **36** |
+| Engine implemented here + JVM unit-tested (`IMPLEMENTED_NOT_TESTED`) | **42** |
 | Already complete on `main`, audited not rebuilt (`EXISTS_VERIFIED`) | 5 |
-| Pre-existing partial support, recorded as follow-up (`NEEDS_IMPROVEMENT`) | 6 |
+| Pre-existing partial support, recorded as follow-up (`NEEDS_IMPROVEMENT`) | 0 |
 | Blocked with a technical reason (`BLOCKED`) | 2 |
 | Deferred with a reason (`DEFERRED_WITH_REASON`) | 1 |
 | Verified end-to-end on a device (`VERIFIED`) | **0** |
@@ -130,6 +130,19 @@ Tests: 2 classes, green.
 
 Tests: 4 classes, green.
 
+### Batch H — The six former partial items, closed as engines (`1c14668`)
+
+| Feature | File(s) | What it does |
+| --- | --- | --- |
+| F006 Connection status | `ui/ConnectionStatus.kt` | `aggregate()` picks one badge for a host holding several sessions, ordered needs-approval > connecting > connected > failed; a healthy shell keeps a dropped SFTP tab from painting the row red. |
+| F009 Cursor appearance | `model/CursorAppearance.kt` | One tolerant parse of the stored shape (case/space-insensitive, unknown falls back to block) paired with the blink flag. |
+| F032 Workspace save/restore | `model/WorkspaceState.kt` | Versioned save/restore of open tabs (host id/title/pin, no secrets); `planRestore()` drops tabs whose host is gone and **never auto-connects**. |
+| F033 tmux windows | `agents/TmuxCommands.kt` | `list-windows` parsing plus rename-session / rename-window / kill-window, all quoted through the existing helper; window indexes are validated ints. |
+| F036 Port-forwarding spec | `ssh/PortForwardSpec.kt` | Validates a `-L`/`-R` rule before it is added, detects a bind port already taken by the same kind, flags privileged ports. The SSH layer still owns the binding. |
+| F038 ssh/config notes | `storage/SshConfigImport.kt` | `analyze()` reports the `Include` / `IdentityFile` / `ProxyJump` directives `parse()` deliberately does not apply, so an import can state what it skipped instead of dropping it silently. |
+
+Tests: 6 classes, green (incl. the new `agents/TmuxWindowsTest`).
+
 ## 4. Security posture of the new code
 
 - **No untrusted data is concatenated into a shell.** Shell roots, search patterns, systemd
@@ -156,7 +169,9 @@ New JVM unit-test classes added on this branch (all green when run together):
 ```
 model:      QuickConnectTest, HostFilterTest, HostIconsTest, ConnectionInfoTest,
             SnippetTemplateTest, SnippetLibraryTest, KeyToolbarConfigTest,
-            SessionNotificationTest, TabLayoutTest, ConnectionOptionsTest
+            SessionNotificationTest, TabLayoutTest, ConnectionOptionsTest,
+            CursorAppearanceTest, WorkspaceStateTest
+ui:         ConnectionStatusTest
 terminal:   TerminalSearchTest, TerminalBookmarksTest, TerminalLinksTest,
             CommandHistoryTest, OutputExportTest, BroadcastInputTest
 tools:      ServerResourcesTest, ProcessListTest, SystemdUnitsTest, DockerContainersTest,
@@ -164,9 +179,10 @@ tools:      ServerResourcesTest, ProcessListTest, SystemdUnitsTest, DockerContai
 sftp:       HexPreviewTest, RemoteFinderTest, TransferPlanTest, TransferQueuePolicyTest,
             FolderSizeBudgetTest, IntegrityStatusTest, ConflictBatchPolicyTest,
             TransferBatchControlTest
-ssh:        ConnectionDiagnosticsTest
+ssh:        ConnectionDiagnosticsTest, PortForwardSpecTest
 security:   PortableBackupTest
-storage:    KnownHostsFormatTest
+storage:    KnownHostsFormatTest, SshConfigNotesTest
+agents:     TmuxWindowsTest
 ```
 
 Run command used (memory-lean, one task per invocation):
@@ -179,7 +195,8 @@ ANDROID_HOME=/root/android-sdk ./gradlew --no-daemon \
   --tests "app.terminalssh.secure.model.*" --tests "app.terminalssh.secure.sftp.*" \
   --tests "app.terminalssh.secure.terminal.*" --tests "app.terminalssh.secure.tools.*" \
   --tests "app.terminalssh.secure.ssh.*" --tests "app.terminalssh.secure.security.*" \
-  --tests "app.terminalssh.secure.storage.*"
+  --tests "app.terminalssh.secure.storage.*" --tests "app.terminalssh.secure.ui.*" \
+  --tests "app.terminalssh.secure.agents.*"
 ```
 
 Result: `BUILD SUCCESSFUL`.
@@ -190,6 +207,7 @@ Result: `BUILD SUCCESSFUL`.
 | --- | --- | --- |
 | Package-filtered unit tests | `testMarketDebugUnitTest` for `model/sftp/terminal/tools` | `BUILD SUCCESSFUL` (422 tests in `model`+`sftp`) |
 | `ssh`/`security`/`storage` unit tests | same, filtered | `BUILD SUCCESSFUL` |
+| Batch H unit tests | same, six filters (`ui`/`model`/`agents`/`ssh`/`storage`) | `BUILD SUCCESSFUL` |
 | Android lint (Market) | `lintMarketDebug` | `BUILD SUCCESSFUL` |
 | Market debug APK | `assembleMarketDebug` | `BUILD SUCCESSFUL` |
 | Gplay flavor compiles | `compileGplayDebugKotlin` | `BUILD SUCCESSFUL` |
@@ -201,7 +219,7 @@ failure.
 
 ## 6. What was **not** done (honest limitations)
 
-- **No UI wiring.** The 36 implemented features are engines with green unit tests. The Compose
+- **No UI wiring.** The 42 implemented features are engines with green unit tests. The Compose
   screens/flows that call them are not built in this run, so a user cannot yet reach most of
   them. This is why none are marked `VERIFIED`.
 - **No device/emulator verification.** The AVD image was deleted and the emulator fails with
@@ -210,12 +228,14 @@ failure.
   this work.
 - **No signed release.** The production signing keystore is not available.
 - **F031, F035, F049** are genuinely blocked/deferred; see the checkpoint doc for reasons.
-- **6 features** remain partial on `main` (F006, F009, F032, F033, F036, F038) and were
-  intentionally left as recorded follow-ups.
+- **No feature is left in a partial state.** The six former `NEEDS_IMPROVEMENT` items
+  (F006, F009, F032, F033, F036, F038) now each have a pure engine; what remains for them is
+  UI wiring, the same as every other engine on this branch.
 
 ## 7. How to verify
 
-1. `git -C /root/work/terminal-features log --oneline` shows the five feature commits.
+1. `git -C /root/work/terminal-features log --oneline` shows the feature commits on top of
+   `origin/main@f675bb1` (the last one is `1c14668`).
 2. Run the unit-test command above — expect `BUILD SUCCESSFUL`.
 3. Read `FEATURE_STATUS.json` for the per-feature status and artifacts.
 4. Run `lintMarketDebug` and `assembleMarketDebug` (one task per invocation) to confirm the

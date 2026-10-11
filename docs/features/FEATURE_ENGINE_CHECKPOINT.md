@@ -51,9 +51,9 @@ Kill stale Gradle daemons before a run if the host is tight on memory
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| `IMPLEMENTED_NOT_TESTED` | 36 | Engine implemented here, JVM unit tests green, **UI wiring / device E2E not done** |
+| `IMPLEMENTED_NOT_TESTED` | 42 | Engine implemented here, JVM unit tests green, **UI wiring / device E2E not done** |
 | `EXISTS_VERIFIED` | 5 | Already complete on `main`; audited, not rebuilt |
-| `NEEDS_IMPROVEMENT` | 6 | Partial on `main`; untouched here (recorded as follow-up) |
+| `NEEDS_IMPROVEMENT` | 0 | All six former partial items now have a pure engine in this branch |
 | `BLOCKED` | 2 | F031 split panes, F035 multi-hop ProxyJump |
 | `DEFERRED_WITH_REASON` | 1 | F049 Mosh |
 | `VERIFIED` (end-to-end) | 0 | No emulator/SSH server available on the host |
@@ -62,7 +62,7 @@ Kill stale Gradle daemons before a run if the host is tight on memory
 > JVM tests, but nothing is marked `VERIFIED` because the Compose UI path and a real device
 > have not been exercised.
 
-## What is implemented (36 features)
+## What is implemented (42 features)
 
 - **Host utilities:** F001 QuickConnect, F003 HostFilter, F005 HostIcons + `iconKey`
   persistence, F007 ConnectionInfo, F010 KeyToolbarConfig, F017 SnippetTemplate,
@@ -74,6 +74,12 @@ Kill stale Gradle daemons before a run if the host is tight on memory
 - **Security / SFTP / SSH:** F021 ConflictBatchPolicy, F022 TransferPlan, F023 TransferBatchControl,
   F024 FolderSizeBudget, F025 RemoteFinder, F026 HexPreview, F028 IntegrityStatus,
   F029 TransferQueuePolicy, F037 KnownHostsFormat, F039 ConnectionDiagnostics, F048 PortableBackup.
+- **Former `NEEDS_IMPROVEMENT` items, now engines:** F006 `aggregate()` (one badge for a host
+  with several sessions), F009 CursorAppearance (tolerant cursor-shape parse), F032
+  WorkspaceState/WorkspaceCodec (save/restore open tabs, restore never auto-connects),
+  F033 TmuxCommands windows (list/rename/kill-window), F036 PortForwardSpec (rule validation +
+  bind-port conflicts), F038 `SshConfigImport.analyze()` (reports the Include/IdentityFile/
+  ProxyJump directives `parse()` deliberately does not apply).
 
 ## Design rules followed
 
@@ -123,9 +129,33 @@ termlib 0.2.1 work: `SettingsToggleAccessibilityTest`, `SettingsAccessibilityTes
 
 1. Wire UI for the highest-value engines, verified with `assembleMarketDebug` + `lintMarketDebug`
    and, where possible, new instrumentation tests: F001/F003/F005/F007/F017/F018 on the host
-   list, F011–F016 on the terminal, and F041–F050 as a server-tools dashboard.
-2. Add string resources for any new user-visible text in `values/`, `values-en/`, `values-ar/`.
+   list, F011–F016 on the terminal, F041–F050 as a server-tools dashboard, F006 badge via
+   `aggregate()`, F032 restore-after-unlock, F033 tmux window list, F036 dashboard validation,
+   F038 import notes.
+2. Add string resources for any new user-visible text in `values/`, `values-en/`, `values-ar/`
+   (`forward.error.*` keys from F036 are the first to land).
 3. Feed `TransferQueuePolicy`/`TransferPlan` into the real transfer scheduler and surface
    F028's honest `UNVERIFIED` state.
 4. Run `lintMarketDebug` then `assembleMarketDebug` (one task per invocation) once the UI lands.
 5. Do **not** merge to `main` or publish without explicit permission.
+
+## Latest batch (commit `1c14668`)
+
+The six former `NEEDS_IMPROVEMENT` features were closed as pure engines so no host is left
+without a testable core:
+
+- F006 `aggregate()` — one badge for a host with several sessions; a healthy shell keeps a
+  dropped SFTP tab from painting the row red.
+- F009 `CursorAppearance` / `CursorShape.fromStored()` — a hand-edited or restored cursor
+  setting falls back to the default instead of leaving the terminal with no cursor.
+- F032 `WorkspaceState` / `WorkspaceCodec` — save/restore open tabs; `planRestore()` drops
+  tabs whose host is gone and **nothing here connects on its own**.
+- F033 `TmuxCommands` windows — `list-windows` parsing plus rename/kill-window commands, all
+  quoted through the existing helper; window indexes are validated ints, never free text.
+- F036 `PortForwardSpec` — validate a `-L`/`-R` rule before it is added, detect a bind port
+  already taken by the same kind, flag privileged ports. The SSH layer still owns the binding.
+- F038 `SshConfigImport.analyze()` — report the `Include` / `IdentityFile` / `ProxyJump`
+  directives `parse()` deliberately does not apply, so an import can say what it skipped.
+
+Verification for this batch: the six new test classes are green under a package-filtered
+`testMarketDebugUnitTest`; `lintMarketDebug` and `assembleMarketDebug` both `BUILD SUCCESSFUL`.
