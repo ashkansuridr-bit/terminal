@@ -198,7 +198,14 @@ fun SettingRow(
                     // rate) stall accessibility and rendering; coercion still snaps them.
                     steps = ((spec.max - spec.min) / spec.step - 1)
                         .takeIf { it in 1..100 } ?: 0,
-                    modifier = Modifier.semantics { contentDescription = title },
+                    // Merge the Slider's own progress-bar semantics into the node that
+                    // carries the label. A bare `semantics { contentDescription }` would
+                    // put the name on a wrapper node and leave the adjustable range on a
+                    // child, so a screen reader (and the accessibility test) lands on a
+                    // node that is named but not adjustable.
+                    modifier = Modifier.semantics(mergeDescendants = true) {
+                        contentDescription = title
+                    },
                 )
             }
 

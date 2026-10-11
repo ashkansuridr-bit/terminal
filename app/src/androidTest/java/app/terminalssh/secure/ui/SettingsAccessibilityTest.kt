@@ -37,8 +37,10 @@ class SettingsAccessibilityTest {
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
                 device.findObject(By.text(settingsTab)).click()
-                // The palettes row can sit below the fold on small emulator screens.
-                device.scrollUntil { device.hasObject(By.desc(oled)) }
+                // The palettes row can sit below the fold on small emulator screens, and a
+                // row scrolled only just into view is clipped — which would make the size
+                // assertion below measure the screen edge instead of the row.
+                device.scrollUntilFullyVisible(By.desc(oled))
                 assertTrue(device.wait(Until.hasObject(By.desc(persianNeon)), TIMEOUT_MS))
 
                 val oledAction = device.findObject(By.desc(oled))
