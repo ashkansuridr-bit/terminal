@@ -316,8 +316,7 @@ class SftpController(
 
     /** Directory-only listing for the "move/copy to" folder picker; doesn't touch [browser]. */
     suspend fun listDirectories(path: String): List<RemoteEntry> =
-        runCatching { withContext(Dispatchers.IO) { client().list(path).filter { it.isDirectory } } }
-            .getOrDefault(emptyList())
+        withContext(Dispatchers.IO) { client().list(path).filter { it.isDirectory } }
 
     /** Moves [entry] into [destinationDirectory], keeping its filename, then refreshes. */
     fun moveTo(entry: RemoteEntry, destinationDirectory: String) = scope.launch {
@@ -392,11 +391,9 @@ class SftpController(
                             contentResolver, currentParent,
                             android.provider.DocumentsContract.Document.MIME_TYPE_DIR, part,
                         )
-                    }.getOrNull()
-                    if (dirUri != null) {
-                        dirMap[currentPath] = dirUri
-                        currentParent = dirUri
-                    }
+                    }.getOrElse { throw IOException("Cannot create local directory '$currentPath': ${it.message}") }
+                    dirMap[currentPath] = dirUri
+                    currentParent = dirUri
                 } else {
                     currentParent = dirMap[currentPath]!!
                 }
@@ -413,7 +410,7 @@ class SftpController(
                     contentResolver, targetParent,
                     "application/octet-stream", fileName,
                 )
-            }.getOrNull() ?: continue
+            }.getOrElse { throw IOException("Cannot create local file '$relativePath': ${it.message}") }
             val entry = RemoteEntry(
                 name = fileName,
                 path = remoteFilePath,
@@ -445,6 +442,9 @@ class SftpController(
         val subdirs = entries.map { it.second.substringBeforeLast('/', "") }.filter { it.isNotEmpty() }.toSet()
         withContext(Dispatchers.IO) {
             val sftp = client()
+            runCatching { sftp.makeDirectory(remoteBase) }.onFailure { failure ->
+                if (!runCatching { sftp.exists(remoteBase) }.getOrDefault(false)) throw failure
+            }
             for (subdir in subdirs) {
                 val fullRemoteDir = RemotePath.join(remoteBase, subdir)
                 // Create each path segment
@@ -625,18 +625,28 @@ class SftpController(
         withContext(Dispatchers.IO) {
             val sftp = client()
             sftp.chmod(path, mode)
-            recursiveChmod(sftp, path, mode, failures)
+            recursiveChmod(sftp, path, mode, failures, mutableSetOf())
         }
         refresh()
         failures.firstOrNull()?.let { showBrowserError(it) }
     }
 
-    private fun recursiveChmod(sftp: SftpClient, path: String, mode: Int, failures: MutableList<Throwable>) {
-        val entries = runCatching { sftp.list(path) }.getOrDefault(emptyList())
+    private fun recursiveChmod(
+        sftp: SftpClient,
+        path: String,
+        mode: Int,
+        failures: MutableList<Throwable>,
+        visited: MutableSet<String>,
+    ) {
+        if (!visited.add(RemotePath.normalize(path))) return
+        val entries = try { sftp.list(path) } catch (failure: Throwable) {
+            failures += failure
+            return
+        }
         for (entry in entries) {
-            if (entry.isDirectory) {
+            if (entry.isDirectory && !entry.isSymlink) {
                 runCatching { sftp.chmod(entry.path, mode) }.onFailure { failures += it }
-                recursiveChmod(sftp, entry.path, mode, failures)
+                recursiveChmod(sftp, entry.path, mode, failures, visited)
             } else {
                 runCatching { sftp.chmod(entry.path, mode) }.onFailure { failures += it }
             }
