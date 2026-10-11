@@ -1,45 +1,45 @@
 # Inspected release artifacts
 
-Source commit: `d7f193fca17d8f6ad4919db05828907f00284cea`
+Source commit: `08babc4fc9ad96f2b3f1eddd34cd14369f392221`
 
 Unsigned market files require production signing before installation/distribution.
 Preview is test-signed, separate-package, and not production.
 
-## TerminalSSH-0.7.0-complete-preview.apk
+## TerminalSSH-0.7.1-complete-preview.apk
 
-- filename: TerminalSSH-0.7.0-complete-preview.apk
+- filename: TerminalSSH-0.7.1-complete-preview.apk
 - package: app.terminalssh.secure.preview
-- versionCode: 10
-- versionName: 0.7.0-preview
+- versionCode: 11
+- versionName: 0.7.1-preview
 - debuggable: False
 - signing: Debug/Test certificate
 - installable: True
 - production: False
-- sha256: 0eee610fefb7b4da6b51d0fa35c42647719341ff748204e6decd710cb5c3d6e0
-- size: 17972059
+- sha256: 1461ad50714f9ca453946c85668f3c31d632c61e56965661f05f05978bcc61f3
+- size: 18092531
 
-## TerminalSSH-0.7.0-market-UNSIGNED.apk
+## TerminalSSH-0.7.1-market-UNSIGNED.apk
 
-- filename: TerminalSSH-0.7.0-market-UNSIGNED.apk
+- filename: TerminalSSH-0.7.1-market-UNSIGNED.apk
 - package: app.terminalssh.secure
-- versionCode: 10
-- versionName: 0.7.0
+- versionCode: 11
+- versionName: 0.7.1
 - debuggable: False
 - signing: Unsigned
 - installable: False
 - production: False
-- sha256: cb77c6b93299e6274dbb3d007bec44ebff009bee4d1df47a28fc2d782b036fe0
-- size: 17959755
+- sha256: f8681c99b805c0814b86d84751ce4c7a3afee88bf438b119806f5afea9779376
+- size: 18080223
 
-## TerminalSSH-0.7.0-market-UNSIGNED.aab
+## TerminalSSH-0.7.1-market-UNSIGNED.aab
 
-- filename: TerminalSSH-0.7.0-market-UNSIGNED.aab
+- filename: TerminalSSH-0.7.1-market-UNSIGNED.aab
 - package: app.terminalssh.secure
-- versionCode: 10
-- versionName: 0.7.0
+- versionCode: 11
+- versionName: 0.7.1
 - debuggable: False
 - signing: Unsigned
 - installable: False
 - production: False
-- sha256: 2fcdab5865ca4d5151766ab331152127b57560272939052340536ea2ece6137d
-- size: 12713364
+- sha256: 46aba8e8f6e1ff52cd05b67e83713bae4f16894b9e4e82ce01b3a2c1559a46a4
+- size: 12871781

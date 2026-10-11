@@ -1,0 +1,45 @@
+# Inspected release artifacts
+
+Source commit: `08babc4fc9ad96f2b3f1eddd34cd14369f392221`
+
+Unsigned market files require production signing before installation/distribution.
+Preview is test-signed, separate-package, and not production.
+
+## TerminalSSH-0.7.1-complete-preview.apk
+
+- filename: TerminalSSH-0.7.1-complete-preview.apk
+- package: app.terminalssh.secure.preview
+- versionCode: 11
+- versionName: 0.7.1-preview
+- debuggable: False
+- signing: Debug/Test certificate
+- installable: True
+- production: False
+- sha256: 1461ad50714f9ca453946c85668f3c31d632c61e56965661f05f05978bcc61f3
+- size: 18092531
+
+## TerminalSSH-0.7.1-market-UNSIGNED.apk
+
+- filename: TerminalSSH-0.7.1-market-UNSIGNED.apk
+- package: app.terminalssh.secure
+- versionCode: 11
+- versionName: 0.7.1
+- debuggable: False
+- signing: Unsigned
+- installable: False
+- production: False
+- sha256: f8681c99b805c0814b86d84751ce4c7a3afee88bf438b119806f5afea9779376
+- size: 18080223
+
+## TerminalSSH-0.7.1-market-UNSIGNED.aab
+
+- filename: TerminalSSH-0.7.1-market-UNSIGNED.aab
+- package: app.terminalssh.secure
+- versionCode: 11
+- versionName: 0.7.1
+- debuggable: False
+- signing: Unsigned
+- installable: False
+- production: False
+- sha256: 46aba8e8f6e1ff52cd05b67e83713bae4f16894b9e4e82ce01b3a2c1559a46a4
+- size: 12871781
