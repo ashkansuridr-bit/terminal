@@ -382,6 +382,11 @@
     <string name="port_forward_listing">Port forwards</string>
     <string name="port_forward_state_pending">Pending</string>
     <string name="port_forward_state_failed">Failed</string>
+    <string name="forward_error_bind_port">Local port must be between 1 and 65535</string>
+    <string name="forward_error_target_port">Target port must be between 1 and 65535</string>
+    <string name="forward_error_host">Target host is not valid</string>
+    <string name="forward_error_conflict">That local port is already used by another rule of this type</string>
+    <string name="forward_warning_privileged">Ports below 1024 may need root on the server</string>
     <string name="sftp_recursive_download_counting">Counting files in "%1$s"…</string>
     <string name="sftp_recursive_download_confirm_unknown">Download folder "%1$s"? The file count could not be determined.</string>
     <string name="xfer_integrity_mismatch">The transferred file does not match the original; it arrived incomplete or corrupted.</string>

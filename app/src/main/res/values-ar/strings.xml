@@ -386,6 +386,11 @@
     <string name="port_forward_listing">إعادة توجيه المنافذ</string>
     <string name="port_forward_state_pending">قيد الانتظار</string>
     <string name="port_forward_state_failed">فشل</string>
+    <string name="forward_error_bind_port">يجب أن يكون المنفذ المحلي بين 1 و65535</string>
+    <string name="forward_error_target_port">يجب أن يكون منفذ الهدف بين 1 و65535</string>
+    <string name="forward_error_host">مضيف الهدف غير صالح</string>
+    <string name="forward_error_conflict">هذا المنفذ المحلي مستخدم بالفعل بقاعدة أخرى من النوع نفسه</string>
+    <string name="forward_warning_privileged">قد تحتاج المنافذ الأقل من 1024 إلى صلاحيات الجذر على الخادم</string>
     <string name="sftp_recursive_download_counting">جارٍ إحصاء ملفات المجلد «%1$s»…</string>
     <string name="sftp_recursive_download_confirm_unknown">هل تريد تنزيل المجلد «%1$s»؟ تعذّر تحديد عدد الملفات.</string>
     <string name="xfer_integrity_mismatch">الملف المنقول لا يطابق الأصل؛ وصل ناقصًا أو تالفًا.</string>

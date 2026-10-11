@@ -384,6 +384,11 @@
     <string name="port_forward_listing">Перенаправления портов</string>
     <string name="port_forward_state_pending">Ожидание</string>
     <string name="port_forward_state_failed">Сбой</string>
+    <string name="forward_error_bind_port">Локальный порт должен быть от 1 до 65535</string>
+    <string name="forward_error_target_port">Целевой порт должен быть от 1 до 65535</string>
+    <string name="forward_error_host">Неверный целевой хост</string>
+    <string name="forward_error_conflict">Этот локальный порт уже используется другим правилом этого типа</string>
+    <string name="forward_warning_privileged">Порты ниже 1024 могут требовать прав root на сервере</string>
     <string name="sftp_recursive_download_counting">Подсчёт файлов в «%1$s»…</string>
     <string name="sftp_recursive_download_confirm_unknown">Скачать папку «%1$s»? Не удалось определить количество файлов.</string>
     <string name="xfer_integrity_mismatch">Переданный файл не совпадает с оригиналом: он получен неполным или повреждённым.</string>

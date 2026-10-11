@@ -382,6 +382,11 @@
     <string name="port_forward_listing">Reenvíos</string>
     <string name="port_forward_state_pending">Pendiente</string>
     <string name="port_forward_state_failed">Fallido</string>
+    <string name="forward_error_bind_port">El puerto local debe estar entre 1 y 65535</string>
+    <string name="forward_error_target_port">El puerto de destino debe estar entre 1 y 65535</string>
+    <string name="forward_error_host">El host de destino no es válido</string>
+    <string name="forward_error_conflict">Ese puerto local ya lo usa otra regla de este tipo</string>
+    <string name="forward_warning_privileged">Los puertos por debajo de 1024 pueden requerir root en el servidor</string>
     <string name="sftp_recursive_download_counting">Contando archivos en «%1$s»…</string>
     <string name="sftp_recursive_download_confirm_unknown">¿Descargar la carpeta «%1$s»? No se pudo determinar el número de archivos.</string>
     <string name="xfer_integrity_mismatch">El archivo transferido no coincide con el original; llegó incompleto o dañado.</string>

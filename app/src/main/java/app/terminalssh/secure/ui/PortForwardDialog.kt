@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.terminalssh.secure.R
+import app.terminalssh.secure.ssh.PortForwardSpec
 import app.terminalssh.secure.ssh.SshSession
 import androidx.compose.material3.MaterialTheme
 
@@ -48,6 +49,22 @@ fun PortForwardDialog(
     var host by remember { mutableStateOf("127.0.0.1") }
     var destPort by remember { mutableStateOf("22") }
     var typeExpanded by remember { mutableStateOf(false) }
+
+    val existingSpecs = existingForwards.map { forward ->
+        PortForwardSpec.Spec(
+            kind = if (forward.isLocal) PortForwardSpec.Kind.LOCAL else PortForwardSpec.Kind.REMOTE,
+            bindPort = forward.bindPort,
+            host = forward.host,
+            port = forward.port,
+        )
+    }
+    val form = PortForwardForm.evaluate(
+        kind = if (isLocal) PortForwardSpec.Kind.LOCAL else PortForwardSpec.Kind.REMOTE,
+        bindPortText = bindPort,
+        hostText = host,
+        targetPortText = destPort,
+        existing = existingSpecs,
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -113,6 +130,24 @@ fun PortForwardDialog(
                     singleLine = true,
                 )
 
+                // Say why "Add" is unavailable instead of leaving the button dead.
+                form.problemKey?.let { key ->
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        stringResource(PortForwardForm.reasonRes(key)),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                form.warningKey?.let { key ->
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        stringResource(PortForwardForm.reasonRes(key)),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
+
                 // Existing forwards — each shows its real runtime state, because a forward that
                 // failed to bind or died with the last reconnect must never look active.
                 if (existingForwards.isNotEmpty()) {
@@ -169,11 +204,11 @@ fun PortForwardDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val bind = bindPort.toIntOrNull() ?: return@TextButton
-                    val dest = destPort.toIntOrNull() ?: return@TextButton
-                    if (host.isBlank()) return@TextButton
-                    onAdd(SshSession.PortForward(bind, host, dest, isLocal))
+                    form.spec?.let { spec ->
+                        onAdd(SshSession.PortForward(spec.bindPort, spec.host, spec.port, isLocal))
+                    }
                 },
+                enabled = form.canAdd,
             ) {
                 Text(stringResource(R.string.ok))
             }

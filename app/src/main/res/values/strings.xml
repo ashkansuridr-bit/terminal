@@ -382,6 +382,11 @@
     <string name="port_forward_listing">جلوبرها</string>
     <string name="port_forward_state_pending">در انتظار</string>
     <string name="port_forward_state_failed">ناموفق</string>
+    <string name="forward_error_bind_port">پورت محلی باید بین ۱ تا ۶۵۵۳۵ باشد</string>
+    <string name="forward_error_target_port">پورت مقصد باید بین ۱ تا ۶۵۵۳۵ باشد</string>
+    <string name="forward_error_host">میزبان مقصد نامعتبر است</string>
+    <string name="forward_error_conflict">این پورت محلی از قبل برای همین نوع ارسال استفاده شده است</string>
+    <string name="forward_warning_privileged">پورت‌های زیر ۱۰۲۴ ممکن است روی سرور به دسترسی root نیاز داشته باشند</string>
     <string name="sftp_recursive_download_counting">در حال شمردن فایل‌های پوشهٔ «%1$s»…</string>
     <string name="sftp_recursive_download_confirm_unknown">آیا می‌خواهید پوشهٔ «%1$s» را دانلود کنید؟ تعداد فایل‌ها مشخص نشد.</string>
     <string name="xfer_integrity_mismatch">فایل منتقل‌شده با نسخهٔ اصلی یکی نیست؛ انتقال ناقص یا خراب بوده است.</string>
