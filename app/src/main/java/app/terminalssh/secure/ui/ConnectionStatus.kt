@@ -69,3 +69,20 @@ val ConnectionStatus.labelRes: Int
         ConnectionStatus.NEEDS_APPROVAL -> R.string.state_verifying
         ConnectionStatus.FAILED -> R.string.state_disconnected
     }
+
+/**
+ * Which single badge best stands for several sessions on one host (F006).
+ *
+ * A host can hold more than one session — a shell and an SFTP tab, or two shells. The list has
+ * only one line per host, so it has to pick one status. The order follows what the colour means:
+ * something waiting on the user outranks everything, then the app working, then a live session,
+ * and a failure shows only when nothing better is on screen. That last rule matters: a host with
+ * one healthy session and one dropped SFTP tab should still read as connected.
+ */
+fun aggregate(statuses: List<ConnectionStatus>): ConnectionStatus = when {
+    statuses.any { it == ConnectionStatus.NEEDS_APPROVAL } -> ConnectionStatus.NEEDS_APPROVAL
+    statuses.any { it == ConnectionStatus.CONNECTING } -> ConnectionStatus.CONNECTING
+    statuses.any { it == ConnectionStatus.CONNECTED } -> ConnectionStatus.CONNECTED
+    statuses.any { it == ConnectionStatus.FAILED } -> ConnectionStatus.FAILED
+    else -> ConnectionStatus.IDLE
+}

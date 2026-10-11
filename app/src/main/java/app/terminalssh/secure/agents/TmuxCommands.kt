@@ -93,4 +93,54 @@ object TmuxCommands {
             .trim('-')
         return cleaned.takeIf { it.isNotEmpty() }?.take(40) ?: "session"
     }
+
+    // ---- windows, for the session-management view (F033) ----
+
+    /** A tmux window as `list-windows` reports it. */
+    data class Window(
+        val index: Int,
+        val name: String,
+        val active: Boolean,
+        val panes: Int,
+    )
+
+    /**
+     * Lists a session's windows in the same separator form as [listSessionsCommand], for the
+     * same reason: window names are free text and the default output is ambiguous to split.
+     */
+    fun listWindowsCommand(session: String): String =
+        "tmux list-windows -t ${AgentInstallScript.shellQuote(session)} -F " +
+            AgentInstallScript.shellQuote(
+                "#{window_index}${SEPARATOR}#{window_name}${SEPARATOR}" +
+                    "#{?window_active,1,0}${SEPARATOR}#{window_panes}",
+            ) + " 2>/dev/null || true"
+
+    /** Parses the output of [listWindowsCommand]; malformed lines are skipped. */
+    fun parseWindows(output: String): List<Window> =
+        output.lineSequence()
+            .mapNotNull { line ->
+                val parts = line.trim().split(SEPARATOR)
+                if (parts.size != 4) return@mapNotNull null
+                val index = parts[0].toIntOrNull() ?: return@mapNotNull null
+                val panes = parts[3].toIntOrNull() ?: return@mapNotNull null
+                Window(index = index, name = parts[1], active = parts[2] == "1", panes = panes)
+            }
+            .toList()
+
+    /** Renames a session in place; the target is quoted like every other name here. */
+    fun renameSessionCommand(oldName: String, newName: String): String =
+        "tmux rename-session -t ${AgentInstallScript.shellQuote(oldName)} " +
+            AgentInstallScript.shellQuote(newName)
+
+    /** Renames one window. The index is a number, never free text, so it cannot inject. */
+    fun renameWindowCommand(session: String, windowIndex: Int, newName: String): String {
+        require(windowIndex >= 0) { "window index must be non-negative" }
+        return "tmux rename-window -t ${AgentInstallScript.shellQuote("$session:$windowIndex")} " +
+            AgentInstallScript.shellQuote(newName)
+    }
+
+    fun killWindowCommand(session: String, windowIndex: Int): String {
+        require(windowIndex >= 0) { "window index must be non-negative" }
+        return "tmux kill-window -t ${AgentInstallScript.shellQuote("$session:$windowIndex")}"
+    }
 }

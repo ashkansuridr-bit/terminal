@@ -73,4 +73,68 @@ object SshConfigImport {
             )
         }.getOrNull()
     }
+
+    /**
+     * What a config contained but [parse] does not apply, so the import can be honest about it
+     * (F038).
+     *
+     * `IdentityFile` is not read on purpose — the private key is outside the app sandbox, and a
+     * profile pointing at a key that does not exist would always fail — but silently dropping it
+     * is worse than saying so. `Include` and `ProxyJump` are reported the same way. No file I/O
+     * happens here; the values are exactly the text the config carried.
+     */
+    data class Notes(
+        /** Named `Host` blocks seen, which is the upper bound on imported profiles. */
+        val namedHostBlocks: Int,
+        /** Wildcard/defaults blocks, which produce no profile. */
+        val skippedWildcardBlocks: Int,
+        /** Paths/globs from `Include` lines; not followed here. */
+        val includePatterns: List<String>,
+        /** How many `IdentityFile` directives were ignored (the key must be imported by hand). */
+        val identityFileCount: Int,
+        /** `ProxyJump` targets referenced by named hosts; not resolved here. */
+        val proxyJumpAliases: List<String>,
+    ) {
+        val hasUnappliedDirectives: Boolean
+            get() = includePatterns.isNotEmpty() || identityFileCount > 0 || proxyJumpAliases.isNotEmpty()
+    }
+
+    fun analyze(text: String): Notes {
+        var namedHostBlocks = 0
+        var skippedWildcardBlocks = 0
+        val includes = mutableListOf<String>()
+        val proxies = mutableListOf<String>()
+        var identityFiles = 0
+        var insideNamedHost = false
+
+        for (rawLine in text.lineSequence()) {
+            val line = rawLine.substringBefore('#').trim()
+            if (line.isEmpty()) continue
+            val separator = line.indexOfFirst { it == ' ' || it == '\t' || it == '=' }
+            if (separator <= 0) continue
+            val keyword = line.substring(0, separator).lowercase()
+            val value = line.substring(separator + 1).trim().trim('=').trim()
+            if (value.isEmpty()) continue
+
+            if (keyword == "host") {
+                val wildcard = value.any { it == '*' || it == '?' }
+                insideNamedHost = !wildcard
+                if (wildcard) skippedWildcardBlocks++ else namedHostBlocks++
+            } else {
+                when (keyword) {
+                    "include" -> includes += value
+                    "identityfile" -> identityFiles++
+                    "proxyjump" -> if (insideNamedHost) proxies += value
+                }
+            }
+        }
+
+        return Notes(
+            namedHostBlocks = namedHostBlocks,
+            skippedWildcardBlocks = skippedWildcardBlocks,
+            includePatterns = includes.distinct(),
+            identityFileCount = identityFiles,
+            proxyJumpAliases = proxies.distinct(),
+        )
+    }
 }
