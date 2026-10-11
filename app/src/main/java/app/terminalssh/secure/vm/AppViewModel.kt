@@ -911,6 +911,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val ref = UUID.randomUUID().toString()
         try {
             VaultLimits.requireSnippetSize(bytes)
+            container.hosts.scheduleCredentialCleanup(CredentialReference(ref, VaultAad.SNIPPET))
             container.vault.put(ref, bytes, VaultAad.SNIPPET)
             val entry = SnippetEntry(
                 id = ref,
@@ -924,8 +925,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 throw t
             }
             _snippets.value = container.hosts.snippets()
+            container.hosts.finishCredentialCleanup(CredentialReference(ref, VaultAad.SNIPPET))
+        } catch (failure: Exception) {
+            _toast.value = string(R.string.host_save_failed)
         } finally {
             bytes.fill(0)
+            command.fill('\u0000')
         }
     }
 
@@ -944,8 +949,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun deleteSnippet(entry: SnippetEntry) {
         if (!metadataMutationAllowed()) return
-        container.vault.delete(entry.id, VaultAad.SNIPPET)
-        container.hosts.deleteSnippet(entry.id)
-        _snippets.value = container.hosts.snippets()
+        try {
+            container.hosts.deleteSnippet(entry.id)
+            _snippets.value = container.hosts.snippets()
+            retryCredentialCleanup()
+        } catch (failure: Exception) {
+            _toast.value = string(R.string.key_delete_failed)
+        }
     }
 }

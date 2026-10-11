@@ -55,8 +55,21 @@ fun FolderPickerDialog(
     var path by remember { mutableStateOf(startPath) }
     var directories by remember { mutableStateOf<List<RemoteEntry>>(emptyList()) }
 
+    var loading by remember { mutableStateOf(true) }
+    var failed by remember { mutableStateOf(false) }
     LaunchedEffect(path) {
-        directories = listDirectories(path)
+        loading = true
+        failed = false
+        directories = emptyList()
+        try {
+            directories = listDirectories(path)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            failed = true
+        } finally {
+            loading = false
+        }
     }
 
     AlertDialog(
@@ -64,6 +77,7 @@ fun FolderPickerDialog(
         title = { Text(title) },
         text = {
             Column {
+                if (failed) Text(stringResource(R.string.xfer_unknown), color = MaterialTheme.colorScheme.error)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
                         onClick = { path = RemotePath.parent(path) },
@@ -105,7 +119,7 @@ fun FolderPickerDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onPick(path) }) {
+            TextButton(onClick = { onPick(path) }, enabled = !loading && !failed) {
                 Text(stringResource(R.string.sftp_move_here))
             }
         },

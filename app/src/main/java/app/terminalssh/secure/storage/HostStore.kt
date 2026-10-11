@@ -124,7 +124,8 @@ class HostStore(context: Context) {
     @Synchronized
     fun credentialIsReferenced(ref: CredentialReference): Boolean {
         check(!metadataDurabilityUncertain) { "reload metadata before credential cleanup" }
-        return hosts().any { ref in CredentialReferences.ownedBy(it.auth) } ||
+        return (ref.aad == VaultAad.SNIPPET && snippets().any { it.id == ref.ref }) ||
+            hosts().any { ref in CredentialReferences.ownedBy(it.auth) } ||
             (ref.aad == VaultAad.PRIVATE_KEY && (keys().any { it.id == ref.ref } ||
                 hosts().any { (it.auth as? AuthMethod.PrivateKey)?.keyVaultRef == ref.ref }))
     }
@@ -158,8 +159,14 @@ class HostStore(context: Context) {
     }
 
     @Synchronized
-    fun deleteSnippet(id: String) =
-        writeArray(KEY_SNIPPETS, snippets().filterNot { it.id == id }.map { it.toJson() })
+    fun deleteSnippet(id: String) {
+        val remaining = snippets().filterNot { it.id == id }
+        val cleanup = pendingCredentialCleanup() + CredentialReference(id, VaultAad.SNIPPET)
+        commitRecords(mapOf(
+            KEY_SNIPPETS to JSONArray().apply { remaining.forEach { put(it.toJson()) } }.toString(),
+            KEY_CLEANUP to JSONArray().apply { cleanup.forEach { put(it.toJson()) } }.toString(),
+        ))
+    }
 
     /** Recovery export keeps original JSON strings, including malformed ones, as JSON values. */
     @Synchronized

@@ -366,12 +366,13 @@ class SftpClient(private val session: Session) : AutoCloseable {
                 while (stdout.available() > 0) {
                     val read = stdout.read(buf)
                     if (read < 0) break
-                    if (out.size() + read > EXEC_MAX_OUTPUT) return out.toString(Charsets.UTF_8.name())
+                    if (out.size() + read > EXEC_MAX_OUTPUT) return null
                     out.write(buf, 0, read)
                 }
                 if (channel.isClosed) break
                 Thread.sleep(20)
             }
+            if (!channel.isClosed || channel.exitStatus != 0) return null
             out.toString(Charsets.UTF_8.name())
         } catch (_: Exception) {
             null
