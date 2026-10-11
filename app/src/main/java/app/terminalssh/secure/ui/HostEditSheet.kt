@@ -191,11 +191,12 @@ fun HostEditSheet(
             error?.let { Text(it, color = Danger, style = MaterialTheme.typography.labelSmall) }
             Button(
                 onClick = {
-                    val portNumber = port.toIntOrNull() ?: 22
+                    val portNumber = port.toIntOrNull()
+                    val reconnectNumber = reconnectAttempts.toIntOrNull()
                     when {
                         host.isBlank() || username.isBlank() -> error = requiredFieldsError
-                        portNumber !in 1..65535 -> error = portRangeError
-                        (reconnectAttempts.toIntOrNull() ?: 0) > HostProfile.MAX_RECONNECT_ATTEMPTS ->
+                        portNumber == null || portNumber !in 1..65535 -> error = portRangeError
+                        reconnectNumber == null || reconnectNumber !in 0..HostProfile.MAX_RECONNECT_ATTEMPTS ->
                             error = reconnectRangeError
                         else -> {
                             val profile = HostProfile(
@@ -212,9 +213,7 @@ fun HostEditSheet(
                                 lastConnectedAt = initial?.lastConnectedAt ?: 0L,
                                 notes = notes.trim(),
                                 environment = environment,
-                                maxReconnectAttempts = reconnectAttempts.toIntOrNull()
-                                    ?.coerceIn(0, HostProfile.MAX_RECONNECT_ATTEMPTS)
-                                    ?: HostProfile.DEFAULT_RECONNECT_ATTEMPTS,
+                                maxReconnectAttempts = reconnectNumber,
                                 jumpHostId = jumpHostId,
                             )
                             onSave(profile, password.takeIf { it.isNotEmpty() }?.toCharArray())
