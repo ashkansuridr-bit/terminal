@@ -3,6 +3,7 @@ package app.terminalssh.secure.storage
 import android.content.Context
 import app.terminalssh.secure.model.AuthMethod
 import app.terminalssh.secure.model.Environment
+import app.terminalssh.secure.model.HostIcons
 import app.terminalssh.secure.model.HostKeyPolicy
 import app.terminalssh.secure.model.HostProfile
 import app.terminalssh.secure.model.KeyEntry
@@ -191,7 +192,7 @@ class HostStore(context: Context) {
         put("id", id); put("label", label); put("host", host); put("port", port)
         put("username", username); put("group", group); put("favorite", favorite)
         put("lastConnectedAt", lastConnectedAt); put("policy", hostKeyPolicy.name)
-        put("notes", notes); put("environment", environment.name)
+        put("notes", notes); put("environment", environment.name); put("iconKey", iconKey)
         put("maxReconnectAttempts", maxReconnectAttempts)
         put("jumpHostId", jumpHostId)
         put("tags", JSONArray().apply { tags.forEach { put(it) } })
@@ -234,6 +235,9 @@ class HostStore(context: Context) {
                 HostProfile.DEFAULT_RECONNECT_ATTEMPTS,
             ).coerceIn(0, HostProfile.MAX_RECONNECT_ATTEMPTS),
             jumpHostId = optString("jumpHostId", ""),
+            // A key written by a future build that renamed an icon must not crash the list.
+            iconKey = optString("iconKey", HostIcons.NONE).takeIf { HostIcons.isKnown(it) }
+                ?: HostIcons.NONE,
         )
     }
 
@@ -255,12 +259,20 @@ class HostStore(context: Context) {
         put("id", id)
         put("name", name)
         put("createdAt", createdAt)
+        put("category", category)
+        put("favorite", favorite)
+        put("tags", JSONArray().apply { tags.forEach { put(it) } })
     }
 
     private fun JSONObject.toSnippet() = SnippetEntry(
         id = getString("id"),
         name = optString("name", "snippet"),
         createdAt = optLong("createdAt", 0L),
+        category = optString("category", ""),
+        favorite = optBoolean("favorite", false),
+        tags = (optJSONArray("tags") ?: JSONArray()).let { array ->
+            (0 until array.length()).map { array.getString(it) }
+        },
     )
 
     companion object {

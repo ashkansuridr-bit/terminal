@@ -20,6 +20,8 @@ data class HostProfile(
     val notes: String = "",
     /** Which environment this server belongs to, shown as a colour in the list. */
     val environment: Environment = Environment.NONE,
+    /** Built-in icon key ([HostIcons]); empty means "use the host's initial". */
+    val iconKey: String = HostIcons.NONE,
     /** Reconnect attempts before giving up; per-host because a flaky VPS is not a LAN box. */
     val maxReconnectAttempts: Int = DEFAULT_RECONNECT_ATTEMPTS,
     /** Stored jump-host reference. Connections currently refuse a configured hop
@@ -90,4 +92,10 @@ data class SnippetEntry(
     val id: String,
     val name: String,
     val createdAt: Long,
+    /** Free-form grouping label; empty means "uncategorised". */
+    val category: String = "",
+    /** Searchable tags; non-secret like the category. */
+    val tags: List<String> = emptyList(),
+    /** Pinned to the top of the snippet sheet. */
+    val favorite: Boolean = false,
 )
