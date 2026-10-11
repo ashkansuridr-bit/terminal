@@ -201,6 +201,21 @@ a value was bad, and never used `PortForwardSpec`.
 Tests: `PortForwardFormTest` (9), green. This batch touches Compose, so it is
 compile/lint/assemble-verified but **not device-rendered**; F036 stays `IMPLEMENTED_NOT_TESTED`.
 
+### Batch M — F021 apply-to-all reaches the dialog (`bf7f7a8`)
+
+`SftpController.resolveConflict(resolution, applyToAll)` existed, but nothing passed
+`applyToAll = true`, so a folder upload re-prompted for every colliding file.
+
+| Piece | File(s) | What it does |
+| --- | --- | --- |
+| Conflict dialog | `ui/UploadConflictDialog.kt` | Carries `(ConflictResolution, applyToAll)`; adds an "apply to all remaining files" checkbox and threads the flag into Overwrite/Rename/Skip. Cancel is intentionally never applied to the batch. |
+| Call site | `ui/FilesScreen.kt` | Forwards `applyToAll` to `sftp.resolveConflict`. |
+| String | `values*` (6 locales) | `sftp_conflict_apply_all`. |
+
+No new JVM test: the remembered-decision rule is already covered by `ConflictBatchPolicyTest`,
+and the rest is Compose. Verified by test compile + lint + assemble only; **not device-rendered**,
+so F021 stays `IMPLEMENTED_NOT_TESTED`.
+
 ## 4. Security posture of the new code
 
 - **No untrusted data is concatenated into a shell.** Shell roots, search patterns, systemd
@@ -269,6 +284,7 @@ Result: `BUILD SUCCESSFUL`.
 | Batch J unit tests | same, filter `app.terminalssh.secure.tools.*` | `BUILD SUCCESSFUL` (`SystemdUnitsLogsTest` 3, `DockerContainerReadTest` 5) |
 | Batch K unit tests | same, filter `app.terminalssh.secure.terminal.*` | `BUILD SUCCESSFUL` (`TerminalSearchTest` 13, incl. 4 Unicode cases) |
 | Batch L unit tests | same, filter `app.terminalssh.secure.ui.PortForwardFormTest` | `BUILD SUCCESSFUL` (9 tests) |
+| Batch M unit tests | same, filter `app.terminalssh.secure.ui.*` (compile check; no new test) | `BUILD SUCCESSFUL` |
 | Android lint (Market) | `lintMarketDebug` | `BUILD SUCCESSFUL` |
 | Market debug APK | `assembleMarketDebug` | `BUILD SUCCESSFUL` |
 | Gplay flavor compiles | `compileGplayDebugKotlin` | `BUILD SUCCESSFUL` |

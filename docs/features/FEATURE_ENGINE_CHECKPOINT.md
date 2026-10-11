@@ -235,3 +235,22 @@ a value was bad, so "Add" looked broken with no explanation, and `PortForwardSpe
 
 Unlike earlier batches this touches Compose, so it is compile/lint/assemble-verified but **not
 device-rendered**; F036 stays `IMPLEMENTED_NOT_TESTED`.
+
+## Batch M (commit `bf7f7a8`) — F021 apply-to-all reaches the dialog
+
+The same lesson as Batch L, one layer over: `SftpController` already implemented
+`resolveConflict(resolution, applyToAll)` with a standing conflict policy, but no caller ever
+passed `applyToAll = true`, so a folder upload re-asked the same question once per file.
+
+- `UploadConflictDialog` now takes `(ConflictResolution, applyToAll)`, renders an "apply to all
+  remaining files" checkbox, and threads the flag into Overwrite/Rename/Skip.
+- **Cancel is never applied to the batch**, on purpose: it stops the current file rather than
+  answering the question. That is the same rule `ConflictBatchPolicy` encodes ("ASK is never
+  remembered"), so the UI and the pure engine now agree even though the controller still owns
+  the runtime state.
+- `FilesScreen` passes the flag straight to `sftp.resolveConflict`.
+- New string `sftp_conflict_apply_all` in all six locale files.
+
+No new JVM test is added: the remembered-decision rule is already covered by
+`ConflictBatchPolicyTest`, and the remaining work is Compose. Verified by test compile, lint and
+assemble only; **not device-rendered**, so F021 stays `IMPLEMENTED_NOT_TESTED`.
