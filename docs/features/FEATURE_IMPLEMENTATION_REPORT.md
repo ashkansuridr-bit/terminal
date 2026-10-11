@@ -248,6 +248,23 @@ and `TransferBatchControl` was never called.
 Tests: `TransferBatchControlTest` 8 → 11. UI is **not device-rendered**, so F023 stays
 `IMPLEMENTED_NOT_TESTED`.
 
+### Batch P — F028 integrity on finished transfers (`fbb7912`)
+
+The machinery for reporting integrity honestly was already written; nothing consumed it.
+`verifyIntegrity` returned a private enum that was discarded once the transfer completed, so
+every finished row read as done.
+
+| Piece | File(s) | What it does |
+| --- | --- | --- |
+| Comparison | `sftp/SftpController.kt` | `verifyIntegrity` returns `IntegrityStatus.State` and delegates to `IntegrityStatus.verify(remote, local)`; the private `IntegrityResult` enum is gone. |
+| Model | `sftp/Transfer.kt` | New `integrity: IntegrityStatus.State`, default `UNVERIFIED`. |
+| Queue | `sftp/TransferQueue.kt` | `markCompleted(id, atMillis, integrity)` records the outcome. |
+| Row | `ui/TransferList.kt` | Appends `verified` only on a proven match, else `unverified`. |
+| Strings | `values*` (6 locales) | `sftp_integrity_verified`, `sftp_integrity_unverified`. |
+
+Tests: `TransferQueueTest` 31 → 32; full `sftp` package 369 tests, 0 failures. UI is **not
+device-rendered**, so F028 stays `IMPLEMENTED_NOT_TESTED`.
+
 ## 4. Security posture of the new code
 
 - **No untrusted data is concatenated into a shell.** Shell roots, search patterns, systemd
@@ -319,6 +336,7 @@ Result: `BUILD SUCCESSFUL`.
 | Batch M unit tests | same, filter `app.terminalssh.secure.ui.*` (compile check; no new test) | `BUILD SUCCESSFUL` |
 | Batch N unit tests | same, filter `app.terminalssh.secure.sftp.PreviewContentTest` + `BoundedTextReadBytesTest` | `BUILD SUCCESSFUL` (8 + 6 tests) |
 | Batch O unit tests | same, filter `app.terminalssh.secure.sftp.TransferBatchControlTest` | `BUILD SUCCESSFUL` (11 tests) |
+| Batch P unit tests | same, filter `app.terminalssh.secure.sftp.*` | `BUILD SUCCESSFUL` (369 tests incl. `TransferQueueTest` 32) |
 | Android lint (Market) | `lintMarketDebug` | `BUILD SUCCESSFUL` |
 | Market debug APK | `assembleMarketDebug` | `BUILD SUCCESSFUL` |
 | Gplay flavor compiles | `compileGplayDebugKotlin` | `BUILD SUCCESSFUL` |

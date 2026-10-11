@@ -296,3 +296,26 @@ may touch, but nothing called it, and there were no batch buttons.
 
 Tests: `TransferBatchControlTest` 8 → 11 (a finished batch offers nothing; an integrity mismatch
 never offers retry). UI is **not device-rendered**, so F023 stays `IMPLEMENTED_NOT_TESTED`.
+
+## Batch P (commit `fbb7912`) — F028 integrity reaches the transfer row
+
+`IntegrityStatus` already encoded the whole point — "finishing is not proving" — but nothing
+fed it. `verifyIntegrity` returned a private `MATCH/MISMATCH/UNVERIFIED` enum, which was thrown
+away the moment the transfer was marked complete, so a completed row read as done whether or
+not its bytes had ever been compared.
+
+- `verifyIntegrity` now returns `IntegrityStatus.State` and delegates the comparison to
+  `IntegrityStatus.verify(remote, local)`; the private enum is deleted, so the rule "only two
+  equal hashes mean VERIFIED" lives in exactly one place. The empty/absent/mismatch branches are
+  behaviour-preserving.
+- `Transfer` gains `integrity: IntegrityStatus.State`, defaulting to `UNVERIFIED`.
+- `TransferQueue.markCompleted(id, atMillis, integrity)` records it; the controller passes the
+  verified state on success, while a genuine `MISMATCH` still fails the transfer with
+  `INTEGRITY_MISMATCH`.
+- `TransferRow`'s status line appends `· verified` only for a proven match and `· unverified`
+  otherwise, so a completed row never implies a check mark it did not earn.
+- Strings `sftp_integrity_verified` / `sftp_integrity_unverified` in all six locales.
+
+Tests: `TransferQueueTest` 31 → 32 (default stays `UNVERIFIED`; `VERIFIED` and `MISMATCH` survive
+onto the completed item). Full `sftp` package: 369 tests, 0 failures. UI is **not device-rendered**,
+so F028 stays `IMPLEMENTED_NOT_TESTED`.
