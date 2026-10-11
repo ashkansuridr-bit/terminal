@@ -3,7 +3,7 @@
 - **Branch:** `feature/terminal-50-tools` (base `origin/main@f675bb1`)
 - **Worktree:** `/root/work/terminal-features`
 - **Scope of this run:** Phases A–E of the 50-feature request (`F001`–`F050`)
-- **Commits:** `9fdb91e`, `5aa2621`, `882abc2`, `da80eb1`, `0629b0e`, `f6a31f0`
+- **Commits:** `9fdb91e`, `5aa2621`, `882abc2`, `da80eb1`, `0629b0e`, `f6a31f0`, `6c13b50`
 - **Machine status:** [`FEATURE_STATUS.json`](FEATURE_STATUS.json) · **Resume notes:** [`FEATURE_ENGINE_CHECKPOINT.md`](FEATURE_ENGINE_CHECKPOINT.md)
 
 ---
@@ -14,9 +14,9 @@ Of the 50 requested features:
 
 | Outcome | Count |
 | --- | --- |
-| Engine implemented here + JVM unit-tested (`IMPLEMENTED_NOT_TESTED`) | **32** |
+| Engine implemented here + JVM unit-tested (`IMPLEMENTED_NOT_TESTED`) | **36** |
 | Already complete on `main`, audited not rebuilt (`EXISTS_VERIFIED`) | 5 |
-| Pre-existing partial support, recorded as follow-up (`NEEDS_IMPROVEMENT`) | 12 |
+| Pre-existing partial support, recorded as follow-up (`NEEDS_IMPROVEMENT`) | 6 |
 | Blocked with a technical reason (`BLOCKED`) | 2 |
 | Deferred with a reason (`DEFERRED_WITH_REASON`) | 1 |
 | Verified end-to-end on a device (`VERIFIED`) | **0** |
@@ -119,6 +119,17 @@ Tests: 6 classes, green.
 
 Tests: 2 classes, green.
 
+### Batch G — Integrity honesty, conflict/batch policy, per-host options (`6c13b50`)
+
+| Feature | File(s) | What it does |
+| --- | --- | --- |
+| F028 Integrity status | `sftp/IntegrityStatus.kt` | Optional-hash comparison where VERIFIED requires a real match; a missing hash is UNVERIFIED, never a silent success. |
+| F021 Conflict apply-to-all | `sftp/ConflictBatchPolicy.kt` | Remembers an apply-to-all conflict decision so a folder transfer stops re-prompting; `ASK` is never remembered. |
+| F023 Batch transfer control | `sftp/TransferBatchControl.kt` | Which queued items Pause all / Resume all / Retry failed / Cancel all may touch; a corrupt transfer is never retried. |
+| F040 Per-host options | `model/ConnectionOptions.kt` | Timeout/keep-alive/compression/reconnect with clamping and a tolerant string-map codec. |
+
+Tests: 4 classes, green.
+
 ## 4. Security posture of the new code
 
 - **No untrusted data is concatenated into a shell.** Shell roots, search patterns, systemd
@@ -145,13 +156,14 @@ New JVM unit-test classes added on this branch (all green when run together):
 ```
 model:      QuickConnectTest, HostFilterTest, HostIconsTest, ConnectionInfoTest,
             SnippetTemplateTest, SnippetLibraryTest, KeyToolbarConfigTest,
-            SessionNotificationTest, TabLayoutTest
+            SessionNotificationTest, TabLayoutTest, ConnectionOptionsTest
 terminal:   TerminalSearchTest, TerminalBookmarksTest, TerminalLinksTest,
             CommandHistoryTest, OutputExportTest, BroadcastInputTest
 tools:      ServerResourcesTest, ProcessListTest, SystemdUnitsTest, DockerContainersTest,
             GitStatusTest, NetworkPortsTest, LogBufferTest, RunbookTest
 sftp:       HexPreviewTest, RemoteFinderTest, TransferPlanTest, TransferQueuePolicyTest,
-            FolderSizeBudgetTest
+            FolderSizeBudgetTest, IntegrityStatusTest, ConflictBatchPolicyTest,
+            TransferBatchControlTest
 ssh:        ConnectionDiagnosticsTest
 security:   PortableBackupTest
 storage:    KnownHostsFormatTest
@@ -189,7 +201,7 @@ failure.
 
 ## 6. What was **not** done (honest limitations)
 
-- **No UI wiring.** The 32 implemented features are engines with green unit tests. The Compose
+- **No UI wiring.** The 36 implemented features are engines with green unit tests. The Compose
   screens/flows that call them are not built in this run, so a user cannot yet reach most of
   them. This is why none are marked `VERIFIED`.
 - **No device/emulator verification.** The AVD image was deleted and the emulator fails with
@@ -198,8 +210,8 @@ failure.
   this work.
 - **No signed release.** The production signing keystore is not available.
 - **F031, F035, F049** are genuinely blocked/deferred; see the checkpoint doc for reasons.
-- **10 features** remain partial on `main` (F006, F009, F021, F023, F028, F032, F033, F036,
-  F038, F040) and were intentionally left as recorded follow-ups.
+- **6 features** remain partial on `main` (F006, F009, F032, F033, F036, F038) and were
+  intentionally left as recorded follow-ups.
 
 ## 7. How to verify
 
