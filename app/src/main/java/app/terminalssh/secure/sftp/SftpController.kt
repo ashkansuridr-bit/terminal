@@ -392,6 +392,7 @@ class SftpController(
                             android.provider.DocumentsContract.Document.MIME_TYPE_DIR, part,
                         )
                     }.getOrElse { throw IOException("Cannot create local directory '$currentPath': ${it.message}") }
+                        ?: throw IOException("Cannot create local directory '$currentPath'")
                     dirMap[currentPath] = dirUri
                     currentParent = dirUri
                 } else {
@@ -411,6 +412,7 @@ class SftpController(
                     "application/octet-stream", fileName,
                 )
             }.getOrElse { throw IOException("Cannot create local file '$relativePath': ${it.message}") }
+                ?: throw IOException("Cannot create local file '$relativePath'")
             val entry = RemoteEntry(
                 name = fileName,
                 path = remoteFilePath,
