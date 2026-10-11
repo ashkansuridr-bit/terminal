@@ -50,6 +50,14 @@ data class Transfer(
     /** Set only when [state] is [TransferState.FAILED]. */
     val errorKind: TransferErrorKind? = null,
     val attempts: Int = 0,
+    /**
+     * The outcome of the post-transfer SHA-256 comparison (F028).
+     *
+     * [IntegrityStatus.State.UNVERIFIED] is the honest default: a transfer that merely
+     * finished was never proven correct, and SFTP does not checksum on its own. Only a
+     * comparison that actually happened and matched may read as [IntegrityStatus.State.VERIFIED].
+     */
+    val integrity: IntegrityStatus.State = IntegrityStatus.State.UNVERIFIED,
     /** Wall-clock time (epoch millis) of the last [TransferQueue.markProgress] call; 0
      *  means no progress has been reported yet for the current attempt. */
     val lastProgressAt: Long = 0L,

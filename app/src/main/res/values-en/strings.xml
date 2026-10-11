@@ -189,6 +189,8 @@
     <string name="sftp_retry_failed">Retry failed</string>
     <string name="sftp_cancel_all">Cancel all</string>
     <string name="sftp_downloaded">Downloaded</string>
+    <string name="sftp_integrity_verified">verified</string>
+    <string name="sftp_integrity_unverified">unverified</string>
     <string name="sftp_conflict_title">File already exists</string>
     <string name="sftp_conflict_body">A file named "%1$s" already exists at this location on the server. What should happen?</string>
     <string name="sftp_conflict_overwrite">Overwrite</string>

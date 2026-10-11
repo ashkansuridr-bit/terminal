@@ -189,6 +189,8 @@
     <string name="sftp_retry_failed">تلاش دوباره برای ناموفق‌ها</string>
     <string name="sftp_cancel_all">لغو همه</string>
     <string name="sftp_downloaded">دانلود شد</string>
+    <string name="sftp_integrity_verified">تأییدشده</string>
+    <string name="sftp_integrity_unverified">تأییدنشده</string>
     <string name="sftp_conflict_title">فایل از قبل وجود دارد</string>
     <string name="sftp_conflict_body">فایلی با نام «%1$s» در این مسیر از قبل روی سرور وجود دارد. چه کاری انجام شود؟</string>
     <string name="sftp_conflict_overwrite">جایگزینی</string>

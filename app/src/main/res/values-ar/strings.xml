@@ -192,6 +192,8 @@
     <string name="sftp_retry_failed">إعادة محاولة الفاشلة</string>
     <string name="sftp_cancel_all">إلغاء الكل</string>
     <string name="sftp_downloaded">تمّ التحميل</string>
+    <string name="sftp_integrity_verified">مؤكّد</string>
+    <string name="sftp_integrity_unverified">غير مؤكّد</string>
     <string name="sftp_conflict_title">الملف موجود مسبقاً</string>
     <string name="sftp_conflict_body">يوجد ملف يحمل الاسم «%1$s» في هذا المسار على الخادم. ما الإجراء المطلوب؟</string>
     <string name="sftp_conflict_overwrite">الاستبدال</string>

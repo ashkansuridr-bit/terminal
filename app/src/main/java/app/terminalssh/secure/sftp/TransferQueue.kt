@@ -155,10 +155,15 @@ class TransferQueue(maxConcurrent: Int = DEFAULT_CONCURRENCY) {
         it.copy(transferredBytes = 0L, lastProgressAt = 0L, bytesPerSecond = 0f)
     }
 
-    fun markCompleted(id: String, atMillis: Long = System.currentTimeMillis()) = update(id) {
+    fun markCompleted(
+        id: String,
+        atMillis: Long = System.currentTimeMillis(),
+        integrity: IntegrityStatus.State = IntegrityStatus.State.UNVERIFIED,
+    ) = update(id) {
         it.copy(
             state = TransferState.COMPLETED,
             errorKind = null,
+            integrity = integrity,
             // A finished transfer shows a full bar even if the server never sent a size.
             transferredBytes = if (it.totalBytes > 0) it.totalBytes else it.transferredBytes,
             finishedAt = atMillis,

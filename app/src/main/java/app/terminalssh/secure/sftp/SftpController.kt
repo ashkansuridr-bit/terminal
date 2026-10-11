@@ -1143,9 +1143,9 @@ class SftpController(
         val integrity = if (result.isSuccess && transfer.id !in cancelled) {
             runCatching {
                 withContext(Dispatchers.IO) { verifyIntegrity(transferClient, transfer) }
-            }.getOrDefault(IntegrityResult.UNVERIFIED)
+            }.getOrDefault(IntegrityStatus.State.UNVERIFIED)
         } else {
-            IntegrityResult.UNVERIFIED
+            IntegrityStatus.State.UNVERIFIED
         }
 
         transferClient?.close()
@@ -1162,10 +1162,10 @@ class SftpController(
                 }
             }
             result.isSuccess -> {
-                if (integrity == IntegrityResult.MISMATCH) {
+                if (integrity == IntegrityStatus.State.MISMATCH) {
                     queue.fail(transfer.id, TransferErrorKind.INTEGRITY_MISMATCH)
                 } else {
-                    queue.markCompleted(transfer.id)
+                    queue.markCompleted(transfer.id, integrity = integrity)
                 }
             }
             else -> queue.fail(transfer.id, SftpClient.classify(result.exceptionOrNull()!!))
@@ -1516,23 +1516,23 @@ class SftpController(
 
     private fun stagingFile(transfer: Transfer): File = File(cacheDir, "sftp-download-${transfer.id}")
 
-    enum class IntegrityResult { MATCH, MISMATCH, UNVERIFIED }
-
     /**
      * Compares what the server has against what this device has, using the server's own
      * sha256 and a local hash of the same bytes.
      *
-     * [IntegrityResult.UNVERIFIED] is not a failure. Servers that disable `exec`, and
+     * [IntegrityStatus.State.UNVERIFIED] is not a failure. Servers that disable `exec`, and
      * files too large to be worth hashing twice, both land here; the transfer stands.
      * Only a hash that actually disagrees fails the transfer, because that is the one
-     * case where reporting success would be a lie.
+     * case where reporting success would be a lie. The comparison itself is delegated to
+     * [IntegrityStatus.verify] so the rule "only two equal hashes mean verified" lives in
+     * exactly one place.
      */
-    private fun verifyIntegrity(sftp: SftpClient?, transfer: Transfer): IntegrityResult {
-        val client = sftp ?: return IntegrityResult.UNVERIFIED
+    private fun verifyIntegrity(sftp: SftpClient?, transfer: Transfer): IntegrityStatus.State {
+        val client = sftp ?: return IntegrityStatus.State.UNVERIFIED
         val size = transfer.totalBytes
-        if (size <= 0L || size > MAX_VERIFY_BYTES) return IntegrityResult.UNVERIFIED
+        if (size <= 0L || size > MAX_VERIFY_BYTES) return IntegrityStatus.State.UNVERIFIED
 
-        val remote = client.remoteSha256(transfer.remotePath) ?: return IntegrityResult.UNVERIFIED
+        val remote = client.remoteSha256(transfer.remotePath) ?: return IntegrityStatus.State.UNVERIFIED
         val local = when (transfer.direction) {
             TransferDirection.DOWNLOAD -> {
                 val staged = stagingFile(transfer)
@@ -1546,9 +1546,9 @@ class SftpController(
             TransferDirection.UPLOAD -> runCatching {
                 contentResolver.openInputStream(Uri.parse(transfer.localUri))?.use { sha256Of(it) }
             }.getOrNull()
-        } ?: return IntegrityResult.UNVERIFIED
+        } ?: return IntegrityStatus.State.UNVERIFIED
 
-        return if (local.equals(remote, ignoreCase = true)) IntegrityResult.MATCH else IntegrityResult.MISMATCH
+        return IntegrityStatus.verify(remote, local).state
     }
 
     private fun sha256Of(stream: java.io.InputStream): String {

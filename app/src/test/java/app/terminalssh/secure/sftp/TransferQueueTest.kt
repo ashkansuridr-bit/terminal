@@ -36,6 +36,21 @@ class TransferQueueTest {
         assertEquals("b", queue.nextToStart()?.id)
     }
 
+    @Test fun aCompletedTransferCarriesItsIntegrityState() {
+        // F028: finishing is not proving. The default must stay UNVERIFIED, and a real
+        // comparison must survive onto the completed row.
+        val queue = TransferQueue()
+        queue.enqueue(transfer("a"))
+        assertEquals(IntegrityStatus.State.UNVERIFIED, queue.byId("a").integrity)
+
+        queue.markCompleted("a", integrity = IntegrityStatus.State.VERIFIED)
+        assertEquals(IntegrityStatus.State.VERIFIED, queue.byId("a").integrity)
+
+        queue.enqueue(transfer("b"))
+        queue.markCompleted("b", integrity = IntegrityStatus.State.MISMATCH)
+        assertEquals(IntegrityStatus.State.MISMATCH, queue.byId("b").integrity)
+    }
+
     @Test fun progressNeverWalksBackwards() {
         // A retry restarts JSch's own counter; the bar must not jump backwards.
         val queue = TransferQueue()

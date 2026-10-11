@@ -46,6 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.terminalssh.secure.R
+import app.terminalssh.secure.sftp.IntegrityStatus
 import app.terminalssh.secure.sftp.Transfer
 import app.terminalssh.secure.sftp.TransferBatchControl
 import app.terminalssh.secure.sftp.TransferDirection
@@ -350,7 +351,17 @@ private fun TransferRow(
 
 @Composable
 private fun Transfer.statusLine(): String = when (state) {
-    TransferState.COMPLETED -> stringResource(R.string.sftp_downloaded)
+    TransferState.COMPLETED -> {
+        // A finished transfer is not a proven transfer. Only a SHA-256 comparison that
+        // actually ran and matched gets to read "verified" (F028); everything else says
+        // so plainly rather than implying a check mark that never happened.
+        val proof = if (integrity == IntegrityStatus.State.VERIFIED) {
+            stringResource(R.string.sftp_integrity_verified)
+        } else {
+            stringResource(R.string.sftp_integrity_unverified)
+        }
+        stringResource(R.string.sftp_downloaded) + " · " + proof
+    }
     TransferState.FAILED -> errorKind?.let { stringResource(it.stringRes) }
         ?: stringResource(R.string.xfer_unknown)
     TransferState.PAUSED -> stringResource(R.string.sftp_pause)

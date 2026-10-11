@@ -188,6 +188,8 @@
     <string name="sftp_retry_failed">Reintentar los fallidos</string>
     <string name="sftp_cancel_all">Cancelar todo</string>
     <string name="sftp_downloaded">Descargado</string>
+    <string name="sftp_integrity_verified">verificado</string>
+    <string name="sftp_integrity_unverified">sin verificar</string>
     <string name="sftp_conflict_title">El archivo ya existe</string>
     <string name="sftp_conflict_body">Ya existe un archivo llamado "%1$s" en esta ubicación del servidor. ¿Qué debería hacerse?</string>
     <string name="sftp_conflict_overwrite">Sobrescribir</string>
