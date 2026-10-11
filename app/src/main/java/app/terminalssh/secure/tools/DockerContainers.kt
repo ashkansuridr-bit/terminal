@@ -69,5 +69,39 @@ object DockerContainers {
         return "docker logs --tail ${tailLines.coerceIn(1, 5000)} ${shellQuote(target)} 2>&1"
     }
 
+    /** One container's resource usage. Kept as display strings — Docker formats the units. */
+    data class Stats(
+        val cpuPercent: String,
+        val memUsage: String,
+        val memPercent: String,
+        val pids: String,
+    )
+
+    /** `--no-stream` makes this a one-shot read rather than a live stream the caller must stop. */
+    fun statsCommand(target: String): String? {
+        if (!isValidTarget(target)) return null
+        return "LC_ALL=C docker stats --no-stream --format " +
+            shellQuote("{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.PIDs}}") +
+            " " + shellQuote(target) + " 2>&1"
+    }
+
+    fun parseStats(output: String): Stats? {
+        val line = output.lineSequence().firstOrNull { it.isNotBlank() } ?: return null
+        val cols = line.split('\t')
+        if (cols.size < 4) return null
+        return Stats(
+            cpuPercent = cols[0].trim(),
+            memUsage = cols[1].trim(),
+            memPercent = cols[2].trim(),
+            pids = cols[3].trim(),
+        )
+    }
+
+    /** Full inspect JSON; read-only, but the caller bounds how much of it is kept. */
+    fun inspectCommand(target: String): String? {
+        if (!isValidTarget(target)) return null
+        return "LC_ALL=C docker inspect ${shellQuote(target)} 2>&1"
+    }
+
     private fun shellQuote(value: String) = "'" + value.replace("'", "'\\''") + "'"
 }

@@ -64,5 +64,18 @@ object SystemdUnits {
         return Command("systemctl ${action.verb} ${shellQuote(unit)}", action.mutating, action.reason)
     }
 
+    /** Cap on `-n` so a chatty service cannot flood the terminal view. */
+    const val MAX_LOG_LINES = 5000
+
+    /**
+     * Read-only tail of a unit's journal. `-n` bounds the output; the caller streams it into a
+     * bounded ring (F042). Returns null when the unit name is not a plain identifier.
+     */
+    fun logsCommand(unit: String, tailLines: Int = 200): String? {
+        if (!isValidUnit(unit)) return null
+        val lines = tailLines.coerceIn(1, MAX_LOG_LINES)
+        return "LC_ALL=C journalctl -u ${shellQuote(unit)} --no-pager -n $lines 2>&1"
+    }
+
     private fun shellQuote(value: String) = "'" + value.replace("'", "'\\''") + "'"
 }
