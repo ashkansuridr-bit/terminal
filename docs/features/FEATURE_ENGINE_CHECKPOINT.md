@@ -178,3 +178,20 @@ half, tested and ready for the transport to consume.
 
 Their `FEATURE_STATUS.json` entries stay `BLOCKED`; the artifacts/evidence fields record the
 engine as groundwork, not as a finished feature. New tests: `JumpChainTest`, `PaneLayoutTest`.
+
+## Batch J (commit `4484e52`) — read-only completions for the server tools
+
+Auditing the five `EXISTS_VERIFIED` features (F002/F004/F008/F027/F030) and the tool engines
+found them already complete on `main`/earlier batches, with two exceptions where the tool
+dashboard promised a read it could not yet perform:
+
+- F044 `SystemdUnits.logsCommand(unit, tailLines)` — a read-only `journalctl -u <unit>
+  --no-pager -n <n>` tail. The unit name is validated as a plain identifier (same gate as the
+  actions), and `-n` is clamped to `MAX_LOG_LINES = 5000` so a chatty service cannot flood the
+  bounded terminal ring (F042). It never calls `systemctl`.
+- F045 `DockerContainers.statsCommand`/`inspectCommand` (+ `parseStats`/`Stats`) — one-shot
+  reads (`docker stats --no-stream`, `docker inspect`) with the target validated and
+  shell-quoted, so the dashboard can show usage without opening a live stream it must stop.
+
+Both were already `IMPLEMENTED_NOT_TESTED`; their `FEATURE_STATUS.json` evidence is extended,
+counts unchanged. New tests: `SystemdUnitsLogsTest` (3), `DockerContainerReadTest` (5).

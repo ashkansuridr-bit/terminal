@@ -156,6 +156,21 @@ emulator still renders one buffer. Only the planning/geometry half is added, tes
 
 Tests: 2 classes, green (`JumpChainTest`, `PaneLayoutTest`). Status stays `BLOCKED` for both.
 
+### Batch J — Read-only completions for the server tools (`4484e52`)
+
+An audit of the five `EXISTS_VERIFIED` features (F002/F004/F008/F027/F030) and the tool
+engines found them complete on `main`/earlier batches, except that two dashboards promised a
+read they could not yet perform. Both additions are read-only and reuse the existing validation
+and quoting helpers.
+
+| Feature | File(s) | What it does |
+| --- | --- | --- |
+| F044 systemd | `tools/SystemdUnits.kt` | `logsCommand(unit, tailLines)` builds a read-only `journalctl -u <unit> --no-pager -n <n>` tail; unit validated as a plain identifier, `-n` clamped to `MAX_LOG_LINES = 5000`. Never calls `systemctl`. |
+| F045 Docker | `tools/DockerContainers.kt` | `statsCommand` / `inspectCommand` (one-shot reads, `--no-stream`) plus `parseStats`/`Stats`; target validated and shell-quoted. |
+
+Tests: 2 classes, green (`SystemdUnitsLogsTest` 3, `DockerContainerReadTest` 5). Both features
+stay `IMPLEMENTED_NOT_TESTED` (UI still unverified); only their evidence fields are extended.
+
 ## 4. Security posture of the new code
 
 - **No untrusted data is concatenated into a shell.** Shell roots, search patterns, systemd
@@ -221,6 +236,7 @@ Result: `BUILD SUCCESSFUL`.
 | Package-filtered unit tests | `testMarketDebugUnitTest` for `model/sftp/terminal/tools` | `BUILD SUCCESSFUL` (422 tests in `model`+`sftp`) |
 | `ssh`/`security`/`storage` unit tests | same, filtered | `BUILD SUCCESSFUL` |
 | Batch H unit tests | same, six filters (`ui`/`model`/`agents`/`ssh`/`storage`) | `BUILD SUCCESSFUL` |
+| Batch J unit tests | same, filter `app.terminalssh.secure.tools.*` | `BUILD SUCCESSFUL` (`SystemdUnitsLogsTest` 3, `DockerContainerReadTest` 5) |
 | Android lint (Market) | `lintMarketDebug` | `BUILD SUCCESSFUL` |
 | Market debug APK | `assembleMarketDebug` | `BUILD SUCCESSFUL` |
 | Gplay flavor compiles | `compileGplayDebugKotlin` | `BUILD SUCCESSFUL` |
