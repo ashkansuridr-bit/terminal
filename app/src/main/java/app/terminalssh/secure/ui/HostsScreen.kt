@@ -169,10 +169,6 @@ fun HostsScreen(
                 ScreenHeader(hostCount = hosts.size, liveCount = hostStates.count { it.value.isLive })
             }
 
-            if (!searching) item(key = "recovery-dashboard") {
-                RecoveryDashboard(viewModel, openHost, onTerminal, onFiles)
-            }
-
             if (showSearch) {
                 item(key = "search") {
                     SearchField(
@@ -200,6 +196,13 @@ fun HostsScreen(
                 searching -> hostRows(filtered, hostStates, openHost, viewModel, { editing = it })
 
                 else -> sectionedHosts(filtered, hostStates, openHost, viewModel, { editing = it })
+            }
+
+            // Keep the host groups reachable before the optional recovery dashboard.
+            // On compact screens the dashboard can otherwise consume the first viewport
+            // and make the Recent section appear absent to keyboard/accessibility users.
+            if (!searching) item(key = "recovery-dashboard") {
+                RecoveryDashboard(viewModel, openHost, onTerminal, onFiles)
             }
 
             if (hosts.isNotEmpty()) {
