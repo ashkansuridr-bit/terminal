@@ -12,6 +12,8 @@ all_text = "\n".join(
 
 vm = (src / "app/terminalssh/secure/vm/AppViewModel.kt").read_text()
 term = (src / "app/terminalssh/secure/ui/TerminalScreen.kt").read_text()
+presets = (src / "app/terminalssh/secure/toolbar/ToolbarPresets.kt").read_text()
+dispatcher = (src / "app/terminalssh/secure/ui/toolbar/ToolbarDispatcher.kt").read_text()
 store = (src / "app/terminalssh/secure/storage/HostStore.kt").read_text()
 gradle = (root / "app/build.gradle.kts").read_text()
 settings = (src / "app/terminalssh/secure/ui/SettingsScreen.kt").read_text()
@@ -38,8 +40,11 @@ checks = {
         and "command" not in re.sub(r'//.*', '', store),
     "snippet insertion never appends Enter":
         "session.send(bytes)" in vm and "append" not in vm[vm.find("fun insertSnippet"):vm.find("fun deleteSnippet")],
-    "terminal exposes snippets without a fifth nav tab":
-        "R.string.snippets_short" in term,
+    "default terminal toolbar opens snippets without a fifth nav tab":
+        'id = "snippets"' in presets
+        and "action = OpenSnippetsAction" in presets
+        and "override fun openSnippets() { snippetsOpen = true }" in term
+        and "OpenSnippetsAction -> host.openSnippets()" in dispatcher,
     "version label follows BuildConfig":
         "BuildConfig.VERSION_NAME" in settings,
     "version bumped to 0.7.2":

@@ -161,6 +161,13 @@ object ToolbarProfiles {
     private val right = special(ToolbarSpecialKey.RIGHT, "→", KeyWidth.NARROW)
     private val ctrlC = ToolKeySpec("cc", "^C", ControlAction('C'), contentDescription = "Interrupt", style = KeyStyle.DANGER)
     private val ctrlD = ToolKeySpec("cd", "^D", ControlAction('D'), contentDescription = "End of file")
+    private val snippets = ToolKeySpec(
+        id = "snippets",
+        label = "Snip",
+        contentDescription = "Open command snippets",
+        action = OpenSnippetsAction,
+        style = KeyStyle.ACCENT,
+    )
 
     // --- profiles ---
 
@@ -172,7 +179,7 @@ object ToolbarProfiles {
         layout = ToolbarLayout(
             rows = listOf(
                 listOf(
-                    ctrl(), alt(), esc, tab,
+                    ctrl(), alt(), esc, tab, snippets,
                     up, down, left, right,
                     ToolKeySpec("pipe", "|", TextAction("|")),
                     ToolKeySpec("slash", "/", TextAction("/")),

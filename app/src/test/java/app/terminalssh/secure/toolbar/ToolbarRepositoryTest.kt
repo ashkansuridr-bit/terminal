@@ -17,6 +17,12 @@ class ToolbarRepositoryTest {
         assertEquals(ToolbarThemes.default.id, repository.state.value.activeThemeId)
     }
 
+    @Test fun defaultShellToolbarOpensSnippetSheet() {
+        val snippetsKey = ToolbarProfiles.default.layout.keyById("snippets")
+        assertNotNull(snippetsKey)
+        assertEquals(OpenSnippetsAction, snippetsKey.action)
+    }
+
     @Test fun activeProfilePersistsAcrossReload() {
         val (repository, prefs) = repo()
         repository.setActiveProfile("vim")

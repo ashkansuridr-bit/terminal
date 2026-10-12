@@ -43,7 +43,9 @@ jobs:
         if: always()
         with:
           name: verification-reports-${{ github.sha }}
-          if-no-files-found: error
+          # Gate failures can occur before Gradle creates reports. Preserve the
+          # primary failure instead of adding a misleading artifact-upload failure.
+          if-no-files-found: warn
           path: app/build/reports/
 
   instrumentation:
