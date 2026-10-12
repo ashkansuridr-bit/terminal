@@ -481,4 +481,5 @@
     <string name="tcs_add_key_title">إضافة مفتاح</string>
     <string name="tcs_locked_suffix">مقفل</string>
     <string name="tcs_active_suffix">نشط</string>
+    <string name="tcs_control_modifier">مفتاح Control</string>
 </resources>

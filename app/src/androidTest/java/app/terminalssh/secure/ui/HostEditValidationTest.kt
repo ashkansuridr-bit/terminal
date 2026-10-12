@@ -51,8 +51,10 @@ class HostEditValidationTest {
             val requiredError = context.getString(R.string.err_host_required)
             val portRangeError = context.getString(R.string.err_port_range)
 
-            assertTrue(device.wait(Until.hasObject(By.text(newConnection)), TIMEOUT_MS))
-            device.findObject(By.text(newConnection)).click()
+            // The primary action clears descendant text semantics and exposes one
+            // accessible button name, so select the control through its description.
+            assertTrue(device.wait(Until.hasObject(By.desc(newConnection)), TIMEOUT_MS))
+            device.findObject(By.desc(newConnection)).click()
             assertTrue(device.wait(Until.hasObject(By.text(save)), TIMEOUT_MS))
 
             device.findObject(By.text(save)).click()

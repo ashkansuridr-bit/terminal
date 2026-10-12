@@ -35,3 +35,13 @@
 - SHA-256: `b19031080566d68ed25ffcc3ca14e5361b27d5b9497eaf68397691aa6bbe7f87` (rebuilt from `ead9c4f`; Android Debug certificate)
 - Reproduction: `./gradlew :app:compileMarketDebugKotlin :app:testMarketDebugUnitTest :app:compileMarketDebugAndroidTestKotlin :app:assembleMarketDebug :app:lintMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m`
 - Next exact step: verify the new CI run for `ead9c4f`; then continue with Compose/instrumentation/accessibility validation when a device/emulator and disk capacity are available. Do not merge PR #4 without explicit authorization.
+
+## Instrumentation follow-up (2026-10-13)
+
+- Last remotely tested commit: `6d5646d`; PR run `38310804825` completed with successful `verify` but failed instrumentation on API 26 and 36. API 37 devices failed to boot (device remained offline / emulator boot timeout), so those failures do not establish app behavior there.
+- Confirmed API 26 test-harness root cause: `TerminalKeyboardTest.tearDown()` first initialized `ClipboardManager` on the instrumentation thread; Android 8 creates its Handler there and throws the Looper exception. Cleanup now resolves/clears clipboard on Main.
+- API 36 accessibility fixes now retain Slider range semantics by removing clickable parent semantics from Int/Choice rows, explicitly expose Choice selection, and localize built-in Control/Interrupt/EOF descriptions so tests and TalkBack query the app locale.
+- Preview instrumentation keep rules now retain nested `WindowInsetsCompat.Type` in the test APK, fixing the specific R8 class resolution gap reported by the previous Preview run.
+- Host form test now selects the accessible primary action by description because the production control intentionally clears child text semantics. Host list scrolling now returns true only when the target node is fully visible; it no longer treats scroll completion or swallowed exceptions as success.
+- Local verification on these source edits: MarketDebug Kotlin compile PASS; AndroidTest Kotlin compile PASS; JVM 1,013/1,013 PASS (118 suites); MarketPreview assemble with R8 PASS. `lintMarketDebug` is currently running. No connected emulator is attached, so device-side fixes remain unverified until the next CI run.
+- Next exact step: finish lint, commit/push this follow-up on `feature/terminal-control-studio-pro`, then inspect the newly triggered API 26/36/37 instrumentation jobs. In particular, use the new marker failure diagnostics to determine why intermittent terminal-tab selection misses “Show keyboard”; do not mark device regressions fixed from compile evidence alone.

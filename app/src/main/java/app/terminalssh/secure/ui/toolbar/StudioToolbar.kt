@@ -456,7 +456,14 @@ private fun ToolKeySpec.isLocked(locked: Set<TerminalModifier>): Boolean {
 
 @Composable
 private fun ToolKeySpec.announce(active: Boolean, locked: Boolean): String {
-    val base = contentDescription ?: label
+    // Keep shipped accessibility names useful in each app locale. User-edited descriptions
+    // remain verbatim; only the built-in default names map to localized resources.
+    val base = when {
+        id == "ctrl" && contentDescription == "Control" -> stringResource(R.string.tcs_control_modifier)
+        id == "cc" && contentDescription == "Interrupt" -> stringResource(R.string.terminal_key_interrupt)
+        id == "cd" && contentDescription == "End of file" -> stringResource(R.string.terminal_key_eof)
+        else -> contentDescription ?: label
+    }
     val suffix = when {
         locked -> stringResource(R.string.tcs_locked_suffix)
         active -> stringResource(R.string.tcs_active_suffix)

@@ -30,13 +30,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
@@ -46,6 +49,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.ExperimentalFoundationApi
 import app.terminalssh.secure.R
 import app.terminalssh.secure.settings.BoolSetting
@@ -94,6 +98,10 @@ fun SettingRow(
     val changed = remember(spec, revision, persistenceFailure) { store.isChanged(spec) }
     val title = stringResource(spec.titleRes)
     val resetLabel = stringResource(R.string.settings_reset_one)
+    val resetFromHeading = spec is IntSetting || spec is ChoiceSetting
+    val resetChangedSetting: () -> Unit = {
+        if (changed) persist { store.reset(spec) }
+    }
     val booleanValue = remember(spec, revision, persistenceFailure) {
         (spec as? BoolSetting)?.let(store::get)
     }
@@ -103,22 +111,18 @@ fun SettingRow(
             .fillMaxWidth()
             .defaultMinSize(minWidth = 240.dp, minHeight = 48.dp)
             .clip(RoundedCornerShape(12.dp))
-            // Long-press resets. Discoverability is the trade-off, so the changed marker
-            // below doubles as the hint that there is something to go back from.
-            .combinedClickable(
+            // Keep the reset gesture off sliders and choice chips. A clickable parent
+            // merges child semantics, hiding the Slider range and FilterChip selection.
+            .then(if (resetFromHeading) Modifier else Modifier.combinedClickable(
                 enabled = !saving,
                 onClick = {
                     if (spec is BoolSetting && booleanValue != null) {
                         persist { store.set(spec, !booleanValue) }
                     }
                 },
-                onLongClick = {
-                    if (changed) {
-                        persist { store.reset(spec) }
-                    }
-                },
+                onLongClick = resetChangedSetting,
                 onLongClickLabel = resetLabel,
-            )
+            ))
             .then(
                 if (spec is BoolSetting && booleanValue != null) Modifier.clearAndSetSemantics {
                     contentDescription = title
@@ -135,7 +139,25 @@ fun SettingRow(
             .padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = if (resetFromHeading) {
+                Modifier
+                    .semantics {
+                        if (changed) {
+                            onLongClick(label = resetLabel) {
+                                resetChangedSetting()
+                                true
+                            }
+                        }
+                    }
+                    .pointerInput(changed, saving) {
+                        detectTapGestures(
+                            onLongPress = { if (!saving && changed) resetChangedSetting() },
+                        )
+                    }
+            } else Modifier,
+        ) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(title, style = MaterialTheme.typography.bodyLarge)
@@ -232,6 +254,7 @@ fun SettingRow(
                                 .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
                                 .semantics(mergeDescendants = true) {
                                     role = Role.RadioButton
+                                    selected = option == value
                                     contentDescription = optionLabel(option)
                                 },
                         )

@@ -57,7 +57,9 @@ class TerminalKeyboardTest {
         device.setOrientationNatural()
         app.sessions.closeAll()
         app.settings.confirmMultilinePaste = previousPasteConfirmation
-        clipboardManager().clearPrimaryClip()
+        // On API 26 ClipboardManager constructs a Handler on first lookup. The
+        // instrumentation test runner has no Looper, so resolve and use it on Main.
+        instrumentation.runOnMainSync { clipboardManager().clearPrimaryClip() }
         writeSecureSetting("show_ime_with_hard_keyboard", previousHardwareKeyboardSetting)
     }
 
@@ -250,7 +252,9 @@ class TerminalKeyboardTest {
         val deadline = SystemClock.uptimeMillis() + within
         while (SystemClock.uptimeMillis() < deadline) {
             findAppNode { n ->
-                n.contentDescription == "Ctrl" && bounds(n).let { it.height() in 40..200 }
+                n.contentDescription?.startsWith(
+                    instrumentation.targetContext.getString(R.string.tcs_control_modifier),
+                ) == true && bounds(n).let { it.height() in 40..200 }
             }?.let { n ->
                 return bounds(n)
             }
@@ -536,17 +540,18 @@ class TerminalKeyboardTest {
 
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             val terminalTab = instrumentation.targetContext.getString(R.string.tab_terminal)
-            openTerminalTab(terminalTab, "Ctrl")
+            val controlName = instrumentation.targetContext.getString(R.string.tcs_control_modifier)
+            openTerminalTab(terminalTab, controlName)
 
             // Essential terminal modifiers are deliberately first in the phone viewport.
-            assertTrue("Ctrl must be visible without scrolling", findAppNode { it.contentDescription == "Ctrl" } != null)
+            assertTrue("Ctrl must be visible without scrolling", findAppNode { it.contentDescription == controlName } != null)
             assertTrue("Alt must be visible without scrolling", findAppNode { it.contentDescription == "Alt" } != null)
             assertTrue("Shift must be visible without scrolling", findAppNode { it.contentDescription == "Shift" } != null)
 
             // Compose splits a toggle key into three nodes: the stateful 48dp control,
             // a full-size child carrying the announced description, and a bare child
             // with the printed label. The checkable box is the control the user taps.
-            val ctrl = modifierControl("Ctrl")
+            val ctrl = modifierControl(controlName)
             val alt = modifierControl("Alt")
             val shift = modifierControl("Shift")
             assertTrue(ctrl.isCheckable)

@@ -478,4 +478,5 @@
     <string name="tcs_add_key_title">افزودن کلید</string>
     <string name="tcs_locked_suffix">قفل‌شده</string>
     <string name="tcs_active_suffix">فعال</string>
+    <string name="tcs_control_modifier">کلید Control</string>
 </resources>

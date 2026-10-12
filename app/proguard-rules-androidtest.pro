@@ -53,3 +53,4 @@
 -keep class androidx.lifecycle.** { *; }
 -dontwarn androidx.lifecycle.**
 -keep class androidx.core.view.WindowInsetsCompat { *; }
+-keep class androidx.core.view.WindowInsetsCompat$Type { *; }

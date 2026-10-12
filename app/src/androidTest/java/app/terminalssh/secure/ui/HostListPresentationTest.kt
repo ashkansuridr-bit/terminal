@@ -4,7 +4,6 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
-import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import app.terminalssh.secure.R
@@ -110,19 +109,11 @@ class HostListPresentationTest {
     private fun assertReachable(stringRes: Int) {
         val text = context.getString(stringRes)
         if (device.wait(Until.hasObject(By.text(text)), SETTLE_MS)) return
-        val list = device.findObjects(By.scrollable(true)).maxByOrNull { it.visibleBounds.bottom }
-        repeat(SCROLL_ATTEMPTS) {
-            if (device.hasObject(By.text(text))) return
-            if (list != null) list.scroll(Direction.DOWN, 0.9f) else device.swipe(
-                device.displayWidth / 2,
-                (device.displayHeight * 0.7).toInt(),
-                device.displayWidth / 2,
-                (device.displayHeight * 0.3).toInt(),
-                12,
-            )
-            device.waitForIdle()
-        }
-        assertTrue("\"$text\" was not reachable by scrolling the host list", device.hasObject(By.text(text)))
+        // Let UiAutomator re-resolve the active scroll container on every gesture. Holding
+        // one stale scrollable node fails after LazyColumn replaces children at section
+        // boundaries, so lower groups can exist in the list yet remain undiscoverable.
+        val reached = device.scrollUntilFullyVisible(By.text(text))
+        assertTrue("\"$text\" was not fully reachable by scrolling the host list", reached)
     }
 
     private fun profile(
@@ -143,6 +134,5 @@ class HostListPresentationTest {
     private companion object {
         const val TIMEOUT_MS = 60_000L
         const val SETTLE_MS = 15_000L
-        const val SCROLL_ATTEMPTS = 8
     }
 }

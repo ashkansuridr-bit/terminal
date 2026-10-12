@@ -41,12 +41,14 @@ fun UiDevice.scrollUntilFullyVisible(
     target: BySelector,
     maxAttempts: Int = 12,
     horizontalDirection: LayoutDirection? = null,
-) {
+): Boolean {
     repeat(maxAttempts) {
         val node = findObject(target)
-        if (node != null && isFullyVisible(node)) return
+        if (node != null && isFullyVisible(node)) return true
         scrollOnce(horizontalDirection)
     }
+    val node = findObject(target)
+    return node != null && isFullyVisible(node)
 }
 
 private fun UiDevice.scrollOnce(horizontalDirection: LayoutDirection?) {

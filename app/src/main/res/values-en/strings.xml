@@ -478,4 +478,5 @@
     <string name="tcs_add_key_title">Add key</string>
     <string name="tcs_locked_suffix">locked</string>
     <string name="tcs_active_suffix">active</string>
+    <string name="tcs_control_modifier">Control modifier</string>
 </resources>

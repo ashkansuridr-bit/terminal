@@ -26,6 +26,7 @@
     <string name="tcs_add_key_title">Ajouter une touche</string>
     <string name="tcs_locked_suffix">verrouillé</string>
     <string name="tcs_active_suffix">actif</string>
+    <string name="tcs_control_modifier">Modificateur Control</string>
     <string name="close">Fermer</string>
     <string name="app_name">Terminal SSH</string>
 

@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-12T21:20:55+00:00",
+  "capturedAt": "2026-10-12T22:01:35+00:00",
   "branch": "feature/terminal-control-studio-pro",
   "baselineCommit": "67021c1",
-  "lastVerifiedCommit": "ead9c4f",
+  "lastVerifiedCommit": "6d5646d",
   "features": [
     {
       "id": "TCS-01",
@@ -255,10 +255,55 @@
       "remainingIssues": [
         "Android runtime/Compose/TalkBack instrumentation requires emulator/device; none available and disk capacity prevented system-image installation."
       ]
+    },
+    {
+      "id": "TCS-10",
+      "title": "ترمیم شکست‌های Instrumentation و semantics دسترس‌پذیری",
+      "phase": "VERIFY",
+      "changedFiles": [
+        "SettingRow.kt",
+        "StudioToolbar.kt",
+        "TerminalKeyboardTest.kt",
+        "HostListPresentationTest.kt",
+        "HostEditValidationTest.kt",
+        "UiScroll.kt",
+        "app/proguard-rules-androidtest.pro",
+        "strings.xml (fa/ar/en/es/fr/ru)"
+      ],
+      "dependencies": [],
+      "status": "IMPLEMENTED_NOT_TESTED",
+      "requiredTests": [
+        "MarketDebug Kotlin compile",
+        "MarketDebug AndroidTest Kotlin compile",
+        "MarketDebug JVM",
+        "MarketDebug lint",
+        "MarketPreview assemble",
+        "API 26/36 instrumentation debug + preview"
+      ],
+      "executedTests": [
+        "MarketDebug Kotlin compile PASS",
+        "MarketDebug AndroidTest Kotlin compile PASS",
+        "MarketDebug JVM PASS (1013/1013; 118 suites)",
+        "MarketPreview R8/minified assemble PASS",
+        "MarketDebug lint PASS (0 errors)",
+        "loop2_gate PASS",
+        "market_release_gate PASS",
+        "git diff --check PASS"
+      ],
+      "lastResult": "Source-level instrumentation fixes compile; Preview app APK assembles with R8. Device-side regression remains pending a fresh CI run.",
+      "lastFailure": "Prior PR run 38310804825 failed instrumentation: API26 ClipboardManager Handler initialized from runner thread; API36 Settings slider/choice semantics and localized toolbar selectors; Preview WindowInsetsCompat$Type missing. API37 emulator could not boot.",
+      "fixAttempts": 1,
+      "commitSha": null,
+      "lastReviewedAt": "2026-10-12T22:01:35+00:00",
+      "remainingIssues": [
+        "Fresh CI instrumentation not run on these edits; workspace has no connected emulator/device.",
+        "Terminal tab selector transient failure has new safe diagnostic only; root cause still requires fresh device evidence.",
+        "Host List scrolling and accessibility semantics need CI confirmation."
+      ]
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS",
+    "marketDebugCompile": "PASS (current uncommitted source)",
     "marketDebugUnitTests": {
       "passed": 1013,
       "failed": 0,
@@ -268,11 +313,11 @@
     },
     "marketDebugAssemble": "PASS",
     "diffCheck": "PASS",
-    "instrumentation": "BLOCKED: adb installed, no emulator/device; API 36 image download exceeds available disk capacity",
+    "instrumentation": "BLOCKED locally: adb present at /root/android-sdk/platform-tools/adb but no device/emulator attached; previous PR instrumentation run failed before these edits; rerun after push required",
     "apiDeviceMatrix": "BLOCKED: no emulator/device; disk capacity insufficient to install system image",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS",
+    "marketDebugAndroidTestCompile": "PASS (current uncommitted source)",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
@@ -280,17 +325,18 @@
       "hints": 2
     },
     "gplayDebugAssemble": "PASS",
-    "marketPreviewAssemble": "PASS (R8/minified; debug certificate)",
+    "marketPreviewAssemble": "PASS (R8/minified; current source; debug certificate)",
     "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
     "apkSignature": "All verified APKs are signed with Android Debug certificate; no production signing claim"
   },
   "knownIssues": [
-    "Compose UI/accessibility behavior not device-tested; no emulator/device available. API 36 image installation was stopped with under 1 GB available; temporary download cleaned up.",
     "Build warns AGP 8.13.2 has not been validated by Google against compileSdk 37.0; build itself succeeds.",
     "All checked APKs use the Android Debug certificate; production signing remains unverified.",
-    "Lint passed with 108 warnings and 2 hints (no errors); these warnings have not been triaged as part of this feature task."
+    "Lint passed with 108 warnings and 2 hints (no errors); these warnings have not been triaged as part of this feature task.",
+    "No emulator/device is currently attached (adb devices is empty); current UI/instrumentation changes have compile evidence only until fresh PR CI runs.",
+    "Previous PR run 38310804825 had instrumentation failures on API 26/36 and emulator boot failure on API 37; source-level follow-up fixes are not yet remotely verified."
   ],
-  "nextStep": "Check CI run for ead9c4f; then run API device/UI validation when emulator image and disk capacity are available.",
+  "nextStep": "Commit and push TCS-10 fixes; inspect fresh PR instrumentation results and diagnose any remaining device failures.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/feature/terminal-control-studio-pro",
   "pullRequest": "https://github.com/ashkansuridr-bit/terminal/pull/4"
 }
