@@ -1,12 +1,16 @@
 # Bugfix Loop Checkpoint
 
-- Date: 2026-10-12
 - Branch: `fix/0.7.2-instrumentation-reliability`
-- Last reviewed commit: `3800322`
-- Reviewed: BUG-014..020, BUG-021, BUG-022, BUG-023, BUG-024, BUG-025, BUG-026, BUG-027, BUG-028, BUG-029, BUG-030, BUG-032, BUG-033, BUG-042, BUG-044, BUG-045, BUG-051, BUG-054
-- Fixed in current branch: SFTP fail-closed traversal/SAF/upload handling; SSH exec result handling; share/compression cleanup; snippet cleanup journal; foreground-service start failures; port/reconnect validation; port-forward range/duplicate validation; termlib NOTICE version.
-- Verified: `./gradlew :app:compileMarketDebugKotlin` PASS; `./gradlew :app:testMarketDebugUnitTest` PASS; `python3 scripts/source_audit.py` PASS; MarketDebug assemble PASS.
-- Blocked: instrumentation/device matrix (AVD system image missing), real SSH/SFTP integration, production signing secrets, crash log reproduction.
-- CI: verify job passed; instrumentation jobs failed; release job skipped. See GitHub Actions history.
-- Current focus: remaining lifecycle, UI/accessibility and documentation audit.
-- Next step: commit port-forward validation, run JVM tests, then produce complete 55-item classification table.
+- Reviewed base for this continuation: `23dd703`
+- Detailed 55-item ledger: `docs/BUGFIX_STATUS.json`. NOT_REVIEWED is explicit; previous approximate totals are superseded.
+- Runtime-verified fixes in this continuation: none. Compiling instrumentation does not execute it.
+- Local emulator attempt failed because test36 system image is missing.
+- GitHub CI run 38099037409 DID execute API36 debug: 111 tests, 7 failures, 0 skips. Earlier claims that its failure was caused by a missing image were incorrect.
+- Current changes: asynchronous settings assertions, main-thread test session construction, safe snippet cleanup on uncertain metadata writes, snippet journal regression test.
+- Current validation: compileMarketDebugAndroidTestKotlin first pass succeeded; final compile plus unit tests PASS (`/tmp/terminal-regression-verification.log`).
+- Next: obtain instrumentation runtime evidence; audit SSH shutdown and LocalShell ownership before claiming stability.
+- Reproduce: `./gradlew :app:compileMarketDebugAndroidTestKotlin :app:testMarketDebugUnitTest --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m`
+- Known open risks: executor rejection after close, local pipe interrupt/resize, raw local command audit history, SFTP channel concurrency, incomplete recursive download cleanup.
+- Production signing not verified. No release published or main merge performed.
+
+- Final JVM result: 533 passed, 0 failed, 0 skipped.

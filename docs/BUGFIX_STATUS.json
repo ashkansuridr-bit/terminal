@@ -1,0 +1,522 @@
+{
+  "scope": 55,
+  "release_status": "NOT VERIFIED",
+  "bugs": [
+    {
+      "id": "BUG-001",
+      "title": "Looper in keyboard tests",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "TerminalKeyboardTest and SnippetAccessibilityTest now construct emulator sessions on Main; device execution pending"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-002",
+      "title": "Preview WindowInsets classpath",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-003",
+      "title": "Show keyboard visibility",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-004",
+      "title": "CR LF CRLF paste",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-005",
+      "title": "IME and focus",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-006",
+      "title": "Terminal modifiers",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-007",
+      "title": "Active tab and session close",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-008",
+      "title": "Host edit validation",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-009",
+      "title": "Recent list reachability",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "Host order changed in c1eb3b1; CI failure cause not proven by compile"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-010",
+      "title": "Palette touch target",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "23dd703 changes target minimums; clipped visible bounds remain an untested hypothesis"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-011",
+      "title": "Font slider accessibility",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "Test now waits for asynchronous persistence plus accessibility range value"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-012",
+      "title": "Snippet delete action",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "c1eb3b1 sets touch minimum; deletion runtime behavior pending"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-013",
+      "title": "Security toggle persistence",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "Test now polls persisted value and refreshed accessibility node"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-014",
+      "title": "Folder download exceptions",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "launchBrowserAction catches recoverable failures preserving cancellation"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-015",
+      "title": "Batch delete exceptions",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "Batch delete is wrapped by launchBrowserAction"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-016",
+      "title": "Recursive chmod exceptions",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "Chmod action boundary catches failures; traversal uses limits"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-017",
+      "title": "Recursive chmod symlinks",
+      "status": "PARTIAL",
+      "evidence": [
+        "Child symlinks skipped; root symlink and race validation still needed"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-018",
+      "title": "Listing error propagation",
+      "status": "PARTIAL",
+      "evidence": [
+        "Picker propagates and displays list failures; other list consumers need audit"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-019",
+      "title": "SAF folder destination errors",
+      "status": "PARTIAL",
+      "evidence": [
+        "SAF failures surfaced; partial destination cleanup and cancellation require validation"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-020",
+      "title": "Folder upload root creation",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "ensureDirectories verifies remote root and child directories"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-021",
+      "title": "SSH exec status and timeout",
+      "status": "PARTIAL",
+      "evidence": [
+        "Nonzero status timeout and output overflow return failure; continuous stdout deadline still needs review"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-022",
+      "title": "Share staging collisions",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "Unique share subdirectory and failure cleanup"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-023",
+      "title": "Snippet metadata and vault consistency",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "Snippet deletion and cleanup journal committed atomically; ownership protects saved snippets"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-024",
+      "title": "Snippet operation exceptions",
+      "status": "PARTIAL",
+      "evidence": [
+        "Save/delete exceptions handled; insert and other vault paths remain"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-025",
+      "title": "SFTP concurrency",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-026",
+      "title": "Foreground service restrictions",
+      "status": "PARTIAL",
+      "evidence": [
+        "sync catches security/start restrictions; onStartCommand foreground promotion remains"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-027",
+      "title": "Session creation exceptions",
+      "status": "OPEN",
+      "evidence": [
+        "openSession rethrows; call sites require review"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-028",
+      "title": "Observer lifetime and failures",
+      "status": "PARTIAL",
+      "evidence": [
+        "Service sync exception path mitigated; observer audit incomplete"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-029",
+      "title": "SSH executor teardown race",
+      "status": "OPEN",
+      "evidence": [
+        "Unguarded io.execute calls can race shutdown"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-030",
+      "title": "Session lifecycle recovery",
+      "status": "PARTIAL",
+      "evidence": [
+        "Application-owned lifecycle exists; device recreation verification pending"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-031",
+      "title": "Jump host support",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-032",
+      "title": "Port forward validation",
+      "status": "PARTIAL",
+      "evidence": [
+        "Port ranges and duplicate key checks added; malformed hosts and stale UI races remain"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-033",
+      "title": "Port forward identity",
+      "status": "PARTIAL",
+      "evidence": [
+        "Identity uses direction and bind port; duplicate prevention added; concurrency remains"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-034",
+      "title": "Local shell PTY support",
+      "status": "OPEN",
+      "evidence": [
+        "LocalShell uses pipes rather than PTY"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-035",
+      "title": "Shell startup on Main",
+      "status": "PARTIAL",
+      "evidence": [
+        "Startup moved to IO; start/dispose ownership race remains"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-036",
+      "title": "Local shell interrupt",
+      "status": "OPEN",
+      "evidence": [
+        "0x03 written to pipe does not deliver SIGINT"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-037",
+      "title": "Local terminal resize",
+      "status": "OPEN",
+      "evidence": [
+        "Stored dimensions do not resize a PTY; prior fix claim was inaccurate"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-038",
+      "title": "Local output performance",
+      "status": "PARTIAL",
+      "evidence": [
+        "Bounded strings already existed; output performance not measured"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-039",
+      "title": "Dangerous command confirmation",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-040",
+      "title": "Local command history privacy",
+      "status": "OPEN",
+      "evidence": [
+        "LocalShell audit log retains raw commands"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-041",
+      "title": "Import resource bounds",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-042",
+      "title": "Compression cleanup",
+      "status": "PARTIAL",
+      "evidence": [
+        "ZIP and directory cleanup added; cancellation/error precedence needs review"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-043",
+      "title": "Missing translations",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-044",
+      "title": "Host port parsing",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "Invalid explicit port rejected in HostEditSheet"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-045",
+      "title": "Reconnect parsing",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "Invalid reconnect value rejected in HostEditSheet"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-046",
+      "title": "Unicode rendering",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-047",
+      "title": "Persian Arabic shaping",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-048",
+      "title": "SAF URI permissions",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-049",
+      "title": "Failing CI",
+      "status": "OPEN",
+      "evidence": [
+        "GitHub run 38099037409 API36 debug: 111 tests, 7 failed, 0 skipped; not an emulator-image failure"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-050",
+      "title": "SSH SFTP integration",
+      "status": "NOT_RUN",
+      "evidence": [
+        "No isolated integration server configured yet; availability not established"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-051",
+      "title": "Production signing",
+      "status": "BLOCKED",
+      "evidence": [
+        "Market production signing has not been verified; existing candidates labeled unsigned"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-052",
+      "title": "Preview release differences",
+      "status": "REVIEWED_UNVERIFIED",
+      "evidence": [
+        "Preview uses separate application ID, debug signing and minification; release conditional external signing"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-053",
+      "title": "README claims",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    },
+    {
+      "id": "BUG-054",
+      "title": "Dependency notices",
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "NOTICE termlib corrected from 0.1.0 to declared 0.2.1"
+      ],
+      "verification": "NOT_RUN",
+      "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
+    },
+    {
+      "id": "BUG-055",
+      "title": "Roadmap and release reports",
+      "status": "NOT_REVIEWED",
+      "evidence": [],
+      "verification": "NOT_RUN",
+      "next_action": "Inspect current source and reproduce before changing behavior"
+    }
+  ]
+}
