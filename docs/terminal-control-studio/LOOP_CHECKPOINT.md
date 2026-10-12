@@ -5,7 +5,7 @@
 - Baseline HEAD: `67021c1` (v0.7.2; `origin/main` at inspection)
 - Implementation commit: `f2e7524`
 - Stability/CI follow-up: `ead9c4f` (default Shell exposes Snippets; CI gate matches the action wiring)
-- Latest checkpoint commit: `ead9c4f`
+- Latest checkpoint commit: `b15b22e`
 - Pull request: https://github.com/ashkansuridr-bit/terminal/pull/4 (OPEN, not merged)
 - Branch is pushed and tracks `origin/feature/terminal-control-studio-pro`.
 
