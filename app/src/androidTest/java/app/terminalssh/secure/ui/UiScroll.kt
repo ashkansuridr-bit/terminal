@@ -56,3 +56,16 @@ private fun UiDevice.pickScrollable(horizontal: Boolean): UiObject2? {
             .maxByOrNull { it.visibleBounds.bottom }
     }
 }
+/** Main-thread idleness does not imply completion of settings writes on Dispatchers.IO. */
+fun awaitUiState(timeoutMs: Long, condition: () -> Boolean): Boolean {
+    val deadline = android.os.SystemClock.uptimeMillis() + timeoutMs
+    do {
+        try {
+            if (condition()) return true
+        } catch (_: androidx.test.uiautomator.StaleObjectException) {
+            // Re-query on the next iteration after Compose replaces the node.
+        }
+        android.os.SystemClock.sleep(50)
+    } while (android.os.SystemClock.uptimeMillis() < deadline)
+    return false
+}

@@ -705,21 +705,29 @@ class TerminalKeyboardTest {
     private fun idleSession(
         id: String = "keyboard-regression",
         title: String = "Keyboard test",
-    ): SshSession = SshSession(
-        id = id,
-        profile = HostProfile(
-            id = "$id-host",
-            label = title,
-            host = "127.0.0.1",
-            port = 1,
-            username = "tester",
-            auth = AuthMethod.Password(""),
-        ),
-        client = app.client,
-        keepAlive = false,
-        onClipboardCopy = {},
-        onPasteRequest = {},
-    )
+    ): SshSession {
+        var created: SshSession? = null
+        val create = {
+            created = SshSession(
+                id = id,
+                profile = HostProfile(
+                    id = "$id-host",
+                    label = title,
+                    host = "127.0.0.1",
+                    port = 1,
+                    username = "tester",
+                    auth = AuthMethod.Password(""),
+                ),
+                client = app.client,
+                keepAlive = false,
+                onClipboardCopy = {},
+                onPasteRequest = {},
+            )
+        }
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) create()
+        else instrumentation.runOnMainSync { create() }
+        return checkNotNull(created)
+    }
 
     /**
      * Top edge (screen Y) of the on-screen soft-keyboard window, or null when the

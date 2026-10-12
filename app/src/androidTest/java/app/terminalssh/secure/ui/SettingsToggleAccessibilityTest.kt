@@ -44,8 +44,9 @@ class SettingsToggleAccessibilityTest {
                 assertTrue("toggle row did not include its label and control", toggle.visibleBounds.width() >= 240 * density)
 
                 toggle.click()
-                assertTrue(device.wait(Until.findObject(By.desc(label)), TIMEOUT_MS).let { !it.isChecked })
-                assertFalse(app.settings.confirmMultilinePaste)
+                assertTrue("Toggle state was not persisted and exposed", awaitUiState(TIMEOUT_MS) {
+                    device.findObject(By.desc(label))?.isChecked == false && !app.settings.confirmMultilinePaste
+                })
             }
         } finally {
             app.settings.confirmMultilinePaste = previous
