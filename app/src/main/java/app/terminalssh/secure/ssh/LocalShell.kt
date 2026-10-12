@@ -21,7 +21,7 @@ import java.io.OutputStream
  * - Runs as the app's own UID in the app sandbox.
  * - Working directory is the app's private cacheDir; no access to /data/data of other apps.
  * - Shell is `sh` (mksh on most Android devices), not `su` — no root escalation.
- * - Command audit log stored in memory (last 200 entries) for the session.
+ * - Commands are not retained in an additional in-memory history.
  * - Commands have only the app UID's permissions; this is not a network sandbox.
  */
 class LocalShell(private val context: Context) {
@@ -36,15 +36,6 @@ class LocalShell(private val context: Context) {
 
     private val _state = MutableStateFlow(ShellState())
     val state: StateFlow<ShellState> = _state.asStateFlow()
-
-    /** Last 200 commands for audit trail. */
-    private val _auditLog = MutableStateFlow<List<AuditEntry>>(emptyList())
-    val auditLog: StateFlow<List<AuditEntry>> = _auditLog.asStateFlow()
-
-    data class AuditEntry(
-        val command: String,
-        val timestamp: Long = System.currentTimeMillis(),
-    )
 
     private var process: Process? = null
     @Volatile private var outputStream: OutputStream? = null
@@ -110,7 +101,6 @@ class LocalShell(private val context: Context) {
 
     /** Sends a command to the shell (adds newline automatically). */
     fun sendCommand(command: String) {
-        _auditLog.value = (_auditLog.value + AuditEntry(command)).takeLast(MAX_AUDIT_ENTRIES)
         val os = outputStream ?: return
         synchronized(os) {
             runCatching {
@@ -159,7 +149,4 @@ class LocalShell(private val context: Context) {
 
     val isRunning: Boolean get() = _state.value.running
 
-    companion object {
-        private const val MAX_AUDIT_ENTRIES = 200
-    }
 }
