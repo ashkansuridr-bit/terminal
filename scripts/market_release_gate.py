@@ -6,8 +6,8 @@ errors=[]
 build=(root/'app/build.gradle.kts').read_text()
 manifest=(root/'app/src/main/AndroidManifest.xml').read_text()
 required = {
-    'final version name': 'versionName = "0.7.1"' in build,
-    'version code': 'versionCode = 11' in build,
+    'final version name': 'versionName = "0.7.2"' in build,
+    'version code': 'versionCode = 12' in build,
     'non-example application id': bool(re.search(r'applicationId = "(?!com\.example)[^"]+"', build)),
     'target sdk 37': 'targetSdk = 37' in build,
     'market signing config': 'marketRelease' in build,
