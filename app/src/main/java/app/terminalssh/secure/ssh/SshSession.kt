@@ -362,6 +362,22 @@ class SshSession(
         if (controlByte in 1..31) send(byteArrayOf(controlByte.toByte()))
     }
 
+    /**
+     * Dispatches an arbitrary termlib key constant with the modifiers currently held, then
+     * releases the one-shot ones. This is how the toolbar reaches keys the small
+     * [TerminalKey] enum does not carry (Insert, Delete, F1–F12).
+     */
+    fun pressVTermKey(vTermKey: Int) {
+        emulator.dispatchKey(terminalInput.modifierMask(), vTermKey)
+        terminalInput.clearTransients()
+    }
+
+    /** Shift+Tab, the conventional BackTab (CSI Z). */
+    fun pressBackTab() {
+        emulator.dispatchKey(TerminalInputController.VTERM_MOD_SHIFT, TerminalKey.TAB.vTermKey)
+        terminalInput.clearTransients()
+    }
+
     fun requestPaste() = onPasteRequest()
 
     /** Applies immediately to a live JSch session and to every later reconnect. */
@@ -387,7 +403,9 @@ class SshSession(
 
     fun disconnect() {
         autoReconnect = false
-        terminalInput.clearTransients()
+        // Lock is a convenience while connected; ending the session must not leave a
+        // modifier stuck on for the next connection.
+        terminalInput.reset()
         generation.incrementAndGet()
         clearPendingHostKey()
         val open = shell

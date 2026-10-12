@@ -1,4 +1,5 @@
 <resources>
+    <string name="close">بستن</string>
     <string name="app_name">ترمینال SSH</string>
 
     <string name="tab_hosts">سرورها</string>
@@ -449,4 +450,32 @@
     <string name="host_metadata_retry">بررسی مجدد</string>
     <string name="host_metadata_export">صدور اطلاعات برای بازیابی</string>
     <string name="host_metadata_export_failed">صدور اطلاعات بازیابی ناموفق بود. فایل مقصد را بررسی کنید.</string>
+
+    <!-- Terminal Control Studio: customizable key toolbar -->
+    <string name="tcs_title">استودیوی کنترل ترمینال</string>
+    <string name="tcs_settings_entry">سفارشی‌سازی نوار کلید بالای کیبورد</string>
+    <string name="tcs_settings_entry_summary">چیدمان کلیدها، پوسته، حرکات و ماکروها</string>
+    <string name="tcs_profile">نمای کلید</string>
+    <string name="tcs_theme">پوستهٔ نوار</string>
+    <string name="tcs_layout">چیدمان</string>
+    <string name="tcs_add_key">افزودن کلید</string>
+    <string name="tcs_save">ذخیره و اعمال</string>
+    <string name="tcs_undo">واگرد</string>
+    <string name="tcs_redo">ازنو</string>
+    <string name="tcs_reset">بازنشانی به پیش‌فرض</string>
+    <string name="tcs_move_earlier">جابه‌جایی به قبل</string>
+    <string name="tcs_move_later">جابه‌جایی به بعد</string>
+    <string name="tcs_move_other_row">انتقال به سطر دیگر</string>
+    <string name="tcs_wide">پهن‌تر</string>
+    <string name="tcs_narrow">باریک‌تر</string>
+    <string name="tcs_duplicate">تکرار کلید</string>
+    <string name="tcs_remove_key">حذف کلید</string>
+    <string name="tcs_rename">تغییر برچسب</string>
+    <string name="tcs_select_key_hint">برای ویرایش، یک کلید را انتخاب کنید</string>
+    <string name="tcs_edit_hint">کلیدها را جابه‌جا یا اضافه کنید؛ تغییرات فقط با «ذخیره و اعمال» روی نوار واقعی اثر می‌گذارد.</string>
+    <string name="tcs_customized_badge">سفارشی</string>
+    <string name="tcs_recover_notice">تنظیمات ذخیره‌شدهٔ نوار کلید خوانده نشد؛ پیش‌فرض بارگذاری شد و فایل قبلی برای بازیابی نگه داشته شد.</string>
+    <string name="tcs_add_key_title">افزودن کلید</string>
+    <string name="tcs_locked_suffix">قفل‌شده</string>
+    <string name="tcs_active_suffix">فعال</string>
 </resources>

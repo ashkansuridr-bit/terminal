@@ -1,4 +1,32 @@
 <resources>
+    <!-- Terminal Control Studio -->
+    <string name="tcs_title">Студия управления терминалом</string>
+    <string name="tcs_settings_entry">Настроить панель клавиш над клавиатурой</string>
+    <string name="tcs_settings_entry_summary">Раскладка, тема, жесты и макросы</string>
+    <string name="tcs_profile">Профиль клавиш</string>
+    <string name="tcs_theme">Тема панели</string>
+    <string name="tcs_layout">Раскладка</string>
+    <string name="tcs_add_key">Добавить клавишу</string>
+    <string name="tcs_save">Сохранить и применить</string>
+    <string name="tcs_undo">Отменить</string>
+    <string name="tcs_redo">Повторить</string>
+    <string name="tcs_reset">Сбросить настройки</string>
+    <string name="tcs_move_earlier">Переместить выше</string>
+    <string name="tcs_move_later">Переместить ниже</string>
+    <string name="tcs_move_other_row">Переместить в другой ряд</string>
+    <string name="tcs_wide">Шире</string>
+    <string name="tcs_narrow">Уже</string>
+    <string name="tcs_duplicate">Дублировать клавишу</string>
+    <string name="tcs_remove_key">Удалить клавишу</string>
+    <string name="tcs_rename">Изменить подпись</string>
+    <string name="tcs_select_key_hint">Выберите клавишу для изменения</string>
+    <string name="tcs_edit_hint">Меняйте порядок или добавляйте клавиши. Панель обновится после нажатия «Сохранить и применить».</string>
+    <string name="tcs_customized_badge">Изменён</string>
+    <string name="tcs_recover_notice">Не удалось прочитать настройки панели; загружены значения по умолчанию, прежний файл сохранён для восстановления.</string>
+    <string name="tcs_add_key_title">Добавить клавишу</string>
+    <string name="tcs_locked_suffix">заблокирована</string>
+    <string name="tcs_active_suffix">активна</string>
+    <string name="close">Закрыть</string>
     <string name="app_name">Terminal SSH</string>
 
     <string name="tab_hosts">Хосты</string>

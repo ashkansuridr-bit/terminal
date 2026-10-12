@@ -69,7 +69,7 @@ import app.terminalssh.secure.ui.theme.Turquoise
 import app.terminalssh.secure.vm.AppViewModel
 
 @Composable
-fun SettingsScreen(viewModel: AppViewModel) {
+fun SettingsScreen(viewModel: AppViewModel, onEditToolbar: () -> Unit = {}) {
     val accountIdentity by viewModel.accountIdentity.collectAsStateWithLifecycle()
     val activity = LocalContext.current as? Activity
     val context = LocalContext.current
@@ -118,6 +118,16 @@ fun SettingsScreen(viewModel: AppViewModel) {
             style = MaterialTheme.typography.bodyMedium,
             color = TextSecondary,
         )
+
+        OutlinedButton(onClick = onEditToolbar, modifier = Modifier.fillMaxWidth()) {
+            Column {
+                Text(stringResource(R.string.tcs_settings_entry))
+                Text(
+                    stringResource(R.string.tcs_settings_entry_summary),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
 
         // Market builds compile without any account integration; the card would only
         // offer a button that can never succeed.

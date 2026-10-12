@@ -84,16 +84,23 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import app.terminalssh.secure.R
 import app.terminalssh.secure.settings.SettingsRegistry
 import app.terminalssh.secure.ssh.SshSession
 import app.terminalssh.secure.ssh.SshSessionState
 import app.terminalssh.secure.ssh.TerminalKey
 import app.terminalssh.secure.ssh.TerminalModifier
+import app.terminalssh.secure.toolbar.ToolbarGesture
 import app.terminalssh.secure.ui.theme.Stroke
 import app.terminalssh.secure.ui.theme.TextSecondary
 import app.terminalssh.secure.ui.theme.TerminalPalettes
 import app.terminalssh.secure.ui.theme.Turquoise
+import app.terminalssh.secure.ui.toolbar.StudioToolbar
+import app.terminalssh.secure.ui.toolbar.ToolbarDispatcher
+import app.terminalssh.secure.ui.toolbar.ToolbarEditorScreen
+import app.terminalssh.secure.ui.toolbar.ToolbarHost
 import app.terminalssh.secure.vm.AppViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -101,7 +108,7 @@ import org.connectbot.terminal.Terminal
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
+fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit, onGoToSettings: () -> Unit) {
     val settingsRevision by viewModel.settingsStore.revision.collectAsStateWithLifecycle()
     val settingsStore = viewModel.settingsStore
     val palette = remember(settingsRevision) {
@@ -164,6 +171,7 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
     var agentSheetOpen by remember(active.id) { mutableStateOf(false) }
     var composeOpen by remember(active.id) { mutableStateOf(false) }
     var portForwardOpen by remember(active.id) { mutableStateOf(false) }
+    var toolbarEditorOpen by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     // Hoisted above the bar so an unsent prompt survives the bar closing, a reconnect,
     // or a rotation. Losing a long prompt to a passing tunnel is the other half of the
@@ -275,17 +283,68 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit) {
                 onDismiss = { composeOpen = false },
             )
         }
-        CompositionLocalProvider(LocalTerminalKeyHaptics provides hapticKeys) {
-            KeyToolbar(
-                active,
-                onShowKeyboard = showKeyboard,
-                onSnippets = { snippetsOpen = true },
-                onAgents = { agentSheetOpen = true },
-                onCompose = { composeOpen = !composeOpen },
-                onPortForward = { portForwardOpen = true },
-                composeActive = composeOpen,
-                onTerminalFocus = focusTerminal,
-            )
+        val toolbarState by viewModel.toolbar.state.collectAsStateWithLifecycle()
+        val toolbarProfile = remember(toolbarState, active.profile.id) {
+            viewModel.toolbar.effectiveProfile(active.profile.id)
+        }
+        val toolbarTheme = remember(toolbarState, toolbarProfile) {
+            viewModel.toolbar.effectiveTheme(toolbarProfile)
+        }
+        val toolbarModifiers by active.terminalInput.modifiers.collectAsStateWithLifecycle()
+        val toolbarLocked by active.terminalInput.locked.collectAsStateWithLifecycle()
+
+        // The host is the seam between a typed toolbar action and the real app. It is built
+        // fresh each recomposition so its lambdas always close over current state rather than
+        // a stale snapshot captured on the first composition.
+        val toolbarHost = object : ToolbarHost {
+            override val session get() = active
+            override fun requestKeyboard() = showKeyboard()
+            override fun dismissKeyboard() { keyboardController?.hide() }
+            override fun toggleCompose() { composeOpen = !composeOpen }
+            override fun openSnippets() { snippetsOpen = true }
+            override fun openAgents() { agentSheetOpen = true }
+            override fun openPortForward() { portForwardOpen = true }
+            override fun openSettings() = onGoToSettings()
+            override fun openToolbarEditor() { toolbarEditorOpen = true }
+            override fun insertSnippet(snippetId: String) {
+                viewModel.snippets.value.firstOrNull { it.id == snippetId }
+                    ?.let { viewModel.insertSnippet(it, active) }
+            }
+            override fun changeFontSize(delta: Int) {
+                settingsStore.set(
+                    SettingsRegistry.fontSize,
+                    settingsStore.get(SettingsRegistry.fontSize) + delta,
+                )
+            }
+            override fun switchProfile(profileId: String) { viewModel.toolbar.setActiveProfile(profileId) }
+            override fun returnFocusToTerminal() = focusTerminal()
+        }
+        val toolbarDispatcher = ToolbarDispatcher(toolbarHost, viewModel.toolbar, scope)
+
+        StudioToolbar(
+            profile = toolbarProfile,
+            theme = toolbarTheme,
+            modifiers = toolbarModifiers,
+            locked = toolbarLocked,
+            hapticsEnabled = hapticKeys,
+            onKeyAction = { key, gesture ->
+                val action = if (gesture == null) key.action else key.gestures[gesture]
+                if (action != null) toolbarDispatcher.dispatch(action)
+            },
+            onShowKeyboard = showKeyboard,
+            onOpenEditor = { toolbarEditorOpen = true },
+        )
+
+        if (toolbarEditorOpen) {
+            Dialog(
+                onDismissRequest = { toolbarEditorOpen = false },
+                properties = DialogProperties(usePlatformDefaultWidth = false),
+            ) {
+                ToolbarEditorScreen(
+                    repository = viewModel.toolbar,
+                    onDismiss = { toolbarEditorOpen = false },
+                )
+            }
         }
         PasteAndHostKeyDialogs(viewModel, active)
         if (portForwardOpen) {
@@ -523,183 +582,3 @@ private fun StatusBar(session: SshSession) {
         )
     }
 }
-
-/**
- * The single most important mobile-SSH affordance: keys a soft keyboard does not have.
- * Ctrl, Alt, and Shift latch for exactly one following keystroke, like a real terminal.
- */
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-@Composable
-private fun KeyToolbar(
-    session: SshSession,
-    onShowKeyboard: () -> Unit,
-    onSnippets: () -> Unit,
-    onAgents: () -> Unit,
-    onCompose: () -> Unit,
-    onPortForward: () -> Unit,
-    composeActive: Boolean,
-    onTerminalFocus: () -> Unit,
-) {
-    val modifiers by session.terminalInput.modifiers.collectAsStateWithLifecycle()
-
-    fun press(key: TerminalKey) {
-        session.pressTerminalKey(key)
-        onTerminalFocus()
-    }
-
-    fun type(text: String) {
-        check(text.length == 1)
-        session.typeToolbarCharacter(text.single())
-        onTerminalFocus()
-    }
-
-    // Keys are ordered by how often they are actually reached for, because on a narrow
-    // phone everything past the first handful costs a scroll. Arrows stay adjacent so the
-    // cluster is findable by shape rather than by reading each label.
-    BoxWithConstraints(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
-        // A 600dp-wide window (large phone landscape, tablet, unfolded foldable) has room
-        // for two rows. Each remains scrollable at large font scales and narrow split widths.
-        // Reserve the controls before the weighted terminal is measured. When the IME
-        // is open, even landscape uses one row so the keyboard cannot crowd keys out.
-        val twoRows = maxWidth >= 600.dp && !WindowInsets.isImeVisible
-        val toolbarHeight = if (twoRows) 120.dp else 64.dp
-
-        Row(
-            Modifier.fillMaxWidth().height(toolbarHeight).padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            ToolKey(
-                label = "⌨",
-                contentDescription = stringResource(R.string.show_keyboard),
-                onClick = onShowKeyboard,
-            )
-
-            val primary: LazyListScope.() -> Unit = {
-                item { ToolKey("Ctrl", active = modifiers.ctrl, toggle = true) {
-                    session.terminalInput.toggle(TerminalModifier.CTRL); onTerminalFocus()
-                } }
-                item { ToolKey("Alt", active = modifiers.alt, toggle = true) {
-                    session.terminalInput.toggle(TerminalModifier.ALT); onTerminalFocus()
-                } }
-                item { ToolKey("Shift", active = modifiers.shift, toggle = true) {
-                    session.terminalInput.toggle(TerminalModifier.SHIFT); onTerminalFocus()
-                } }
-                item { ToolKey("Esc") { press(TerminalKey.ESCAPE) } }
-                item { ToolKey("Tab") { press(TerminalKey.TAB) } }
-                item { ToolKey(stringResource(R.string.snippets_short)) { onSnippets() } }
-                item { ToolKey(stringResource(R.string.agent_short)) { onAgents() } }
-                item { ToolKey("⚡") { onPortForward() } }
-                item { ToolKey(
-                    stringResource(R.string.compose_short),
-                    active = composeActive,
-                    toggle = true,
-                ) { onCompose() } }
-                item { ToolKey("^C", contentDescription = stringResource(R.string.terminal_key_interrupt)) {
-                    session.pressControl('C'); onTerminalFocus()
-                } }
-                item { ToolKey("^D", contentDescription = stringResource(R.string.terminal_key_eof)) {
-                    session.pressControl('D'); onTerminalFocus()
-                } }
-                item { ToolKey("^L", contentDescription = stringResource(R.string.terminal_key_clear)) {
-                    session.pressControl('L'); onTerminalFocus()
-                } }
-                item { ToolKey("↑", contentDescription = stringResource(R.string.terminal_key_up)) { press(TerminalKey.UP) } }
-                item { ToolKey("↓", contentDescription = stringResource(R.string.terminal_key_down)) { press(TerminalKey.DOWN) } }
-                item { ToolKey("←", contentDescription = stringResource(R.string.terminal_key_left)) { press(TerminalKey.LEFT) } }
-                item { ToolKey("→", contentDescription = stringResource(R.string.terminal_key_right)) { press(TerminalKey.RIGHT) } }
-            }
-
-            val secondary: LazyListScope.() -> Unit = {
-                item { ToolKey("|") { type("|") } }
-                item { ToolKey("/") { type("/") } }
-                item { ToolKey("-") { type("-") } }
-                item { ToolKey("~") { type("~") } }
-                item { ToolKey("Home") { press(TerminalKey.HOME) } }
-                item { ToolKey("End") { press(TerminalKey.END) } }
-                item { ToolKey("PgUp") { press(TerminalKey.PAGE_UP) } }
-                item { ToolKey("PgDn") { press(TerminalKey.PAGE_DOWN) } }
-            }
-
-            if (twoRows) {
-                Column(
-                    Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    LazyRow(Modifier.fillMaxWidth().height(48.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), content = primary)
-                    LazyRow(Modifier.fillMaxWidth().height(48.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), content = secondary)
-                }
-            } else {
-                LazyRow(
-                    Modifier.weight(1f).height(48.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    primary()
-                    secondary()
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ToolKey(
-    label: String,
-    active: Boolean = false,
-    toggle: Boolean = false,
-    contentDescription: String? = null,
-    onClick: () -> Unit,
-) {
-    val hapticsEnabled = LocalTerminalKeyHaptics.current
-    val haptics = LocalHapticFeedback.current
-    val interactions = remember { MutableInteractionSource() }
-    val isPressed by interactions.collectIsPressedAsState()
-    // A physical key gives travel; a glass one has to give something back instead.
-    val scale by animateFloatAsState(if (isPressed) 0.92f else 1f, Motion.press(), label = "key-press")
-
-    val press: () -> Unit = {
-        if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        onClick()
-    }
-
-    val labelStyle = MaterialTheme.typography.labelLarge.copy(
-        color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-    )
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .requiredSizeIn(minWidth = 48.dp, minHeight = 48.dp)
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (active) Turquoise else MaterialTheme.colorScheme.surfaceVariant)
-            // One named, stateful target per key: the announced description (defaulting
-            // to the printed label) lives on the same box that carries the click and
-            // toggle state, so screen readers and UiAutomator can find the real 48dp
-            // target by name. The printed label stays as a passive child node for
-            // visible-text lookups. (Trying to clear-and-define the whole key as one
-            // node instead made the a11y layer merge the entire toolbar into a single
-            // unreadable button, so the label stays a real Text underneath.)
-            .semantics {
-                this.contentDescription = contentDescription ?: label
-            }
-            .then(
-                if (toggle) Modifier.toggleable(
-                    value = active,
-                    interactionSource = interactions,
-                    indication = null,
-                    role = Role.Button,
-                    onValueChange = { press() },
-                ) else Modifier.clickable(
-                    interactionSource = interactions,
-                    indication = null,
-                    role = Role.Button,
-                    onClick = press,
-                ),
-            ),
-    ) {
-        Text(label, style = labelStyle, maxLines = 1, overflow = TextOverflow.Clip)
-    }
-}
-
-private val LocalTerminalKeyHaptics = staticCompositionLocalOf { true }

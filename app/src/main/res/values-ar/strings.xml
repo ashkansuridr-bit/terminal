@@ -453,4 +453,32 @@
     <string name="host_metadata_retry">فحص مجدد</string>
     <string name="host_metadata_export">تصدير بيانات الاستعادة</string>
     <string name="host_metadata_export_failed">فشل تصدير بيانات الاستعادة. تحقق من الملف الوجهة.</string>
+    <!-- Terminal Control Studio -->
+    <string name="close">إغلاق</string>
+    <string name="tcs_title">استوديو التحكم بالطرفية</string>
+    <string name="tcs_settings_entry">تخصيص شريط المفاتيح فوق لوحة المفاتيح</string>
+    <string name="tcs_settings_entry_summary">ترتيب المفاتيح والمظهر والإيماءات والماكرو</string>
+    <string name="tcs_profile">ملف المفاتيح</string>
+    <string name="tcs_theme">مظهر الشريط</string>
+    <string name="tcs_layout">التخطيط</string>
+    <string name="tcs_add_key">إضافة مفتاح</string>
+    <string name="tcs_save">حفظ وتطبيق</string>
+    <string name="tcs_undo">تراجع</string>
+    <string name="tcs_redo">إعادة</string>
+    <string name="tcs_reset">استعادة الإعدادات الافتراضية</string>
+    <string name="tcs_move_earlier">نقل إلى الأعلى</string>
+    <string name="tcs_move_later">نقل إلى الأسفل</string>
+    <string name="tcs_move_other_row">نقل إلى صف آخر</string>
+    <string name="tcs_wide">توسيع</string>
+    <string name="tcs_narrow">تضييق</string>
+    <string name="tcs_duplicate">نسخ المفتاح</string>
+    <string name="tcs_remove_key">إزالة المفتاح</string>
+    <string name="tcs_rename">تغيير التسمية</string>
+    <string name="tcs_select_key_hint">اختر مفتاحاً لتعديله</string>
+    <string name="tcs_edit_hint">أعد ترتيب المفاتيح أو أضفها؛ تُطبّق التغييرات على الشريط عند الحفظ.</string>
+    <string name="tcs_customized_badge">مخصص</string>
+    <string name="tcs_recover_notice">تعذّرت قراءة إعدادات الشريط؛ تم تحميل الافتراضي والاحتفاظ بالملف السابق للاستعادة.</string>
+    <string name="tcs_add_key_title">إضافة مفتاح</string>
+    <string name="tcs_locked_suffix">مقفل</string>
+    <string name="tcs_active_suffix">نشط</string>
 </resources>

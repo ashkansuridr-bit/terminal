@@ -11,7 +11,9 @@ import app.terminalssh.secure.storage.HostStore
 import app.terminalssh.secure.storage.KnownHostsStore
 import app.terminalssh.secure.settings.SettingsStore
 import app.terminalssh.secure.sftp.ThumbnailCache
+import app.terminalssh.secure.storage.AndroidToolbarPrefs
 import app.terminalssh.secure.storage.Settings
+import app.terminalssh.secure.toolbar.ToolbarRepository
 
 /** Single composition root. No DI framework: the graph is six objects. */
 class TerminalApp : Application() {
@@ -19,6 +21,7 @@ class TerminalApp : Application() {
     lateinit var knownHosts: KnownHostsStore; private set
     lateinit var hosts: HostStore; private set
     lateinit var settings: Settings; private set
+    lateinit var toolbar: ToolbarRepository; private set
 
     /** Schema-driven store; [settings] stays for the paths not yet migrated to it. */
     lateinit var settingsStore: SettingsStore; private set
@@ -61,6 +64,7 @@ class TerminalApp : Application() {
         hosts = HostStore(this)
         settingsStore = SettingsStore(this)
         settings = Settings.sharing(settingsStore)
+        toolbar = ToolbarRepository(AndroidToolbarPrefs(this))
         client = JschSshClient(vault, knownHosts, hosts)
         sessions = SessionRegistry()
         lifecycle = app.terminalssh.secure.ssh.SessionLifecycleManager(sessions, sessionScope) {

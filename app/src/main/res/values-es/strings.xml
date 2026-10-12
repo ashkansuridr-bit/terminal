@@ -1,4 +1,32 @@
 <resources>
+    <!-- Terminal Control Studio -->
+    <string name="tcs_title">Estudio de control del terminal</string>
+    <string name="tcs_settings_entry">Personalizar la barra de teclas sobre el teclado</string>
+    <string name="tcs_settings_entry_summary">Distribución, tema, gestos y macros</string>
+    <string name="tcs_profile">Perfil de teclas</string>
+    <string name="tcs_theme">Tema de la barra</string>
+    <string name="tcs_layout">Distribución</string>
+    <string name="tcs_add_key">Añadir tecla</string>
+    <string name="tcs_save">Guardar y aplicar</string>
+    <string name="tcs_undo">Deshacer</string>
+    <string name="tcs_redo">Rehacer</string>
+    <string name="tcs_reset">Restablecer valores predeterminados</string>
+    <string name="tcs_move_earlier">Mover antes</string>
+    <string name="tcs_move_later">Mover después</string>
+    <string name="tcs_move_other_row">Mover a otra fila</string>
+    <string name="tcs_wide">Más ancha</string>
+    <string name="tcs_narrow">Más estrecha</string>
+    <string name="tcs_duplicate">Duplicar tecla</string>
+    <string name="tcs_remove_key">Quitar tecla</string>
+    <string name="tcs_rename">Cambiar etiqueta</string>
+    <string name="tcs_select_key_hint">Selecciona una tecla para editarla</string>
+    <string name="tcs_edit_hint">Reordena o añade teclas. Los cambios se aplican a la barra al pulsar Guardar y aplicar.</string>
+    <string name="tcs_customized_badge">Personalizado</string>
+    <string name="tcs_recover_notice">No se pudieron leer los ajustes de la barra; se cargaron los valores predeterminados y se conservó el archivo anterior.</string>
+    <string name="tcs_add_key_title">Añadir tecla</string>
+    <string name="tcs_locked_suffix">bloqueado</string>
+    <string name="tcs_active_suffix">activo</string>
+    <string name="close">Cerrar</string>
     <string name="app_name">Terminal SSH</string>
 
     <string name="tab_hosts">Hosts</string>

@@ -69,6 +69,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val sessions = container.sessions
     val sessionCleanupFailures = container.lifecycle.cleanupFailures
     val settings = container.settings
+    /** Terminal Control Studio: the user's toolbar profiles, themes and macros. */
+    val toolbar = container.toolbar
     private val account = accountProvider(app)
 
     init {

@@ -37,6 +37,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,6 +56,7 @@ import app.terminalssh.secure.model.HostProfile
 import app.terminalssh.secure.ui.theme.Cyan
 import app.terminalssh.secure.ui.theme.Ink
 import app.terminalssh.secure.ui.theme.Turquoise
+import app.terminalssh.secure.ui.toolbar.ToolbarEditorScreen
 import app.terminalssh.secure.vm.AppViewModel
 import app.terminalssh.secure.vm.HostMetadataUnavailableException
 
@@ -69,6 +72,7 @@ fun RootScreen(viewModel: AppViewModel, launchHostId: String? = null) {
     val hosts by viewModel.hosts.collectAsStateWithLifecycle()
     // Survives recomposition so a shortcut cannot re-open the session on every recompose.
     var consumedLaunchId by rememberSaveable { mutableStateOf<String?>(null) }
+    var toolbarEditorOpen by rememberSaveable { mutableStateOf(false) }
 
     BackHandler(enabled = tab != Tab.HOSTS) {
         tab = Tab.HOSTS
@@ -189,12 +193,24 @@ fun RootScreen(viewModel: AppViewModel, launchHostId: String? = null) {
             Crossfade(targetState = tab, label = "root-tab") { target ->
                 when (target) {
                     Tab.HOSTS -> HostsScreen(viewModel, onConnect = openTerminal, onTerminal = { tab = Tab.TERMINAL }, onFiles = { tab = Tab.FILES })
-                    Tab.TERMINAL -> TerminalScreen(viewModel, onGoToHosts = { tab = Tab.HOSTS })
+                    Tab.TERMINAL -> TerminalScreen(viewModel, onGoToHosts = { tab = Tab.HOSTS }, onGoToSettings = { tab = Tab.SETTINGS })
                     Tab.FILES -> FilesScreen(viewModel, onGoToHosts = { tab = Tab.HOSTS })
                     Tab.KEYS -> KeysScreen(viewModel)
-                    Tab.SETTINGS -> SettingsScreen(viewModel)
+                    Tab.SETTINGS -> SettingsScreen(viewModel, onEditToolbar = { toolbarEditorOpen = true })
                 }
             }
+        }
+    }
+
+    if (toolbarEditorOpen) {
+        Dialog(
+            onDismissRequest = { toolbarEditorOpen = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            ToolbarEditorScreen(
+                repository = viewModel.toolbar,
+                onDismiss = { toolbarEditorOpen = false },
+            )
         }
     }
 }

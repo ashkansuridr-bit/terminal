@@ -1,0 +1,258 @@
+{
+  "capturedAt": "2026-10-12T15:42:38+00:00",
+  "branch": "feature/terminal-control-studio-pro",
+  "baselineCommit": "67021c1",
+  "lastVerifiedCommit": null,
+  "features": [
+    {
+      "id": "TCS-01",
+      "title": "مدل نوع‌دار، پروفایل و تم",
+      "phase": "VERIFY",
+      "changedFiles": [
+        "ToolbarModel.kt",
+        "ToolbarPresets.kt",
+        "ToolbarKeyPalette.kt"
+      ],
+      "dependencies": [],
+      "status": "UNIT_VERIFIED",
+      "requiredTests": [
+        ":app:testMarketDebugUnitTest"
+      ],
+      "executedTests": [
+        "MarketDebug JVM: PASS"
+      ],
+      "lastResult": "Verified as noted",
+      "lastFailure": null,
+      "fixAttempts": 0,
+      "commitSha": null,
+      "lastReviewedAt": "2026-10-12T15:42:38+00:00",
+      "remainingIssues": []
+    },
+    {
+      "id": "TCS-02",
+      "title": "رندر نوار و توزیع اکشن",
+      "phase": "IMPLEMENT",
+      "changedFiles": [
+        "StudioToolbar.kt",
+        "ToolbarDispatcher.kt",
+        "TerminalScreen.kt"
+      ],
+      "dependencies": [],
+      "status": "IMPLEMENTED_NOT_TESTED",
+      "requiredTests": [
+        "Compose UI",
+        "Instrumentation"
+      ],
+      "executedTests": [
+        "MarketDebug compile PASS",
+        "MarketDebug lint PASS; no Compose UI runtime test (adb unavailable)"
+      ],
+      "lastResult": "No execution evidence yet",
+      "lastFailure": null,
+      "fixAttempts": 0,
+      "commitSha": null,
+      "lastReviewedAt": "2026-10-12T15:42:38+00:00",
+      "remainingIssues": [
+        "UI instrumentation blocked: adb not installed"
+      ]
+    },
+    {
+      "id": "TCS-03",
+      "title": "Modifier و ارسال کلید ترمینال",
+      "phase": "IMPLEMENT",
+      "changedFiles": [
+        "TerminalInput.kt",
+        "SshSession.kt"
+      ],
+      "dependencies": [],
+      "status": "IMPLEMENTED_NOT_TESTED",
+      "requiredTests": [
+        "modifier/session device regression"
+      ],
+      "executedTests": [
+        "JVM regressions PASS",
+        "MarketDebug AndroidTest Kotlin compile PASS"
+      ],
+      "lastResult": "No execution evidence yet",
+      "lastFailure": null,
+      "fixAttempts": 0,
+      "commitSha": null,
+      "lastReviewedAt": "2026-10-12T15:42:38+00:00",
+      "remainingIssues": [
+        "Device input regression not run"
+      ]
+    },
+    {
+      "id": "TCS-04",
+      "title": "ذخیره‌سازی، کدک و import/export",
+      "phase": "VERIFY",
+      "changedFiles": [
+        "ToolbarCodec.kt",
+        "ToolbarRepository.kt",
+        "AndroidToolbarPrefs.kt"
+      ],
+      "dependencies": [],
+      "status": "UNIT_VERIFIED",
+      "requiredTests": [
+        "JVM codec/repository tests",
+        "Android process recreation"
+      ],
+      "executedTests": [
+        "JVM codec/repository tests PASS"
+      ],
+      "lastResult": "Verified as noted",
+      "lastFailure": null,
+      "fixAttempts": 0,
+      "commitSha": null,
+      "lastReviewedAt": "2026-10-12T15:42:38+00:00",
+      "remainingIssues": [
+        "Android process recreation not run"
+      ]
+    },
+    {
+      "id": "TCS-05",
+      "title": "ویرایشگر، چینش و undo/redo",
+      "phase": "VERIFY",
+      "changedFiles": [
+        "ToolbarEditor.kt",
+        "ToolbarEditorScreen.kt"
+      ],
+      "dependencies": [],
+      "status": "UNIT_VERIFIED",
+      "requiredTests": [
+        "JVM editor tests",
+        "Compose UI"
+      ],
+      "executedTests": [
+        "JVM editor tests PASS"
+      ],
+      "lastResult": "Verified as noted",
+      "lastFailure": null,
+      "fixAttempts": 0,
+      "commitSha": null,
+      "lastReviewedAt": "2026-10-12T15:42:38+00:00",
+      "remainingIssues": [
+        "Compose UI blocked"
+      ]
+    },
+    {
+      "id": "TCS-06",
+      "title": "ژست و ماکرو",
+      "phase": "VERIFY",
+      "changedFiles": [
+        "ToolbarGestures.kt",
+        "MacroEngine.kt"
+      ],
+      "dependencies": [],
+      "status": "UNIT_VERIFIED",
+      "requiredTests": [
+        "JVM gesture/macro tests",
+        "device gesture/cancellation"
+      ],
+      "executedTests": [
+        "JVM tests PASS"
+      ],
+      "lastResult": "Verified as noted",
+      "lastFailure": null,
+      "fixAttempts": 0,
+      "commitSha": null,
+      "lastReviewedAt": "2026-10-12T15:42:38+00:00",
+      "remainingIssues": [
+        "Device tests blocked"
+      ]
+    },
+    {
+      "id": "TCS-07",
+      "title": "دسترسی‌پذیری و زبان‌ها",
+      "phase": "IMPLEMENT",
+      "changedFiles": [
+        "StudioToolbar.kt",
+        "values-en/strings.xml",
+        "values/strings.xml",
+        "values-es/strings.xml",
+        "values-fr/strings.xml",
+        "values-ru/strings.xml"
+      ],
+      "dependencies": [],
+      "status": "IMPLEMENTED_NOT_TESTED",
+      "requiredTests": [
+        "TalkBack/locale UI"
+      ],
+      "executedTests": [
+        "Resource parity check PASS in values, ar, en, es, fr, ru"
+      ],
+      "lastResult": "No execution evidence yet",
+      "lastFailure": null,
+      "fixAttempts": 0,
+      "commitSha": null,
+      "lastReviewedAt": "2026-10-12T15:42:38+00:00",
+      "remainingIssues": [
+        "TalkBack runtime check not run"
+      ]
+    },
+    {
+      "id": "TCS-08",
+      "title": "بیلد APK و تفکیک امضای release",
+      "phase": "VERIFY",
+      "changedFiles": [
+        "app/build/outputs/apk/market/debug/app-market-debug.apk"
+      ],
+      "dependencies": [],
+      "status": "BUILD_VERIFIED",
+      "requiredTests": [
+        "MarketDebug compile/assemble",
+        "device install",
+        "production signing"
+      ],
+      "executedTests": [
+        "MarketDebug compile/assemble PASS",
+        "GplayDebug assemble PASS",
+        "MarketPreview R8 assemble PASS",
+        "GplayPreview R8 assemble PASS",
+        "apksigner verified; Android Debug certificate"
+      ],
+      "lastResult": "Verified as noted",
+      "lastFailure": null,
+      "fixAttempts": 0,
+      "commitSha": null,
+      "lastReviewedAt": "2026-10-12T15:42:38+00:00",
+      "remainingIssues": [
+        "No production certificate signing; device install unavailable"
+      ]
+    }
+  ],
+  "testSummary": {
+    "marketDebugCompile": "PASS",
+    "marketDebugUnitTests": {
+      "passed": 1012,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 118
+    },
+    "marketDebugAssemble": "PASS",
+    "diffCheck": "PASS",
+    "instrumentation": "BLOCKED: adb command unavailable",
+    "apiDeviceMatrix": "BLOCKED: no emulator/device",
+    "sshSftpIntegration": "NOT_RUN",
+    "productionSigning": "NOT_VERIFIED",
+    "marketDebugAndroidTestCompile": "PASS",
+    "marketDebugLint": {
+      "status": "PASS",
+      "errors": 0,
+      "warnings": 108,
+      "hints": 2
+    },
+    "gplayDebugAssemble": "PASS",
+    "marketPreviewAssemble": "PASS (R8/minified; debug certificate)",
+    "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
+    "apkSignature": "All verified APKs are signed with Android Debug certificate; no production signing claim"
+  },
+  "knownIssues": [
+    "Compose UI/accessibility behavior not device-tested; adb is unavailable",
+    "Build warns AGP 8.13.2 has not been validated by Google against compileSdk 37.0; build itself succeeds",
+    "All checked APKs use the Android Debug certificate; production signing remains unverified",
+    "Lint passed with 112 warnings and 2 hints (no errors); these warnings have not been triaged as part of this feature task"
+  ],
+  "nextStep": "Commit implementation and evidence, push branch and open or update PR, then record resulting SHA and remote links in this checkpoint."
+}
