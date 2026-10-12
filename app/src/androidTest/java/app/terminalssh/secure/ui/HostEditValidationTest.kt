@@ -1,6 +1,7 @@
 package app.terminalssh.secure.ui
 
 import android.content.res.Configuration
+import android.view.accessibility.AccessibilityWindowInfo
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -57,7 +58,7 @@ class HostEditValidationTest {
             device.findObject(By.desc(newConnection)).click()
             assertTrue(device.wait(Until.hasObject(By.text(save)), TIMEOUT_MS))
 
-            device.wait(Until.findObject(By.text(save)), TIMEOUT_MS)!!.click()
+            clickWhenAvailable(By.text(save), "Save after empty host")
             assertTrue(device.wait(Until.hasObject(By.text(requiredError)), TIMEOUT_MS))
             assertTrue(app.hosts.hosts().none { host -> host.host == savedHost })
 
@@ -68,8 +69,8 @@ class HostEditValidationTest {
             assertTrue("username fixture input was not applied", device.findObject(By.desc(usernameLabel)).text == "tester")
             device.findObject(By.desc(portLabel)).setText("0")
             assertTrue("invalid port input was not applied", device.findObject(By.desc(portLabel)).text == "0")
-            device.pressBack() // Dismiss the numeric IME so Save cannot be occluded.
-            device.wait(Until.findObject(By.text(save)), TIMEOUT_MS)!!.click()
+            dismissImeIfVisible()
+            clickWhenAvailable(By.text(save), "Save after invalid port")
             assertTrue(
                 "Expected port validation message '$portRangeError' after entering port 0",
                 device.wait(Until.hasObject(By.text(portRangeError)), TIMEOUT_MS),
@@ -77,13 +78,27 @@ class HostEditValidationTest {
             assertTrue(app.hosts.hosts().none { host -> host.host == savedHost })
 
             device.findObject(By.desc(portLabel)).setText("22")
-            device.pressBack()
-            device.wait(Until.findObject(By.text(save)), TIMEOUT_MS)!!.click()
+            dismissImeIfVisible()
+            clickWhenAvailable(By.text(save), "Save after valid port")
             assertTrue(device.wait(Until.gone(By.text(save)), TIMEOUT_MS))
             assertTrue(app.hosts.hosts().any { host ->
                 host.host == savedHost && host.username == "tester" && host.port == 22
             })
         }
+    }
+
+    private fun dismissImeIfVisible() {
+        device.waitForIdle()
+        val imeVisible = instrumentation.uiAutomation.windows.any {
+            it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD
+        }
+        if (imeVisible) device.pressBack()
+    }
+
+    private fun clickWhenAvailable(selector: androidx.test.uiautomator.BySelector, label: String) {
+        val button = device.wait(Until.findObject(selector), TIMEOUT_MS)
+        if (button == null) throw AssertionError("$label button was not available")
+        button.click()
     }
 
     @Suppress("DEPRECATION")

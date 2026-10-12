@@ -36,12 +36,14 @@ class TerminalKeyboardTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val device = UiDevice.getInstance(instrumentation)
     private lateinit var app: TerminalApp
+    private var previousPrimaryClip: ClipData? = null
     private var previousHardwareKeyboardSetting = "0"
     private var previousPasteConfirmation = true
 
     @Before
     fun setUp() {
         app = instrumentation.targetContext.applicationContext as TerminalApp
+        instrumentation.runOnMainSync { previousPrimaryClip = clipboardManager().primaryClip }
         app.sessions.closeAll()
         // Keep the GMS "Remote Copy" overlay from stealing focus if GMS restarts mid-run.
         device.executeShellCommand("settings delete secure nearby_sharing_component")
@@ -57,12 +59,20 @@ class TerminalKeyboardTest {
         device.setOrientationNatural()
         app.sessions.closeAll()
         app.settings.confirmMultilinePaste = previousPasteConfirmation
-        // On API 26 ClipboardManager constructs a Handler on first lookup. The
-        // instrumentation test runner has no Looper, so resolve and use it on Main.
-        // clearPrimaryClip() was added after API 26. Replacing the clip with an
-        // empty value is available on every supported Android version.
+        // ClipboardManager must be resolved on Main on API 26. Restore the prior
+        // clip so test data does not overwrite a device user's clipboard. Android
+        // only added a true clear operation in API 28; on older systems an originally
+        // empty clipboard can only be approximated with an empty clip.
         instrumentation.runOnMainSync {
-            clipboardManager().setPrimaryClip(ClipData.newPlainText("", ""))
+            val clipboard = clipboardManager()
+            val previous = previousPrimaryClip
+            if (previous != null) {
+                clipboard.setPrimaryClip(previous)
+            } else if (android.os.Build.VERSION.SDK_INT >= 28) {
+                clipboard.clearPrimaryClip()
+            } else {
+                clipboard.setPrimaryClip(ClipData.newPlainText("", ""))
+            }
         }
         writeSecureSetting("show_ime_with_hard_keyboard", previousHardwareKeyboardSetting)
     }

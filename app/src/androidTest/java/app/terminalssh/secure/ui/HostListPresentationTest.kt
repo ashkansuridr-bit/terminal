@@ -9,6 +9,7 @@ import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
+import android.view.accessibility.AccessibilityNodeInfo
 import app.terminalssh.secure.R
 import app.terminalssh.secure.TerminalApp
 import app.terminalssh.secure.model.AuthMethod
@@ -111,13 +112,13 @@ class HostListPresentationTest {
      */
     private fun assertReachable(stringRes: Int) {
         val text = context.getString(stringRes)
-        if (device.wait(Until.hasObject(By.text(text)), SETTLE_MS)) return
         // UiObject2.scroll reports success without moving this Compose LazyColumn on
         // some emulator images. Swipe inside the freshly resolved vertical list bounds;
-        // observe the target after every gesture instead of trusting the action result.
+        // require the entire row to be visible after every gesture, not merely present
+        // in the semantics tree or clipped to a few pixels at the viewport edge.
         repeat(40) {
             val target = device.findObject(By.text(text))
-            if (hasVisibleBounds(target)) return
+            if (hasFullyVisibleBounds(target)) return
             val listBounds = hostListBounds()
             assertTrue("Host list was not exposed as a vertical scroll container", listBounds != null)
             val bounds = listBounds!!
@@ -129,17 +130,41 @@ class HostListPresentationTest {
             device.waitForIdle()
         }
         val target = device.findObject(By.text(text))
-        assertTrue("\"$text\" was not fully reachable by swiping the host list", hasVisibleBounds(target))
+        assertTrue("\"$text\" was not fully reachable by swiping the host list", hasFullyVisibleBounds(target))
     }
 
-
-    private fun hasVisibleBounds(node: UiObject2?): Boolean {
+    private fun hasFullyVisibleBounds(node: UiObject2?): Boolean {
         if (node == null) return false
         return try {
-            node.visibleBounds.height() > 0
+            val visible = node.visibleBounds
+            val fullBounds = accessibilityBounds(text = node.text)
+            fullBounds != null && visible.contains(fullBounds)
         } catch (_: StaleObjectException) {
             false
         }
+    }
+
+    private fun accessibilityBounds(text: String?): Rect? {
+        if (text == null) return null
+        val root = instrumentation.uiAutomation.rootInActiveWindow ?: return null
+        return try {
+            findBounds(root, text)
+        } finally {
+            root.recycle()
+        }
+    }
+
+    private fun findBounds(node: AccessibilityNodeInfo, text: String): Rect? {
+        if (node.text?.toString() == text) return Rect().also(node::getBoundsInScreen)
+        for (index in 0 until node.childCount) {
+            val child = node.getChild(index) ?: continue
+            try {
+                findBounds(child, text)?.let { return it }
+            } finally {
+                child.recycle()
+            }
+        }
+        return null
     }
 
     private fun hostListBounds(): Rect? = device.findObjects(By.scrollable(true))
