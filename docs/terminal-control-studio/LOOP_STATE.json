@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-12T15:42:38+00:00",
+  "capturedAt": "2026-10-12T21:20:55+00:00",
   "branch": "feature/terminal-control-studio-pro",
   "baselineCommit": "67021c1",
-  "lastVerifiedCommit": "f2e7524",
+  "lastVerifiedCommit": "ead9c4f",
   "features": [
     {
       "id": "TCS-01",
@@ -219,12 +219,48 @@
       "remainingIssues": [
         "No production certificate signing; device install unavailable"
       ]
+    },
+    {
+      "id": "TCS-09",
+      "title": "دسترسی مستقیم Snippet و ترمیم Gateهای CI",
+      "phase": "VERIFY",
+      "changedFiles": [
+        "ToolbarPresets.kt",
+        "ToolbarRepositoryTest.kt",
+        "scripts/loop2_gate.py",
+        ".github/workflows/android-release.yml"
+      ],
+      "dependencies": [],
+      "status": "UNIT_VERIFIED",
+      "requiredTests": [
+        "default profile routes Snip action",
+        "source/release gates",
+        "MarketDebug JVM",
+        "Android instrumentation"
+      ],
+      "executedTests": [
+        "defaultShellToolbarOpensSnippetSheet PASS",
+        "source_audit PASS",
+        "market_release_gate PASS",
+        "loop2_gate PASS",
+        "release artifact suite 9/9 PASS",
+        "MarketDebug JVM 1013/1013 PASS",
+        "MarketDebug AndroidTest Kotlin compilation PASS"
+      ],
+      "lastResult": "Local validators and JVM tests pass; PR CI rerun pending.",
+      "lastFailure": "Previous PR CI failed on obsolete literal-string assertion; corrected. Artifact upload changed to warn when reports do not exist.",
+      "fixAttempts": 1,
+      "commitSha": "ead9c4f",
+      "lastReviewedAt": "2026-10-12T21:20:55+00:00",
+      "remainingIssues": [
+        "Android runtime/Compose/TalkBack instrumentation requires emulator/device; none available and disk capacity prevented system-image installation."
+      ]
     }
   ],
   "testSummary": {
     "marketDebugCompile": "PASS",
     "marketDebugUnitTests": {
-      "passed": 1012,
+      "passed": 1013,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
@@ -232,8 +268,8 @@
     },
     "marketDebugAssemble": "PASS",
     "diffCheck": "PASS",
-    "instrumentation": "BLOCKED: adb command unavailable",
-    "apiDeviceMatrix": "BLOCKED: no emulator/device",
+    "instrumentation": "BLOCKED: adb installed, no emulator/device; API 36 image download exceeds available disk capacity",
+    "apiDeviceMatrix": "BLOCKED: no emulator/device; disk capacity insufficient to install system image",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
     "marketDebugAndroidTestCompile": "PASS",
@@ -249,12 +285,12 @@
     "apkSignature": "All verified APKs are signed with Android Debug certificate; no production signing claim"
   },
   "knownIssues": [
-    "Compose UI/accessibility behavior not device-tested; adb is unavailable",
-    "Build warns AGP 8.13.2 has not been validated by Google against compileSdk 37.0; build itself succeeds",
-    "All checked APKs use the Android Debug certificate; production signing remains unverified",
-    "Lint passed with 112 warnings and 2 hints (no errors); these warnings have not been triaged as part of this feature task"
+    "Compose UI/accessibility behavior not device-tested; no emulator/device available. API 36 image installation was stopped with under 1 GB available; temporary download cleaned up.",
+    "Build warns AGP 8.13.2 has not been validated by Google against compileSdk 37.0; build itself succeeds.",
+    "All checked APKs use the Android Debug certificate; production signing remains unverified.",
+    "Lint passed with 108 warnings and 2 hints (no errors); these warnings have not been triaged as part of this feature task."
   ],
-  "nextStep": "Await PR review and run Compose/device/instrumentation validation when an Android SDK platform-tools adb and emulator/device are available.",
+  "nextStep": "Check CI run for ead9c4f; then run API device/UI validation when emulator image and disk capacity are available.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/feature/terminal-control-studio-pro",
   "pullRequest": "https://github.com/ashkansuridr-bit/terminal/pull/4"
 }
