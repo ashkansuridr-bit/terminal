@@ -17,3 +17,11 @@
 ## محدودیت‌ها
 
 رفتار Compose روی دستگاه، TalkBack، APIهای مختلف، بازیابی پس از مرگ پردازه و اتصال واقعی SSH هنوز با تست دستگاه تأیید نشده‌اند.
+
+
+## شاخه و بازبینی
+
+- شاخه: `feature/terminal-control-studio-pro`
+- Commit پیاده‌سازی: `f2e7524`
+- Pull Request: https://github.com/ashkansuridr-bit/terminal/pull/4
+- وضعیت: پوش شده و منتظر بازبینی؛ ادغام نشده است.

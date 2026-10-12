@@ -1,5 +1,7 @@
 # Loop checkpoint
 
+- Implementation commit: `f2e7524`
+- Pull request: https://github.com/ashkansuridr-bit/terminal/pull/4
 - Captured: 2026-10-12T15:42:38+00:00
 - Branch: `feature/terminal-control-studio-pro`
 - Baseline HEAD before these changes: `67021c1` (v0.7.2 / observed origin/main at inspection)

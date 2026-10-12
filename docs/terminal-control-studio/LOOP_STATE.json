@@ -2,7 +2,7 @@
   "capturedAt": "2026-10-12T15:42:38+00:00",
   "branch": "feature/terminal-control-studio-pro",
   "baselineCommit": "67021c1",
-  "lastVerifiedCommit": null,
+  "lastVerifiedCommit": "f2e7524",
   "features": [
     {
       "id": "TCS-01",
@@ -24,7 +24,7 @@
       "lastResult": "Verified as noted",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": null,
+      "commitSha": "f2e7524",
       "lastReviewedAt": "2026-10-12T15:42:38+00:00",
       "remainingIssues": []
     },
@@ -50,7 +50,7 @@
       "lastResult": "No execution evidence yet",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": null,
+      "commitSha": "f2e7524",
       "lastReviewedAt": "2026-10-12T15:42:38+00:00",
       "remainingIssues": [
         "UI instrumentation blocked: adb not installed"
@@ -76,7 +76,7 @@
       "lastResult": "No execution evidence yet",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": null,
+      "commitSha": "f2e7524",
       "lastReviewedAt": "2026-10-12T15:42:38+00:00",
       "remainingIssues": [
         "Device input regression not run"
@@ -103,7 +103,7 @@
       "lastResult": "Verified as noted",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": null,
+      "commitSha": "f2e7524",
       "lastReviewedAt": "2026-10-12T15:42:38+00:00",
       "remainingIssues": [
         "Android process recreation not run"
@@ -129,7 +129,7 @@
       "lastResult": "Verified as noted",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": null,
+      "commitSha": "f2e7524",
       "lastReviewedAt": "2026-10-12T15:42:38+00:00",
       "remainingIssues": [
         "Compose UI blocked"
@@ -155,7 +155,7 @@
       "lastResult": "Verified as noted",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": null,
+      "commitSha": "f2e7524",
       "lastReviewedAt": "2026-10-12T15:42:38+00:00",
       "remainingIssues": [
         "Device tests blocked"
@@ -184,7 +184,7 @@
       "lastResult": "No execution evidence yet",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": null,
+      "commitSha": "f2e7524",
       "lastReviewedAt": "2026-10-12T15:42:38+00:00",
       "remainingIssues": [
         "TalkBack runtime check not run"
@@ -214,7 +214,7 @@
       "lastResult": "Verified as noted",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": null,
+      "commitSha": "f2e7524",
       "lastReviewedAt": "2026-10-12T15:42:38+00:00",
       "remainingIssues": [
         "No production certificate signing; device install unavailable"
@@ -254,5 +254,7 @@
     "All checked APKs use the Android Debug certificate; production signing remains unverified",
     "Lint passed with 112 warnings and 2 hints (no errors); these warnings have not been triaged as part of this feature task"
   ],
-  "nextStep": "Commit implementation and evidence, push branch and open or update PR, then record resulting SHA and remote links in this checkpoint."
+  "nextStep": "Await PR review and run Compose/device/instrumentation validation when an Android SDK platform-tools adb and emulator/device are available.",
+  "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/feature/terminal-control-studio-pro",
+  "pullRequest": "https://github.com/ashkansuridr-bit/terminal/pull/4"
 }
