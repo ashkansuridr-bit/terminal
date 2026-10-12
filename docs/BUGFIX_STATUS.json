@@ -191,9 +191,10 @@
     {
       "id": "BUG-021",
       "title": "SSH exec status and timeout",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED_UNVERIFIED",
       "evidence": [
-        "Nonzero status timeout and output overflow return failure; continuous stdout deadline still needs review"
+        "Nonzero status timeout and output overflow return failure; continuous stdout deadline still needs review",
+        "Monotonic timeout covers connect and continuous stdout loop; nonzero exit/overflow fail; interrupt flag restored. SSH runtime test pending."
       ],
       "verification": "NOT_RUN",
       "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
@@ -289,8 +290,10 @@
     {
       "id": "BUG-031",
       "title": "Jump host support",
-      "status": "NOT_REVIEWED",
-      "evidence": [],
+      "status": "IMPLEMENTED_UNVERIFIED",
+      "evidence": [
+        "Client explicitly rejects ProxyJump. UI now disables new selection, preserves stored route and requires explicit removal before saving."
+      ],
       "verification": "NOT_RUN",
       "next_action": "Inspect current source and reproduce before changing behavior"
     },
@@ -375,9 +378,10 @@
     {
       "id": "BUG-040",
       "title": "Local command history privacy",
-      "status": "OPEN",
+      "status": "IMPLEMENTED_UNVERIFIED",
       "evidence": [
-        "LocalShell audit log retains raw commands"
+        "LocalShell audit log retains raw commands",
+        "Removed unused raw-command auditLog from LocalShell; terminal-visible output is outside this change."
       ],
       "verification": "NOT_RUN",
       "next_action": "Reproduce and validate remaining behavior; do not count compilation as runtime verification"
@@ -403,8 +407,10 @@
     {
       "id": "BUG-043",
       "title": "Missing translations",
-      "status": "NOT_REVIEWED",
-      "evidence": [],
+      "status": "OPEN",
+      "evidence": [
+        "XML comparison confirms 44 missing keys in each of es/fr/ru; en complete. Translations still needed."
+      ],
       "verification": "NOT_RUN",
       "next_action": "Inspect current source and reproduce before changing behavior"
     },
