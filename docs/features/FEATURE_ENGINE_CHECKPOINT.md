@@ -319,3 +319,20 @@ not its bytes had ever been compared.
 Tests: `TransferQueueTest` 31 → 32 (default stays `UNVERIFIED`; `VERIFIED` and `MISMATCH` survive
 onto the completed item). Full `sftp` package: 369 tests, 0 failures. UI is **not device-rendered**,
 so F028 stays `IMPLEMENTED_NOT_TESTED`.
+
+## Batch Q (commit `aae9f55`) — F028 integrity extends to the history dialog
+
+The live transfer row was made honest in Batch P, but the *history dialog* still rendered
+a bare `Downloaded` for every completed transfer — the same silent success the feature exists
+to prevent.
+
+- `Transfer.integrityProven`: true only when the transfer is COMPLETED **and** a post-transfer
+  SHA-256 comparison actually matched (F028). A running or merely finished transfer is never
+  proven.
+- `TransferList` gains one private `completionLabel()` composable used by both the live row
+  and the history dialog; the duplicated `COMPLETED` branch is gone.
+- `completionLabel()` reads `R.string.sftp_downloaded` + `· verified` / `· unverified`
+  depending on `integrityProven`.
+- Tests: `TransferQueueTest` 32 → 33 (a running transfer is never proven; completed without
+  a comparison is not proven; completed + VERIFIED is proven). Full `sftp` package: 369 tests,
+  0 failures. UI is **not device-rendered**, so F028 stays `IMPLEMENTED_NOT_TESTED`.

@@ -1,5 +1,90 @@
 # Changelog
 
+## 0.7.2 — 50-feature engine + instrumentation/stability round
+
+Test-signed preview and unsigned market candidates. No production signing.
+
+This release integrates two independent work streams that both branched from
+`0.7.1`:
+
+- **`feature/terminal-50-tools`** — a 50-item feature engine (host tools,
+  terminal tools, SFTP, server diagnostics, encrypted backup). 42 features are
+  implemented with pure logic and green JVM unit tests, 5 already existed on
+  `main` and were audited, 2 are blocked by the current transport, 1 is deferred.
+  Device rendering is **not** verified; see `docs/features/FEATURE_STATUS.json`.
+- **`fix/0.7.2-instrumentation-reliability`** — a 55-item bug ledger
+  (`docs/BUGFIX_STATUS.json`) covering instrumentation reliability, SFTP
+  fail-closed behaviour, lifecycle/executor teardown, privacy and accessibility.
+  Only the reviewed subset is claimed as fixed; the ledger records the rest
+  explicitly as `NOT_REVIEWED`, `PARTIAL` or `OPEN` rather than rounding up.
+
+### Added — host & connection
+
+- Quick connect without saving a profile (`ssh://user@host:port`, IPv6 brackets).
+- Coloured tags with a pure filter model (tag/env/favourite/query).
+- Offline host-icon catalog + avatar rendering.
+- Aggregate connection status across a host's sessions.
+- Quick-copy of hostname/IP/username/port without touching the credential ref.
+- Per-host advanced settings (timeout, keep-alive, compression, reconnect) with
+  clamped, tolerant decoding.
+- Connection diagnostics phase model (DNS/TCP/KEX/host-key/auth/shell).
+- `known_hosts` import/export codec with SHA-256 fingerprints.
+- `~/.ssh/config` analysis that reports the Include/IdentityFile/ProxyJump
+  directives it deliberately does not apply.
+
+### Added — terminal
+
+- Scrollback search with next/prev, wrap and match count (Unicode-safe offsets).
+- Bookmarks keyed to output lines with trim handling.
+- Bounded output export with a secret-looking-output warning.
+- URL detection with a safe/confirm/block scheme policy.
+- Optional, bounded, off-by-default local command history that suppresses
+  secret-looking lines.
+- Broadcast input to multiple terminals behind a confirmation gate.
+- Configurable key toolbar and cursor appearance (shape + blink).
+- Advanced tab management (rename/pin/reorder/close).
+
+### Added — SFTP
+
+- Upload-conflict "apply to all" policy (ASK is never remembered).
+- Folder-transfer preview (files/dirs/bytes/conflicts/unreadable/symlinks).
+- Batch pause/resume/retry/cancel with per-state counts.
+- Bounded, cancellable remote folder-size accounting with a stop reason.
+- Depth- and count-capped remote file search.
+- Bounded text/hex file preview.
+- Honest SHA-256 integrity state: `VERIFIED` only on a real match, otherwise
+  `UNVERIFIED`, surfaced in both the live row and the transfer history dialog.
+- Queue policy: priority + FIFO + size ordering, concurrency cap, exponential
+  backoff with overflow guard, permanent-vs-retryable classification.
+
+### Added — server tools & security
+
+- Read-only server resource/process/service/docker/git/network diagnostics and a
+  dry-run runbook state machine (mutating commands stay allow-listed and quoted).
+- Encrypted local backup: PBKDF2-HMAC-SHA256 (210k) + AES-256-GCM with the header
+  bound as AAD.
+
+### Fixed — stability & privacy (codex round)
+
+- SSH exec now enforces a real command deadline and rejects non-zero exit codes.
+- Configured but unsupported jump routes fail closed instead of silently
+  connecting directly.
+- Unused local command history is no longer retained.
+- SFTP recursive/folder operations fail closed; recursive `chmod` gets a
+  traversal guard and skips symlinks.
+- SAF document creation no longer swallows nulls; failures surface.
+- Accessibility: larger touch targets and settings rows, screen-reader semantics.
+
+### Known-blocked / deferred
+
+- **F031 split panes** and **F035 multi-hop ProxyJump** ship pure, tested
+  planning cores only; the transport half is not implemented, so both remain
+  `BLOCKED`.
+- **F049 Mosh** remains deferred (native UDP + server-side install).
+- No production keystore is available, so market artifacts remain unsigned.
+- Heavy UI (Compose) and on-device paths are not device-verified in this
+  environment.
+
 ## 0.7.1 — Persian/Arabic terminal shaping
 
 Test-signed preview and unsigned market candidates. No production signing.
