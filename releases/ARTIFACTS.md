@@ -1,45 +1,45 @@
 # Inspected release artifacts
 
-Source commit: `08babc4fc9ad96f2b3f1eddd34cd14369f392221`
+Source commit: `5ec119f6f79cadbdc94370944901afb660049123`
 
 Unsigned market files require production signing before installation/distribution.
 Preview is test-signed, separate-package, and not production.
 
-## TerminalSSH-0.7.1-complete-preview.apk
+## TerminalSSH-0.7.2-complete-preview.apk
 
-- filename: TerminalSSH-0.7.1-complete-preview.apk
+- filename: TerminalSSH-0.7.2-complete-preview.apk
 - package: app.terminalssh.secure.preview
-- versionCode: 11
-- versionName: 0.7.1-preview
+- versionCode: 12
+- versionName: 0.7.2-preview
 - debuggable: False
 - signing: Debug/Test certificate
 - installable: True
 - production: False
-- sha256: 1461ad50714f9ca453946c85668f3c31d632c61e56965661f05f05978bcc61f3
-- size: 18092531
+- sha256: 7e9a2c940bfc87360ac8eee075e5cd51d09ebeeee83f53bdafc74696ed7cc29e
+- size: 18103355
 
-## TerminalSSH-0.7.1-market-UNSIGNED.apk
+## TerminalSSH-0.7.2-market-UNSIGNED.apk
 
-- filename: TerminalSSH-0.7.1-market-UNSIGNED.apk
+- filename: TerminalSSH-0.7.2-market-UNSIGNED.apk
 - package: app.terminalssh.secure
-- versionCode: 11
-- versionName: 0.7.1
+- versionCode: 12
+- versionName: 0.7.2
 - debuggable: False
 - signing: Unsigned
 - installable: False
 - production: False
-- sha256: f8681c99b805c0814b86d84751ce4c7a3afee88bf438b119806f5afea9779376
-- size: 18080223
+- sha256: 29405aa0965a1a992fa46dabcfb7ba9c03fdada605f090d90c3fded168aec698
+- size: 18091051
 
-## TerminalSSH-0.7.1-market-UNSIGNED.aab
+## TerminalSSH-0.7.2-market-UNSIGNED.aab
 
-- filename: TerminalSSH-0.7.1-market-UNSIGNED.aab
+- filename: TerminalSSH-0.7.2-market-UNSIGNED.aab
 - package: app.terminalssh.secure
-- versionCode: 11
-- versionName: 0.7.1
+- versionCode: 12
+- versionName: 0.7.2
 - debuggable: False
 - signing: Unsigned
 - installable: False
 - production: False
-- sha256: 46aba8e8f6e1ff52cd05b67e83713bae4f16894b9e4e82ce01b3a2c1559a46a4
-- size: 12871781
+- sha256: 26b822d23b92847be675005684617882c8817a0212fbdebf5d12a4d3a1b07bfd
+- size: 12894762
