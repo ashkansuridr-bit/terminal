@@ -10,3 +10,5 @@
 | TCS-06 | Gesture bindings and bounded macro execution | `ToolbarGestures.kt`, `MacroEngine.kt` | UNIT_VERIFIED | On-device gesture and disconnect tests |
 | TCS-07 | Localized labels, descriptions and accessible state | `values*/strings.xml`, renderer semantics | IMPLEMENTED_NOT_TESTED | Locale and TalkBack tests |
 | TCS-08 | Android artifact and release distinction | APK verification report | BUILD_VERIFIED | Device install; production signing credentials unavailable |
+| TCS-09 | Snippet access and CI gate repair | `ToolbarPresets.kt`, `ToolbarDispatcher.kt`, `loop2_gate.py`; unit regressions | UNIT_VERIFIED | Fresh PR CI instrumentation matrix |
+| TCS-10 | Accessibility and instrumentation regression hardening | `SettingRow.kt`, keyboard/host/settings instrumentation; CI run 38319706251 | IMPLEMENTED_NOT_TESTED | API 26/36/37 job results and artifacts |
