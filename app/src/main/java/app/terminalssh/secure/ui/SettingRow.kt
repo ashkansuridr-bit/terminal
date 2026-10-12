@@ -101,6 +101,7 @@ fun SettingRow(
     Column(
         Modifier
             .fillMaxWidth()
+            .defaultMinSize(minWidth = 240.dp, minHeight = 48.dp)
             .clip(RoundedCornerShape(12.dp))
             // Long-press resets. Discoverability is the trade-off, so the changed marker
             // below doubles as the hint that there is something to go back from.
@@ -221,7 +222,7 @@ fun SettingRow(
                                 Text(optionLabel(option), style = MaterialTheme.typography.labelSmall)
                             },
                             modifier = Modifier
-                                .defaultMinSize(minHeight = 48.dp)
+                                .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
                                 .semantics(mergeDescendants = true) {
                                     role = Role.RadioButton
                                     contentDescription = optionLabel(option)
