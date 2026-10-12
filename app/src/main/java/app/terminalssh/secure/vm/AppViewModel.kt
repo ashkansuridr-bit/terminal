@@ -918,12 +918,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 name = name.trim().ifBlank { "snippet-${System.currentTimeMillis()}" },
                 createdAt = System.currentTimeMillis(),
             )
-            try {
-                container.hosts.upsertSnippet(entry)
-            } catch (t: Throwable) {
-                container.vault.delete(ref, VaultAad.SNIPPET)
-                throw t
-            }
+            // The durable cleanup journal owns failed saves. An uncertain metadata
+            // rollback must retain ciphertext until ownership can be established.
+            container.hosts.upsertSnippet(entry)
             _snippets.value = container.hosts.snippets()
             container.hosts.finishCredentialCleanup(CredentialReference(ref, VaultAad.SNIPPET))
         } catch (failure: Exception) {
