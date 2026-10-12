@@ -3,8 +3,11 @@ package app.terminalssh.secure.ui
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import android.graphics.Rect
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import app.terminalssh.secure.R
 import app.terminalssh.secure.TerminalApp
@@ -109,12 +112,45 @@ class HostListPresentationTest {
     private fun assertReachable(stringRes: Int) {
         val text = context.getString(stringRes)
         if (device.wait(Until.hasObject(By.text(text)), SETTLE_MS)) return
-        // Let UiAutomator re-resolve the active scroll container on every gesture. Holding
-        // one stale scrollable node fails after LazyColumn replaces children at section
-        // boundaries, so lower groups can exist in the list yet remain undiscoverable.
-        val reached = device.scrollUntilFullyVisible(By.text(text))
-        assertTrue("\"$text\" was not fully reachable by scrolling the host list", reached)
+        // UiObject2.scroll reports success without moving this Compose LazyColumn on
+        // some emulator images. Swipe inside the freshly resolved vertical list bounds;
+        // observe the target after every gesture instead of trusting the action result.
+        repeat(40) {
+            val target = device.findObject(By.text(text))
+            if (hasVisibleBounds(target)) return
+            val listBounds = hostListBounds()
+            assertTrue("Host list was not exposed as a vertical scroll container", listBounds != null)
+            val bounds = listBounds!!
+            device.swipe(
+                bounds.centerX(), bounds.bottom - (bounds.height() * 0.15f).toInt(),
+                bounds.centerX(), bounds.top + (bounds.height() * 0.15f).toInt(),
+                12,
+            )
+            device.waitForIdle()
+        }
+        val target = device.findObject(By.text(text))
+        assertTrue("\"$text\" was not fully reachable by swiping the host list", hasVisibleBounds(target))
     }
+
+
+    private fun hasVisibleBounds(node: UiObject2?): Boolean {
+        if (node == null) return false
+        return try {
+            node.visibleBounds.height() > 0
+        } catch (_: StaleObjectException) {
+            false
+        }
+    }
+
+    private fun hostListBounds(): Rect? = device.findObjects(By.scrollable(true))
+        .mapNotNull { candidate ->
+            try {
+                candidate.visibleBounds.takeIf { it.height() > it.width() }
+            } catch (_: StaleObjectException) {
+                null
+            }
+        }
+        .maxByOrNull { it.height() }
 
     private fun profile(
         id: String,

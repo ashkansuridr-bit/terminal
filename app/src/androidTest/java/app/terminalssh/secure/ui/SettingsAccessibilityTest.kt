@@ -7,6 +7,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import androidx.compose.ui.unit.LayoutDirection
 import android.view.accessibility.AccessibilityNodeInfo
 import app.terminalssh.secure.R
 import app.terminalssh.secure.TerminalApp
@@ -40,14 +41,16 @@ class SettingsAccessibilityTest {
                 // The palettes row can sit below the fold on small emulator screens, and a
                 // row scrolled only just into view is clipped — which would make the size
                 // assertion below measure the screen edge instead of the row.
-                device.scrollUntilFullyVisible(By.desc(oled))
+                // Reach the palette section vertically and confirm the selected preset
+                // before scrolling its horizontal strip to OLED for the touch-target check.
+                device.scrollUntil(maxAttempts = 20) { device.hasObject(By.desc(persianNeon)) }
                 assertTrue(device.wait(Until.hasObject(By.desc(persianNeon)), TIMEOUT_MS))
-
+                assertTrue(device.findObject(By.desc(persianNeon)).isSelected)
+                device.scrollUntilFullyVisible(By.desc(oled), horizontalDirection = LayoutDirection.Ltr)
                 val oledAction = device.findObject(By.desc(oled))
                 val minimumPx = (48 * instrumentation.targetContext.resources.displayMetrics.density).toInt()
                 assertTrue("$oled width was ${oledAction.visibleBounds.width()}px", oledAction.visibleBounds.width() >= minimumPx)
                 assertTrue("$oled height was ${oledAction.visibleBounds.height()}px", oledAction.visibleBounds.height() >= minimumPx)
-                assertTrue(device.findObject(By.desc(persianNeon)).isSelected)
                 assertFalse(oledAction.isSelected)
 
                 oledAction.click()
@@ -76,12 +79,11 @@ class SettingsAccessibilityTest {
                 device.scrollUntil { device.hasObject(By.desc(fontSizeLabel)) }
                 assertTrue(device.wait(Until.hasObject(By.desc(fontSizeLabel)), TIMEOUT_MS))
 
-                val sliderNode = findNodeByDescription(
+                val sliderNode = findAdjustableNodeByDescription(
                     instrumentation.uiAutomation.rootInActiveWindow,
                     fontSizeLabel,
                 )
-                assertNotNull("font-size accessibility node was missing", sliderNode)
-                assertNotNull("font-size slider lost adjustable range semantics", sliderNode?.rangeInfo)
+                assertNotNull("font-size slider node carrying both its accessible name and adjustable range was missing", sliderNode)
                 assertEquals(17f, sliderNode?.rangeInfo?.current ?: Float.NaN, 0.01f)
 
                 val progressArguments = Bundle().apply {
@@ -94,7 +96,7 @@ class SettingsAccessibilityTest {
                     ),
                 )
                 assertTrue("Font-size action was not persisted and exposed", awaitUiState(TIMEOUT_MS) {
-                    val current = findNodeByDescription(instrumentation.uiAutomation.rootInActiveWindow, fontSizeLabel)
+                    val current = findAdjustableNodeByDescription(instrumentation.uiAutomation.rootInActiveWindow, fontSizeLabel)
                     app.settings.fontSizeSp == 18 && current?.rangeInfo?.current == 18f
                 })
             }
@@ -103,14 +105,14 @@ class SettingsAccessibilityTest {
         }
     }
 
-    private fun findNodeByDescription(
+    private fun findAdjustableNodeByDescription(
         node: AccessibilityNodeInfo?,
         description: String,
     ): AccessibilityNodeInfo? {
         if (node == null) return null
-        if (node.contentDescription?.toString() == description) return node
+        if (node.contentDescription?.toString() == description && node.rangeInfo != null) return node
         for (index in 0 until node.childCount) {
-            findNodeByDescription(node.getChild(index), description)?.let { return it }
+            findAdjustableNodeByDescription(node.getChild(index), description)?.let { return it }
         }
         return null
     }

@@ -21,6 +21,7 @@ class ToolbarRepositoryTest {
         val snippetsKey = ToolbarProfiles.default.layout.keyById("snippets")
         assertNotNull(snippetsKey)
         assertEquals(OpenSnippetsAction, snippetsKey.action)
+        assertEquals(listOf("ctrl", "alt", "shift"), ToolbarProfiles.default.layout.keys.take(3).map { it.id })
     }
 
     @Test fun activeProfilePersistsAcrossReload() {

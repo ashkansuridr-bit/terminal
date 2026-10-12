@@ -57,20 +57,28 @@ class HostEditValidationTest {
             device.findObject(By.desc(newConnection)).click()
             assertTrue(device.wait(Until.hasObject(By.text(save)), TIMEOUT_MS))
 
-            device.findObject(By.text(save)).click()
+            device.wait(Until.findObject(By.text(save)), TIMEOUT_MS)!!.click()
             assertTrue(device.wait(Until.hasObject(By.text(requiredError)), TIMEOUT_MS))
             assertTrue(app.hosts.hosts().none { host -> host.host == savedHost })
 
             // Each host field is named for accessibility (contentDescription = its label).
             device.findObject(By.desc(hostLabel)).setText(savedHost)
+            assertTrue("host fixture input was not applied", device.findObject(By.desc(hostLabel)).text == savedHost)
             device.findObject(By.desc(usernameLabel)).setText("tester")
+            assertTrue("username fixture input was not applied", device.findObject(By.desc(usernameLabel)).text == "tester")
             device.findObject(By.desc(portLabel)).setText("0")
-            device.findObject(By.text(save)).click()
-            assertTrue(device.wait(Until.hasObject(By.text(portRangeError)), TIMEOUT_MS))
+            assertTrue("invalid port input was not applied", device.findObject(By.desc(portLabel)).text == "0")
+            device.pressBack() // Dismiss the numeric IME so Save cannot be occluded.
+            device.wait(Until.findObject(By.text(save)), TIMEOUT_MS)!!.click()
+            assertTrue(
+                "Expected port validation message '$portRangeError' after entering port 0",
+                device.wait(Until.hasObject(By.text(portRangeError)), TIMEOUT_MS),
+            )
             assertTrue(app.hosts.hosts().none { host -> host.host == savedHost })
 
             device.findObject(By.desc(portLabel)).setText("22")
-            device.findObject(By.text(save)).click()
+            device.pressBack()
+            device.wait(Until.findObject(By.text(save)), TIMEOUT_MS)!!.click()
             assertTrue(device.wait(Until.gone(By.text(save)), TIMEOUT_MS))
             assertTrue(app.hosts.hosts().any { host ->
                 host.host == savedHost && host.username == "tester" && host.port == 22

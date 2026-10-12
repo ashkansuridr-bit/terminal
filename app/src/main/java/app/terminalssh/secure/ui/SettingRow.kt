@@ -38,7 +38,10 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.onLongClick
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
@@ -205,6 +208,9 @@ fun SettingRow(
                     style = MaterialTheme.typography.labelSmall,
                     color = TextSecondary,
                 )
+                val sliderRange = spec.min.toFloat()..spec.max.toFloat()
+                val sliderSteps = ((spec.max - spec.min) / spec.step - 1)
+                    .takeIf { it in 1..100 } ?: 0
                 Slider(
                     value = draft,
                     onValueChange = { draft = it },
@@ -215,19 +221,31 @@ fun SettingRow(
                         }
                     },
                     enabled = !saving,
-                    valueRange = spec.min.toFloat()..spec.max.toFloat(),
+                    valueRange = sliderRange,
                     // Compose counts the gaps between stops, not the stops themselves.
                     // Hundreds of painted tick marks make large ranges (such as transfer
                     // rate) stall accessibility and rendering; coercion still snaps them.
-                    steps = ((spec.max - spec.min) / spec.step - 1)
-                        .takeIf { it in 1..100 } ?: 0,
-                    // Merge the Slider's own progress-bar semantics into the node that
-                    // carries the label. A bare `semantics { contentDescription }` would
-                    // put the name on a wrapper node and leave the adjustable range on a
-                    // child, so a screen reader (and the accessibility test) lands on a
-                    // node that is named but not adjustable.
+                    steps = sliderSteps,
+                    // Material Slider exposes its range on a nested semantics node on some
+                    // Compose versions. Put the same real range and progress action on the
+                    // named node so accessibility services can adjust the named control.
                     modifier = Modifier.semantics(mergeDescendants = true) {
                         contentDescription = title
+                        progressBarRangeInfo = ProgressBarRangeInfo(draft, sliderRange, sliderSteps)
+                        setProgress { requested ->
+                            if (saving) {
+                                false
+                            } else {
+                                // Int settings may have a non-unit step; accessibility
+                                // adjustments must obey the same snapping rule as touch input.
+                                val next = spec.coerce(requested.roundToInt()).toFloat()
+                                draft = next
+                                persist(onFailure = { draft = store.get(spec).toFloat() }) {
+                                    store.set(spec, next.roundToInt())
+                                }
+                                true
+                            }
+                        }
                     },
                 )
             }

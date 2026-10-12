@@ -59,7 +59,11 @@ class TerminalKeyboardTest {
         app.settings.confirmMultilinePaste = previousPasteConfirmation
         // On API 26 ClipboardManager constructs a Handler on first lookup. The
         // instrumentation test runner has no Looper, so resolve and use it on Main.
-        instrumentation.runOnMainSync { clipboardManager().clearPrimaryClip() }
+        // clearPrimaryClip() was added after API 26. Replacing the clip with an
+        // empty value is available on every supported Android version.
+        instrumentation.runOnMainSync {
+            clipboardManager().setPrimaryClip(ClipData.newPlainText("", ""))
+        }
         writeSecureSetting("show_ime_with_hard_keyboard", previousHardwareKeyboardSetting)
     }
 
@@ -369,15 +373,38 @@ class TerminalKeyboardTest {
         var attempts = 0
         while (SystemClock.uptimeMillis() < deadline) {
             runCatching { clickAppText(terminalTab) }
-            if (waitForAppDesc(terminalMarker, within = 8_000) != null) return
+            val marker = waitForAppDesc(terminalMarker, within = 8_000)
+            if (marker != null) return
             // A system overlay (e.g. the GMS Remote Copy sheet) can cover the app and
             // swallow the tap; clear it and try again rather than waiting out the clock.
             if (++attempts % 2 == 0) dismissNearbyShareOverlay()
         }
         assertTrue(
-            "Selecting the terminal tab must reveal \"$terminalMarker\"",
-            waitForAppDesc(terminalMarker) != null,
+            "Selecting the terminal tab must reveal \"$terminalMarker\"; ${safeNavigationSnapshot()}",
+            false,
         )
+    }
+
+    /** Reports only fixed UI anchors and geometry; never dumps terminal or host content to CI. */
+    private fun safeNavigationSnapshot(): String {
+        val context = instrumentation.targetContext
+        val anchors = listOf(
+            context.getString(R.string.tab_hosts),
+            context.getString(R.string.tab_terminal),
+            context.getString(R.string.show_keyboard),
+            context.getString(R.string.tcs_control_modifier),
+            "Alt",
+            "Shift",
+        )
+        val found = anchors.mapNotNull { anchor ->
+            findAppNode { node ->
+                node.text?.toString() == anchor || node.contentDescription?.toString()?.startsWith(anchor) == true
+            }?.let { node ->
+                val bounds = bounds(node)
+                "$anchor:${node.className}@${bounds.flattenToString()}"
+            }
+        }
+        return "applicationWindows=${instrumentation.uiAutomation.windows.count { it.type == AccessibilityWindowInfo.TYPE_APPLICATION }}; anchors=$found"
     }
 
     /** Taps the center of the first node carrying [desc] in the application windows. */
@@ -562,19 +589,19 @@ class TerminalKeyboardTest {
             assertFalse(shift.isChecked)
 
             ctrl.click()
-            assertTrue(modifierControl("Ctrl").isChecked)
+            assertTrue(modifierControl(controlName).isChecked)
 
             alt.click()
-            assertTrue(modifierControl("Ctrl").isChecked)
+            assertTrue(modifierControl(controlName).isChecked)
             assertTrue(modifierControl("Alt").isChecked)
 
             shift.click()
-            assertTrue(modifierControl("Ctrl").isChecked)
+            assertTrue(modifierControl(controlName).isChecked)
             assertTrue(modifierControl("Alt").isChecked)
             assertTrue(modifierControl("Shift").isChecked)
 
             clickAppDesc("Tab")
-            assertFalse(modifierControl("Ctrl").isChecked)
+            assertFalse(modifierControl(controlName).isChecked)
             assertFalse(modifierControl("Alt").isChecked)
             assertFalse(modifierControl("Shift").isChecked)
             assertTrue(focusedViewSummary(scenario), waitForFocusedTextEditor(scenario))
@@ -589,7 +616,7 @@ class TerminalKeyboardTest {
      */
     private fun modifierControl(name: String): UiObject2 =
         device.wait(
-            Until.findObject(By.checkable(true).hasDescendant(By.desc(name))),
+            Until.findObject(By.checkable(true).hasDescendant(By.descStartsWith(name))),
             UI_TIMEOUT_MS,
         )
 
