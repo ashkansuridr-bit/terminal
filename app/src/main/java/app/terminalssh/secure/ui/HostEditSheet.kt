@@ -52,9 +52,8 @@ fun HostEditSheet(
     onSave: (HostProfile, CharArray?) -> Unit,
     onDelete: (HostProfile) -> Unit,
 ) {
-    // ProxyJump uses a separate SSH session whose credential cannot share the target
-    // session's password slot. Until independent jump-password prompting exists, only
-    // key-backed hosts are valid jump candidates.
+    // Transport currently rejects ProxyJump. Keep existing configuration visible until
+    // the user explicitly removes it; do not silently connect directly instead.
     val jumpHostCandidates = availableHosts.filter {
         it.id != initial?.id && it.auth is AuthMethod.PrivateKey
     }
@@ -72,12 +71,13 @@ fun HostEditSheet(
         mutableStateOf((initial?.maxReconnectAttempts ?: HostProfile.DEFAULT_RECONNECT_ATTEMPTS).toString())
     }
     var jumpHostId by remember {
-        mutableStateOf(initial?.jumpHostId?.takeIf { id -> jumpHostCandidates.any { it.id == id } } ?: "")
+        mutableStateOf(initial?.jumpHostId ?: "")
     }
     var error by remember { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
     val requiredFieldsError = stringResource(R.string.err_host_required)
     val portRangeError = stringResource(R.string.err_port_range)
+    val jumpUnavailable = stringResource(R.string.err_jump_host_unavailable)
     val reconnectRangeError = stringResource(R.string.err_reconnect_range)
 
     ModalBottomSheet(
@@ -135,10 +135,11 @@ fun HostEditSheet(
 
             // Jump host picker: select another saved host to tunnel through.
             val otherHosts = jumpHostCandidates
-            if (otherHosts.isNotEmpty()) {
+            if (otherHosts.isNotEmpty() || jumpHostId.isNotEmpty()) {
                 var expanded by remember { mutableStateOf(false) }
                 val selectedJump = otherHosts.firstOrNull { it.id == jumpHostId }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(jumpUnavailable, style = MaterialTheme.typography.bodySmall)
                     Text(
                         stringResource(R.string.field_jump_host),
                         style = MaterialTheme.typography.labelMedium,
@@ -152,6 +153,7 @@ fun HostEditSheet(
                         )
                         FilterChip(
                             selected = jumpHostId.isNotEmpty(),
+                            enabled = false,
                             onClick = { expanded = true },
                             label = {
                                 Text(
@@ -191,11 +193,13 @@ fun HostEditSheet(
             error?.let { Text(it, color = Danger, style = MaterialTheme.typography.labelSmall) }
             Button(
                 onClick = {
-                    val portNumber = port.toIntOrNull() ?: 22
+                    val portNumber = port.toIntOrNull()
+                    val reconnectNumber = reconnectAttempts.toIntOrNull()
                     when {
                         host.isBlank() || username.isBlank() -> error = requiredFieldsError
-                        portNumber !in 1..65535 -> error = portRangeError
-                        (reconnectAttempts.toIntOrNull() ?: 0) > HostProfile.MAX_RECONNECT_ATTEMPTS ->
+                        jumpHostId.isNotEmpty() -> error = jumpUnavailable
+                        portNumber == null || portNumber !in 1..65535 -> error = portRangeError
+                        reconnectNumber == null || reconnectNumber !in 0..HostProfile.MAX_RECONNECT_ATTEMPTS ->
                             error = reconnectRangeError
                         else -> {
                             val profile = HostProfile(
@@ -212,9 +216,7 @@ fun HostEditSheet(
                                 lastConnectedAt = initial?.lastConnectedAt ?: 0L,
                                 notes = notes.trim(),
                                 environment = environment,
-                                maxReconnectAttempts = reconnectAttempts.toIntOrNull()
-                                    ?.coerceIn(0, HostProfile.MAX_RECONNECT_ATTEMPTS)
-                                    ?: HostProfile.DEFAULT_RECONNECT_ATTEMPTS,
+                                maxReconnectAttempts = reconnectNumber,
                                 jumpHostId = jumpHostId,
                             )
                             onSave(profile, password.takeIf { it.isNotEmpty() }?.toCharArray())

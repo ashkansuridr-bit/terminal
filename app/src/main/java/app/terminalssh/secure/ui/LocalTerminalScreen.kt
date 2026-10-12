@@ -28,6 +28,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,8 +68,11 @@ fun LocalTerminalScreen(onClose: () -> Unit) {
     // Start shell on first composition
     LaunchedEffect(Unit) {
         if (!shell.isRunning) {
-            shell.start(scope) { chunk ->
-                output = (output + chunk).takeLast(MAX_OUTPUT_CHARS)
+            withContext(Dispatchers.IO) {
+                shell.start(scope) { chunk ->
+                    output = if (chunk.length >= MAX_OUTPUT_CHARS) chunk.takeLast(MAX_OUTPUT_CHARS)
+                    else (output + chunk).takeLast(MAX_OUTPUT_CHARS)
+                }
             }
         }
     }

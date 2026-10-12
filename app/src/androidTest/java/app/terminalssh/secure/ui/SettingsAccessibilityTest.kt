@@ -49,8 +49,9 @@ class SettingsAccessibilityTest {
                 assertFalse(oledAction.isSelected)
 
                 oledAction.click()
-                assertTrue(device.wait(Until.findObject(By.desc(oled)), TIMEOUT_MS).isSelected)
-                assertTrue(app.settings.themeName == "oled")
+                assertTrue("Palette selection was not persisted and exposed", awaitUiState(TIMEOUT_MS) {
+                    device.findObject(By.desc(oled))?.isSelected == true && app.settings.themeName == "oled"
+                })
             }
         } finally {
             app.settings.themeName = previousTheme
@@ -90,8 +91,10 @@ class SettingsAccessibilityTest {
                         progressArguments,
                     ),
                 )
-                instrumentation.waitForIdleSync()
-                assertEquals(18, app.settings.fontSizeSp)
+                assertTrue("Font-size action was not persisted and exposed", awaitUiState(TIMEOUT_MS) {
+                    val current = findNodeByDescription(instrumentation.uiAutomation.rootInActiveWindow, fontSizeLabel)
+                    app.settings.fontSizeSp == 18 && current?.rangeInfo?.current == 18f
+                })
             }
         } finally {
             app.settings.fontSizeSp = previousFontSize

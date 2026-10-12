@@ -494,6 +494,9 @@ class SshSession(
 
     /** Records the forward immediately and applies it to the live session if there is one. */
     private fun pushForward(forward: PortForward) {
+        require(forward.bindPort in 1..65535 && forward.port in 1..65535) { "port out of range" }
+        require(forward.host.isNotBlank()) { "forward host is blank" }
+        check(_portForwards.value.none { it.key == forward.key }) { "duplicate port forward" }
         _portForwards.value = _portForwards.value + forward
         applyForwardOnce(forward)
     }

@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -192,7 +193,9 @@ fun SnippetSheet(
                     }
                     IconButton(
                         onClick = { onDelete(entry) },
-                        modifier = Modifier.semantics { contentDescription = deleteDescription },
+                        modifier = Modifier
+                            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                            .semantics { contentDescription = deleteDescription },
                     ) {
                         Icon(
                             Icons.Outlined.Delete,

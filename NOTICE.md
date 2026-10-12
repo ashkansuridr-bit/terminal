@@ -7,7 +7,7 @@ BSD-style licence (JSch original licence, Atsuhiko Yamanaka / JCraft).
 https://github.com/mwiede/jsch
 Provides the SSH-2 transport, authentication and channel layer.
 
-## ConnectBot termlib — 0.1.0
+## ConnectBot termlib — 0.2.1
 Apache License 2.0.
 https://github.com/connectbot
 Provides the terminal emulator and its Compose renderer.

@@ -26,6 +26,21 @@ class HostStoreCredentialTest {
         context.getSharedPreferences("hosts_v1", 0).edit().clear().commit()
     }
 
+    @Test fun snippetCleanupSurvivesReloadAndProtectsReferencedSecrets() {
+        val store = HostStore(context)
+        val snippet = app.terminalssh.secure.model.SnippetEntry("snippet-journal", "example", 0L)
+        val ref = CredentialReference(snippet.id, VaultAad.SNIPPET)
+        store.scheduleCredentialCleanup(ref)
+        store.upsertSnippet(snippet)
+        assertTrue(HostStore(context).credentialIsReferenced(ref))
+        store.finishCredentialCleanup(ref)
+        store.deleteSnippet(snippet.id)
+        val reloaded = HostStore(context)
+        assertTrue(reloaded.snippets().isEmpty())
+        assertFalse(reloaded.credentialIsReferenced(ref))
+        assertTrue(ref in reloaded.pendingCredentialCleanup())
+    }
+
     @Test fun referencedKeyCannotBeDeletedAndUnlinkIsDurable() {
         val store = HostStore(context)
         store.upsertKey(key)

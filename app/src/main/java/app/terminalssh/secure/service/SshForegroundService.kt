@@ -142,14 +142,22 @@ class SshForegroundService : Service() {
             val intent = Intent(context, SshForegroundService::class.java)
                 .putExtra(EXTRA_SESSION_COUNT, liveSessions)
                 .putExtra(EXTRA_TRANSFER_COUNT, activeTransfers)
-            if (liveSessions > 0 || activeTransfers > 0) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startForegroundService(intent)
+            try {
+                if (liveSessions > 0 || activeTransfers > 0) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        context.startForegroundService(intent)
+                    } else {
+                        context.startService(intent)
+                    }
                 } else {
-                    context.startService(intent)
+                    context.stopService(Intent(context, SshForegroundService::class.java))
                 }
-            } else {
-                context.stopService(Intent(context, SshForegroundService::class.java))
+            } catch (failure: SecurityException) {
+                android.util.Log.w("SshForegroundService", "Foreground service permission unavailable")
+            } catch (failure: IllegalStateException) {
+                // Includes Android 12+ background-start restrictions. Retain session state;
+                // a later foreground observation can retry without crashing a collector.
+                android.util.Log.w("SshForegroundService", "Foreground service start unavailable")
             }
         }
     }

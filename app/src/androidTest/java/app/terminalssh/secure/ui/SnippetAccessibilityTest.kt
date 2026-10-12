@@ -76,21 +76,29 @@ class SnippetAccessibilityTest {
         }
     }
 
-    private fun idleSession(): SshSession = SshSession(
-        id = "snippet-accessibility-session",
-        profile = HostProfile(
-            id = "snippet-accessibility-host",
-            label = "Snippet test",
-            host = "127.0.0.1",
-            port = 1,
-            username = "tester",
-            auth = AuthMethod.Password(""),
-        ),
-        client = app.client,
-        keepAlive = false,
-        onClipboardCopy = {},
-        onPasteRequest = {},
-    )
+    private fun idleSession(): SshSession {
+        var created: SshSession? = null
+        val create = {
+            created = SshSession(
+                id = "snippet-accessibility-session",
+                profile = HostProfile(
+                    id = "snippet-accessibility-host",
+                    label = "Snippet test",
+                    host = "127.0.0.1",
+                    port = 1,
+                    username = "tester",
+                    auth = AuthMethod.Password(""),
+                ),
+                client = app.client,
+                keepAlive = false,
+                onClipboardCopy = {},
+                onPasteRequest = {},
+            )
+        }
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) create()
+        else instrumentation.runOnMainSync { create() }
+        return checkNotNull(created)
+    }
 
     private fun assertTouchTargetAtLeast48Dp(description: String) {
         val bounds = device.findObject(By.desc(description)).visibleBounds

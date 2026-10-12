@@ -360,28 +360,36 @@ class SftpClient(private val session: Session) : AutoCloseable {
      * degrade to "not verified" rather than blocking the transfer.
      */
     fun exec(command: String, timeoutMs: Int = EXEC_TIMEOUT_MS): String? {
+        require(timeoutMs > 0) { "Command timeout must be positive" }
         var channel: ChannelExec? = null
+        val started = System.nanoTime()
+        val budget = java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(timeoutMs.toLong())
+        fun expired() = System.nanoTime() - started >= budget
         return try {
             channel = session.openChannel("exec") as ChannelExec
             channel.setCommand(command)
             channel.setErrStream(null)
             val stdout = channel.inputStream
-            channel.connect(CONNECT_TIMEOUT_MS)
+            channel.connect(minOf(CONNECT_TIMEOUT_MS, timeoutMs))
 
             val out = java.io.ByteArrayOutputStream()
             val buf = ByteArray(4096)
-            val deadline = System.currentTimeMillis() + timeoutMs
-            while (System.currentTimeMillis() < deadline) {
+            while (!expired()) {
                 while (stdout.available() > 0) {
+                    if (expired()) return null
                     val read = stdout.read(buf)
                     if (read < 0) break
-                    if (out.size() + read > EXEC_MAX_OUTPUT) return out.toString(Charsets.UTF_8.name())
+                    if (out.size() + read > EXEC_MAX_OUTPUT) return null
                     out.write(buf, 0, read)
                 }
                 if (channel.isClosed) break
                 Thread.sleep(20)
             }
+            if (expired() || !channel.isClosed || channel.exitStatus != 0) return null
             out.toString(Charsets.UTF_8.name())
+        } catch (interrupted: InterruptedException) {
+            Thread.currentThread().interrupt()
+            null
         } catch (_: Exception) {
             null
         } finally {

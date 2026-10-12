@@ -115,6 +115,17 @@ class SftpController(
     private val _browser = MutableStateFlow(BrowserState())
     val browser: StateFlow<BrowserState> = _browser.asStateFlow()
 
+    /** Catch recoverable action failures at the coroutine boundary; cancellation stays cancellation. */
+    private fun launchBrowserAction(action: suspend CoroutineScope.() -> Unit): Job = scope.launch {
+        try {
+            action()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            showBrowserError(failure)
+        }
+    }
+
     /** Session-isolated durable ledger; legacy shared ledgers are never uploaded to an unknown host. */
     private val persistFile = TransferStatePaths.queueFile(persistentDir, session.profile.id, session.id)
     val queue = TransferQueue.fromPersisted(persistFile)
@@ -301,7 +312,7 @@ class SftpController(
      * attempted, and only the first failure is surfaced, since the refreshed listing
      * itself shows exactly what actually got removed.
      */
-    fun deleteAll(entries: List<RemoteEntry>) = scope.launch {
+    fun deleteAll(entries: List<RemoteEntry>) = launchBrowserAction {
         val failures = mutableListOf<Throwable>()
         withContext(Dispatchers.IO) {
             val sftp = client()
@@ -316,8 +327,7 @@ class SftpController(
 
     /** Directory-only listing for the "move/copy to" folder picker; doesn't touch [browser]. */
     suspend fun listDirectories(path: String): List<RemoteEntry> =
-        runCatching { withContext(Dispatchers.IO) { client().list(path).filter { it.isDirectory } } }
-            .getOrDefault(emptyList())
+        withContext(Dispatchers.IO) { client().list(path).filter { it.isDirectory } }
 
     /** Moves [entry] into [destinationDirectory], keeping its filename, then refreshes. */
     fun moveTo(entry: RemoteEntry, destinationDirectory: String) = scope.launch {
@@ -369,7 +379,7 @@ class SftpController(
      * file as its own resumable Transfer. The destination tree is mirrored under
      * [destinationTreeUri] using SAF's DocumentsContract.
      */
-    fun downloadFolder(remotePath: String, destinationTreeUri: android.net.Uri, displayName: String) = scope.launch {
+    fun downloadFolder(remotePath: String, destinationTreeUri: android.net.Uri, displayName: String) = launchBrowserAction {
         val entries = withContext(Dispatchers.IO) { client().listRecursive(remotePath) }
         val parentDocUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(
             destinationTreeUri,
@@ -392,11 +402,10 @@ class SftpController(
                             contentResolver, currentParent,
                             android.provider.DocumentsContract.Document.MIME_TYPE_DIR, part,
                         )
-                    }.getOrNull()
-                    if (dirUri != null) {
-                        dirMap[currentPath] = dirUri
-                        currentParent = dirUri
-                    }
+                    }.getOrElse { throw IOException("Cannot create local directory '$currentPath': ${it.message}") }
+                        ?: throw IOException("Cannot create local directory '$currentPath'")
+                    dirMap[currentPath] = dirUri
+                    currentParent = dirUri
                 } else {
                     currentParent = dirMap[currentPath]!!
                 }
@@ -413,7 +422,8 @@ class SftpController(
                     contentResolver, targetParent,
                     "application/octet-stream", fileName,
                 )
-            }.getOrNull() ?: continue
+            }.getOrElse { throw IOException("Cannot create local file '$relativePath': ${it.message}") }
+                ?: throw IOException("Cannot create local file '$relativePath'")
             val entry = RemoteEntry(
                 name = fileName,
                 path = remoteFilePath,
@@ -437,7 +447,7 @@ class SftpController(
      * Recursively uploads a local folder to the remote server: mirrors the
      * directory structure via makeDirectory, then queues each file.
      */
-    fun uploadFolder(localPath: java.io.File, remotePath: String) = scope.launch {
+    fun uploadFolder(localPath: java.io.File, remotePath: String) = launchBrowserAction {
         val entries = withContext(Dispatchers.IO) { client().listLocalRecursive(localPath) }
         val remoteBase = RemotePath.join(remotePath, localPath.name)
 
@@ -445,15 +455,9 @@ class SftpController(
         val subdirs = entries.map { it.second.substringBeforeLast('/', "") }.filter { it.isNotEmpty() }.toSet()
         withContext(Dispatchers.IO) {
             val sftp = client()
+            sftp.ensureDirectories(remoteBase)
             for (subdir in subdirs) {
-                val fullRemoteDir = RemotePath.join(remoteBase, subdir)
-                // Create each path segment
-                val parts = subdir.split("/")
-                var current = remoteBase
-                for (part in parts) {
-                    current = RemotePath.join(current, part)
-                    runCatching { sftp.makeDirectory(current) }
-                }
+                sftp.ensureDirectories(RemotePath.join(remoteBase, subdir))
             }
         }
 
@@ -477,14 +481,14 @@ class SftpController(
             }.getOrElse { failure ->
                 if (failure is kotlinx.coroutines.CancellationException) throw failure
                 showBrowserError(failure)
-                return@launch
+                return@launchBrowserAction
             }
             if (exists) {
                 val renamed = runCatching { nonCollidingName(RemotePath.parent(remoteFilePath), displayName) }
                     .getOrElse { failure ->
                         if (failure is kotlinx.coroutines.CancellationException) throw failure
                         showBrowserError(failure)
-                        return@launch
+                        return@launchBrowserAction
                     }
                 val renamedPath = RemotePath.join(RemotePath.parent(remoteFilePath), renamed)
                 enqueueUploadNow(android.net.Uri.fromFile(localFile), renamed, renamedPath)
@@ -627,24 +631,36 @@ class SftpController(
      * Recursive chmod: applies [mode] to all files under a directory.
      * Shows consequences before action — matches the app's security principle.
      */
-    fun chmodRecursive(path: String, mode: Int) = scope.launch {
+    fun chmodRecursive(path: String, mode: Int) = launchBrowserAction {
         val failures = mutableListOf<Throwable>()
         withContext(Dispatchers.IO) {
             val sftp = client()
             sftp.chmod(path, mode)
-            recursiveChmod(sftp, path, mode, failures)
+            recursiveChmod(sftp, path, mode, failures, TraversalGuard(), 0)
         }
         refresh()
         failures.firstOrNull()?.let { showBrowserError(it) }
     }
 
-    private fun recursiveChmod(sftp: SftpClient, path: String, mode: Int, failures: MutableList<Throwable>) {
-        val entries = runCatching { sftp.list(path) }.getOrDefault(emptyList())
+    private fun recursiveChmod(
+        sftp: SftpClient,
+        path: String,
+        mode: Int,
+        failures: MutableList<Throwable>,
+        guard: TraversalGuard,
+        depth: Int,
+    ) {
+        check(guard.enter(path, depth)) { "Recursive chmod traversal limit reached" }
+        val entries = try { sftp.list(path) } catch (failure: Exception) {
+            failures += failure
+            return
+        }
         for (entry in entries) {
-            if (entry.isDirectory) {
+            if (entry.isDirectory && !entry.isSymlink) {
                 runCatching { sftp.chmod(entry.path, mode) }.onFailure { failures += it }
-                recursiveChmod(sftp, entry.path, mode, failures)
-            } else {
+                recursiveChmod(sftp, entry.path, mode, failures, guard, depth + 1)
+            } else if (!entry.isSymlink) {
+                check(guard.countFile()) { "Recursive chmod traversal limit reached" }
                 runCatching { sftp.chmod(entry.path, mode) }.onFailure { failures += it }
             }
         }
@@ -659,20 +675,23 @@ class SftpController(
         return withContext(Dispatchers.IO) {
             val sftp = client()
             val tempDir = java.io.File(cacheDir, "compress_${System.currentTimeMillis()}")
-            tempDir.mkdirs()
+            check(tempDir.mkdirs()) { "Cannot create compression staging directory" }
+            var zipFile: File? = null
             try {
                 // Download all files to temp dir
                 for (entry in entries) {
                     if (entry.isDirectory) continue
-                    val localFile = java.io.File(tempDir, entry.name)
+                    val localFile = java.io.File(tempDir, RemotePath.sanitizeDownloadName(entry.name))
+                    check(!localFile.exists()) { "Duplicate archive entry" }
                     java.io.FileOutputStream(localFile).use { out ->
                         sftp.download(entry.path, out, 0L) {}
                     }
                 }
                 // Create zip from temp files
                 val zipName = "archive_${System.currentTimeMillis()}.zip"
-                val zipFile = java.io.File(cacheDir, zipName)
-                java.util.zip.ZipOutputStream(java.io.FileOutputStream(zipFile)).use { zos ->
+                val archive = java.io.File(cacheDir, zipName)
+                zipFile = archive
+                java.util.zip.ZipOutputStream(java.io.FileOutputStream(archive)).use { zos ->
                     tempDir.listFiles()?.filter { it.isFile }?.forEach { file ->
                         java.util.zip.ZipEntry(file.name).also { zos.putNextEntry(it) }
                         file.inputStream().use { it.copyTo(zos) }
@@ -682,13 +701,15 @@ class SftpController(
                 // Upload zip to remote destination
                 val remotePath = RemotePath.join(remoteDestDir, zipName)
                 val guard = sftp.destinationGuard(remotePath)
-                java.io.FileInputStream(zipFile).use { inp ->
+                java.io.FileInputStream(archive).use { inp ->
                     sftp.atomicUpload(inp, remotePath, beforeCommit = guard)
                 }
-                zipFile.delete()
                 remotePath
             } finally {
-                tempDir.deleteRecursively()
+                val archive = zipFile
+                val zipRemoved = archive == null || archive.delete() || !archive.exists()
+                val directoryRemoved = tempDir.deleteRecursively()
+                if (!zipRemoved || !directoryRemoved) throw IOException("Cannot clean compression staging files")
             }
         }
     }
@@ -1382,12 +1403,18 @@ class SftpController(
     suspend fun stageForShare(entry: RemoteEntry, cacheRoot: File): Result<File> = runCatching {
         require(!entry.isDirectory) { "a directory cannot be shared as a file" }
         withContext(Dispatchers.IO) {
-            val dir = File(cacheRoot, "shared").apply { mkdirs() }
+            val dir = File(cacheRoot, "shared/${UUID.randomUUID()}")
+            check(dir.mkdirs()) { "Cannot create share staging directory" }
             val target = File(dir, RemotePath.sanitizeDownloadName(entry.name))
-            java.io.FileOutputStream(target).use { out ->
-                client().download(entry.path, LimitedOutputStream(out, MAX_SHARE_BYTES), 0L) {}
+            try {
+                java.io.FileOutputStream(target).use { out ->
+                    client().download(entry.path, LimitedOutputStream(out, MAX_SHARE_BYTES), 0L) {}
+                }
+                target
+            } catch (failure: Exception) {
+                if (!dir.deleteRecursively()) failure.addSuppressed(IOException("Cannot clean share staging"))
+                throw failure
             }
-            target
         }
     }
 
