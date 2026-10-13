@@ -332,12 +332,20 @@ class TerminalKeyboardTest {
         val sb = StringBuilder()
         try {
             for (window in instrumentation.uiAutomation.windows) {
-                if (window.type != AccessibilityWindowInfo.TYPE_APPLICATION) continue
-                val root = window.root ?: continue
                 try {
-                    appendNode(root, sb)
+                    try {
+                        if (window.type != AccessibilityWindowInfo.TYPE_APPLICATION) continue
+                        val root = window.root ?: continue
+                        try {
+                            appendNode(root, sb)
+                        } finally {
+                            root.recycle()
+                        }
+                    } catch (_: Throwable) {
+                        // Ignore this stale window and continue with the remaining snapshot.
+                    }
                 } finally {
-                    root.recycle()
+                    window.recycle()
                 }
             }
         } catch (t: Throwable) {
@@ -447,7 +455,18 @@ class TerminalKeyboardTest {
                 }
             }
         }
-        return "applicationWindows=${instrumentation.uiAutomation.windows.count { it.type == AccessibilityWindowInfo.TYPE_APPLICATION }}; anchors=$found"
+        val windows = instrumentation.uiAutomation.windows
+        var applicationWindowCount = 0
+        windows.forEach { window ->
+            try {
+                if (window.type == AccessibilityWindowInfo.TYPE_APPLICATION) applicationWindowCount++
+            } catch (_: Throwable) {
+                // A stale window does not change the diagnostic anchor summary.
+            } finally {
+                window.recycle()
+            }
+        }
+        return "applicationWindows=$applicationWindowCount; anchors=$found"
     }
 
     /** Taps the center of the first node carrying [desc] in the application windows. */
@@ -474,16 +493,24 @@ class TerminalKeyboardTest {
         for (i in 0 until attempts) {
             try {
                 for (window in instrumentation.uiAutomation.windows) {
-                    if (window.type != AccessibilityWindowInfo.TYPE_APPLICATION) continue
-                    val root = window.root ?: continue
                     try {
-                        findDescendant(root, predicate)?.let { return it }
+                        try {
+                            if (window.type != AccessibilityWindowInfo.TYPE_APPLICATION) continue
+                            val root = window.root ?: continue
+                            try {
+                                findDescendant(root, predicate)?.let { return it }
+                            } finally {
+                                root.recycle()
+                            }
+                        } catch (_: Throwable) {
+                            // Continue after a stale window or tree snapshot.
+                        }
                     } finally {
-                        root.recycle()
+                        window.recycle()
                     }
                 }
             } catch (t: Throwable) {
-                // A11y tree changed mid-walk; retry the snapshot.
+                // Window enumeration itself changed; retry the snapshot.
             }
             SystemClock.sleep(100)
         }
@@ -826,10 +853,18 @@ class TerminalKeyboardTest {
         while (SystemClock.uptimeMillis() < deadline) {
             try {
                 for (window in instrumentation.uiAutomation.windows) {
-                    if (window.type != AccessibilityWindowInfo.TYPE_INPUT_METHOD) continue
-                    val bounds = Rect()
-                    window.getBoundsInScreen(bounds)
-                    if (bounds.height() > 0) return bounds.top
+                    try {
+                        try {
+                            if (window.type != AccessibilityWindowInfo.TYPE_INPUT_METHOD) continue
+                            val bounds = Rect()
+                            window.getBoundsInScreen(bounds)
+                            if (bounds.height() > 0) return bounds.top
+                        } catch (_: Throwable) {
+                            // Continue through the window snapshot after stale entries.
+                        }
+                    } finally {
+                        window.recycle()
+                    }
                 }
             } catch (t: Throwable) {
                 // Window list changed mid-walk; retry.

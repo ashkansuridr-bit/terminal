@@ -87,3 +87,10 @@
 - Latest local app compile, AndroidTest compile, and JVM suite pass (1,013/1,013). Lint passes with 0 errors, 108 warnings, and 2 hints after the renderer semantics change. No emulator/device is available locally.
 - CI run `38382396450` tests `c706354` and remains in its verify job. It will be superseded by this review follow-up; inspect the newest full instrumentation matrix after pushing.
 - Next exact step: commit/push these review fixes, cancel obsolete CI for earlier commits, and inspect the newest full instrumentation matrix.
+
+## Reviewer-driven accessibility window lifecycle follow-up (2026-10-13)
+
+- Independent review of `c9714b4` found that `AccessibilityNodeInfo` objects were recycled but `AccessibilityWindowInfo` snapshots were not. Added `finally` cleanup to terminal tree traversal, navigation diagnostics, IME window polling, and HostEdit IME detection so repeated polling does not retain native accessibility handles on API 26+.
+- Local evidence after this change: `:app:compileMarketDebugAndroidTestKotlin` PASS; `git diff --check` PASS. Runtime behavior still requires CI/device execution.
+- PR run `38383163665` for `c9714b4`: verify PASS; API 26/36/37 Debug and Preview instrumentation jobs still running at checkpoint time.
+- Next exact step: commit and push the window-resource cleanup with this checkpoint, then inspect the latest CI instrumentation results and follow any remaining failures to root cause. Keep PR #4 open and unmerged.

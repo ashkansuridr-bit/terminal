@@ -93,8 +93,13 @@ class HostEditValidationTest {
 
     private fun dismissImeIfVisible() {
         device.waitForIdle()
-        val imeVisible = instrumentation.uiAutomation.windows.any {
-            it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD
+        var imeVisible = false
+        instrumentation.uiAutomation.windows.forEach { window ->
+            try {
+                if (window.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD) imeVisible = true
+            } finally {
+                window.recycle()
+            }
         }
         if (imeVisible) device.pressBack()
     }

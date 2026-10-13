@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-13T10:20:29+00:00",
+  "capturedAt": "2026-10-13T10:31:11+00:00",
   "branch": "feature/terminal-control-studio-pro",
   "baselineCommit": "67021c1",
   "lastVerifiedCommit": "2976238",
@@ -261,17 +261,16 @@
       "title": "ترمیم شکست‌های Instrumentation و semantics دسترس‌پذیری",
       "phase": "VERIFY",
       "changedFiles": [
+        "HostEditValidationTest.kt",
+        "HostListPresentationTest.kt",
         "SettingRow.kt",
+        "SettingsAccessibilityTest.kt",
+        "SnippetAccessibilityTest.kt",
         "StudioToolbar.kt",
         "TerminalKeyboardTest.kt",
-        "HostListPresentationTest.kt",
-        "SettingsAccessibilityTest.kt",
-        "HostEditValidationTest.kt",
         "UiScroll.kt",
         "app/proguard-rules-androidtest.pro",
-        "strings.xml (fa/ar/en/es/fr/ru)",
-        "HostEditValidationTest.kt",
-        "SnippetAccessibilityTest.kt"
+        "strings.xml (fa/ar/en/es/fr/ru)"
       ],
       "dependencies": [],
       "status": "IMPLEMENTED_NOT_TESTED",
@@ -289,18 +288,19 @@
         "2976238 CI run 38320080882: verify/build PASS; API36 Debug 8 failed, Preview 7 failed; API26 Debug 14 failed; API37 Debug/Preview boot BLOCKED (ADB offline)",
         "Current worktree: MarketDebug app compile PASS; AndroidTest compile PASS; JVM 1,013/1,013 PASS; lint PASS (0 errors, 108 warnings, 2 hints); loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS",
         "Follow-up test hardening: MarketDebug AndroidTest Kotlin compile PASS after dismissing IME before HostEdit validation and trying both horizontal toolbar scroll directions for Snippets",
-        "Reviewer-driven follow-up: MarketDebug app Kotlin compile PASS; AndroidTest Kotlin compile PASS; JVM 1,013/1,013 PASS; lint PASS (0 errors, 108 warnings, 2 hints); git diff --check PASS"
+        "Reviewer-driven follow-up: MarketDebug app Kotlin compile PASS; AndroidTest Kotlin compile PASS; JVM 1,013/1,013 PASS; lint PASS (0 errors, 108 warnings, 2 hints); git diff --check PASS",
+        "Window snapshot lifecycle review: AccessibilityWindowInfo recycled in finally for terminal navigation, IME polling, and host-form IME detection",
+        "MarketDebug AndroidTest Kotlin compilation PASS after window recycling; git diff --check PASS"
       ],
-      "lastResult": "Current-source app and AndroidTest compilation, JVM tests, and lint pass; runtime matrix pending.",
+      "lastResult": "API 26/36/37 debug/preview CI run 38383163665: verify PASS; six instrumentation jobs still running. Latest local test harness edit compiles.",
       "lastFailure": "Run 38320080882: API26/36 UI instrumentation failures, including terminal tab lookup, host/settings scrolling/semantics and host form/snippet assertions; API37 emulator boot timed out with adb offline. API36 Debug had 8 failures; Preview 7; API26 Debug 14.",
-      "fixAttempts": 1,
-      "commitSha": "c706354 plus current reviewer-driven fixes",
-      "lastReviewedAt": "2026-10-13T10:20:29+00:00",
+      "fixAttempts": 2,
+      "commitSha": "c9714b4 + pending window-resource follow-up",
+      "lastReviewedAt": "2026-10-13T10:31:11+00:00",
       "remainingIssues": [
-        "Push current accessibility and test harness fixes, then rerun API26/36/37 debug/preview CI.",
-        "Recheck host edit and snippet toolbar runtime failures against fresh logs; prior failures are not yet classified on current sources.",
-        "No local adb or emulator; API37 requires a healthy CI emulator.",
-        "Local GPlay Preview assemble not rerun on latest source; production signing remains unverified."
+        "Await API 26/36/37 debug and preview instrumentation results from run 38383163665.",
+        "API37 CI emulator boot reliability remains uncertain; classify from job logs.",
+        "No local adb/emulator; production signing and GPlay Preview on latest source remain unverified."
       ]
     }
   ],
@@ -316,7 +316,7 @@
     },
     "marketDebugAssemble": "PASS",
     "diffCheck": "PASS (e2bd89c)",
-    "instrumentation": "PR run 38320080882 completed with failures: API36 Debug 8, Preview 7; API26 Debug 14. API37 debug/preview blocked at emulator boot (adb offline). Current follow-up awaits fresh CI.",
+    "instrumentation": "PR run 38383163665: verify PASS; API26/36/37 debug+preview instrumentation jobs in progress. Earlier API26/36 runs failed; API37 boot failures previously observed.",
     "apiDeviceMatrix": "BLOCKED: no emulator/device; disk capacity insufficient to install system image",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
@@ -339,7 +339,7 @@
       "signature": "Android Debug certificate; apksigner verification PASS",
       "releaseStatus": "not production-signed"
     },
-    "api37": "BLOCKED by emulator infrastructure in run 38320080882; no app tests executed"
+    "api37": "Pending in run 38383163665; prior run 38320080882 blocked at emulator boot (adb offline)."
   },
   "knownIssues": [
     "Build warns AGP 8.13.2 has not been validated by Google against compileSdk 37.0; build itself succeeds.",
@@ -348,7 +348,7 @@
     "No emulator/device is currently attached (adb devices is empty); current UI/instrumentation changes have compile evidence only until fresh PR CI runs.",
     "PR run 38320080882 completed with API26/36 instrumentation failures; latest follow-up has compile/unit evidence only until CI reruns."
   ],
-  "nextStep": "Commit and push reviewer-driven fixes, cancel superseded CI for earlier source, and inspect the newest full API 26/36/37 instrumentation run.",
+  "nextStep": "Inspect run 38383163665 instrumentation logs; then record outcomes and fix remaining source regressions. Current window-resource lifecycle follow-up is locally compiled and ready to push.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/feature/terminal-control-studio-pro",
   "pullRequest": "https://github.com/ashkansuridr-bit/terminal/pull/4"
 }
