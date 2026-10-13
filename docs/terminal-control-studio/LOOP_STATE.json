@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-13T13:00:00+00:00",
+  "capturedAt": "2026-10-13T13:01:00+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
   "lastVerifiedCommit": "93135b0cbb2699c0aa2141254eda4c01c0736521",
@@ -203,7 +203,7 @@
       "executedTests": [
         "Alt/Shift/Snippets built-in spoken labels localized in fa/ar/en/es/fr/ru; XML parity check PASS",
         "MarketDebug app compile PASS; AndroidTest Kotlin compile PASS; JVM 1,021/1,021 PASS; lint 0 errors, 105 warnings, 2 hints; MarketDebug assemble PASS",
-        "Latest GitHub run 38401934345 Verify job PASS; API26/36/37 instrumentation jobs pending."
+        "Latest GitHub run 38401934345 source gates PASS; Verify unit/lint/build and API26/36/37 instrumentation remain in progress."
       ],
       "lastResult": "NEW-006 fixes hardcoded English accessible names for Alt, Shift and Snippets. Modifier controls expose label, checked state and explicit accessibility onClick together through clearAndSetSemantics while combinedClickable continues handling touch/long-press/repeat. Runtime semantics still require instrumentation confirmation.",
       "lastFailure": null,
@@ -387,7 +387,7 @@
     },
     "marketDebugAssemble": "PASS on 93135b0",
     "diffCheck": "PASS before commit 93135b0",
-    "instrumentation": "Run 38401934345 for 93135b0: Verify PASS; API26/36/37 Debug and Preview instrumentation still running at 2026-10-13T13:00Z. Older runs 38399699440 (94b7842), 38400520050 (895aea1), 38400681521 (d784dcf) also in progress at last check.",
+    "instrumentation": "Run 38401934345 for 93135b0: source/artifact validator gates PASS. Verify unit/lint/build step in progress; instrumentation jobs have not yet completed.",
     "apiDeviceMatrix": "Local E2E BLOCKED: adb executable/device unavailable. GitHub run 38401934345 has API26/36/37 Debug/Preview tests in progress; runtime status pending.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
@@ -452,7 +452,7 @@
   "latestCi": {
     "commit": "93135b0cbb2699c0aa2141254eda4c01c0736521",
     "run": "38401934345",
-    "result": "in_progress; Verify job PASS; six API26/36/37 instrumentation jobs running",
+    "result": "in_progress; source/artifact validator gates PASS; Verify build/test step still running; six instrumentation jobs not yet assessed",
     "details": "Includes localized Alt/Shift/Snippets labels and one-clickable-semantics-node regression. Previous runs 38399699440, 38400520050, and docs run 38400681521 also remain in progress; do not treat them as current-source runtime proof."
   },
   "remainingFeatureCount": 11,
