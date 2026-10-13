@@ -155,8 +155,7 @@ class ToolbarDispatcher(
             // automatic reconnect. Epoch comparison catches even a fast reconnect
             // whose transient state was not observed by this coroutine.
             MacroRunner(sink).execute(ops, cancelled = {
-                host.session.state.value !is SshSessionState.Connected ||
-                    host.session.activeChannelEpoch != channelEpoch
+                !host.session.isConnectedAtEpoch(channelEpoch)
             })
         }
     }

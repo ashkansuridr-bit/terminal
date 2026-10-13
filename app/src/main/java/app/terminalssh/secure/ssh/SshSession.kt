@@ -68,16 +68,26 @@ class SshSession(
     /** Identifies the concrete SSH shell channel, including automatic reconnects. */
     val activeChannelEpoch: Long get() = channelEpoch.get()
 
+    /** True only while the captured epoch still owns a live, connected shell. */
+    fun isConnectedAtEpoch(expectedEpoch: Long): Boolean = synchronized(channelLock) {
+        isChannelCurrentLocked(expectedEpoch)
+    }
+
     /** Runs a short synchronous dispatch only while the captured live channel is current. */
     fun runIfConnectedAtEpoch(expectedEpoch: Long, action: () -> Unit): Boolean =
         synchronized(channelLock) {
-            if (channelEpoch.get() != expectedEpoch || _state.value !is SshSessionState.Connected || shell?.alive != true) {
+            if (!isChannelCurrentLocked(expectedEpoch)) {
                 false
             } else {
                 action()
                 true
             }
         }
+
+    private fun isChannelCurrentLocked(expectedEpoch: Long): Boolean =
+        channelEpoch.get() == expectedEpoch &&
+            _state.value is SshSessionState.Connected &&
+            shell?.alive == true
 
     val emulator: TerminalEmulator = TerminalEmulatorFactory.create(
         initialRows = INITIAL_ROWS,
