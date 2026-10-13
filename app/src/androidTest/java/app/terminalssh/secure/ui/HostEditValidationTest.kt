@@ -43,17 +43,22 @@ class HostEditValidationTest {
     @Test
     fun validationUsesActiveLocaleAndOnlySavesValidInput() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            val context = instrumentation.targetContext
-            val newConnection = context.getString(R.string.home_new_connection)
-            val save = context.getString(R.string.save)
-            val hostLabel = context.getString(R.string.field_host)
-            val portLabel = context.getString(R.string.field_port)
-            val usernameLabel = context.getString(R.string.field_username)
-            val requiredError = context.getString(R.string.err_host_required)
-            // Resolve the expected validation text from the actual Activity Resources;
-            // the instrumentation target Context can carry a different Configuration.
+            // Read strings from the live Activity. Instrumentation's target Context can
+            // retain a different locale configuration on API 26 after tests switch locale.
+            lateinit var newConnection: String
+            lateinit var save: String
+            lateinit var hostLabel: String
+            lateinit var portLabel: String
+            lateinit var usernameLabel: String
+            lateinit var requiredError: String
             var portRangeError = ""
             scenario.onActivity { activity ->
+                newConnection = activity.getString(R.string.home_new_connection)
+                save = activity.getString(R.string.save)
+                hostLabel = activity.getString(R.string.field_host)
+                portLabel = activity.getString(R.string.field_port)
+                usernameLabel = activity.getString(R.string.field_username)
+                requiredError = activity.getString(R.string.err_host_required)
                 portRangeError = activity.getString(R.string.err_port_range)
             }
 
@@ -71,8 +76,10 @@ class HostEditValidationTest {
             assertTrue(device.wait(Until.hasObject(By.text(requiredError)), TIMEOUT_MS))
             assertTrue(app.hosts.hosts().none { host -> host.host == savedHost })
 
-            // Target the editable node itself. A plain By.desc can resolve the named
-            // Compose wrapper rather than its EditText, making ACTION_SET_TEXT a no-op.
+            // Compose names the OutlinedTextField wrapper, but the platform EditText
+            // child does not inherit that description on API 26/36. Tap each named
+            // wrapper and edit the single focused platform editor; validation and
+            // durable-save assertions below verify the resulting form state.
             setFieldText(hostLabel, savedHost)
             setFieldText(usernameLabel, "tester")
             setFieldText(portLabel, "0")
@@ -116,8 +123,7 @@ class HostEditValidationTest {
 
     private fun setFieldText(label: String, value: String) {
         // Compose exposes the named OutlinedTextField wrapper separately from its
-        // Compose and UiAutomator can report different window insets for this field.
-        // Target the named editable node and verify its own focus/text instead.
+        // platform editor. Use the wrapper's UiAutomator bounds to focus it.
         val field = device.wait(Until.findObject(By.desc(label)), TIMEOUT_MS)
             ?: throw AssertionError("Named field '$label' was not exposed in the app accessibility tree")
         val visibleBounds = field.visibleBounds
@@ -130,13 +136,15 @@ class HostEditValidationTest {
             "Touching named field '$label' was rejected",
             device.click(visibleBounds.centerX(), visibleBounds.centerY()),
         )
-        val editor = device.wait(
-            Until.findObject(By.clazz("android.widget.EditText").desc(label).focused(true)),
+        val focusedEditors = device.wait(
+            Until.findObjects(By.clazz("android.widget.EditText").focused(true)),
             TIMEOUT_MS,
-        ) ?: throw AssertionError(
-            "Named field '$label' did not focus its own editable node; " +
-                "focusedEditables=${device.findObjects(By.clazz("android.widget.EditText").focused(true)).map { it.contentDescription to it.text }}",
         )
+        if (focusedEditors.size != 1) throw AssertionError(
+            "Tapping named field '$label' should focus exactly one editable node; " +
+                "focusedEditables=${focusedEditors.map { it.contentDescription to it.text }}",
+        )
+        val editor = focusedEditors.single()
         editor.setText(value)
         device.waitForIdle()
         // The later validation/save assertions verify the form model, which is the

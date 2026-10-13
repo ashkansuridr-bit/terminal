@@ -2,7 +2,7 @@
 
 ## وضعیت فعلی — آخرین به‌روزرسانی 2026-10-13
 
-تغییرات Terminal Control Studio مستقیماً روی `main` ثبت می‌شوند، مطابق دستور صریح مالک مخزن. آخرین commit پوش‌شده `c68b95f` است؛ Verify، unit tests، lint و Debug builds موفق‌اند، اما اجرای Instrumentation شمارهٔ [38444931145](https://github.com/ashkansuridr-bit/terminal/actions/runs/38444931145) چهار ماتریس API26/36 را با ۱۶ اجرای ناموفق تمام کرد (همان چهار آزمون در هر ماتریس). دو job API37 پیش از تست به علت `adb: device offline` و timeout بوت Emulator متوقف شدند. harness follow-up و ساخت/ویرایش Theme سفارشی و تکثیر پروفایل محلی کامپایل و JVM-tested شده‌اند، اما هنوز runtime CI ندارند. شمار Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است؛ وضعیت انتشار همچنان NOT VERIFIED.
+تغییرات Terminal Control Studio مستقیماً روی `main` ثبت می‌شوند، مطابق دستور صریح مالک مخزن. آخرین commit پوش‌شده `7727c4f` است؛ Verify، unit tests، lint و Debug builds موفق‌اند، اما اجرای Instrumentation شمارهٔ [38448985782](https://github.com/ashkansuridr-bit/terminal/actions/runs/38448985782) در API26 Debug/Preview چهار تست و API36 Debug/Preview سه تست را از ۱۱۴ مورد ناموفق گزارش کرد (۱۴ اجرای ناموفق). HostEdit، HostList و SettingsToggle در API26/36 و TerminalKeyboard در API26 شکست خوردند؛ Snippet موفق بود. دو job API37 پیش از تست به علت `adb: device offline` و timeout بوت Emulator متوقف شدند. harness follow-up و ساخت/ویرایش Theme سفارشی و تکثیر پروفایل محلی کامپایل و JVM-tested شده‌اند، اما هنوز runtime CI ندارند. شمار Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است؛ وضعیت انتشار همچنان NOT VERIFIED.
 
 ## تغییرات و علت‌ها
 
@@ -18,11 +18,11 @@
 
 ## راستی‌آزمایی
 
-روی کد برنامهٔ `cf0ac9d`، JVM tests برابر ۱٬۰۲۲/۱٬۰۲۲ در ۱۱۸ suite، lint با صفر خطا (۱۰۶ هشدار، ۲ hint)، MarketDebug/Preview build، AndroidTest compile و `apksigner verify` برای APK Debug موفق شدند. فایل APK ریشه از کد برنامهٔ `cf0ac9d` ساخته شده و با گواهی Android Debug امضا شده؛ SHA-256: `36a954e19c2a9ae5831e2dd22c1ea196a0d72483cff9e0e6fd447fae924e98ae`. امضای Production تأیید نشده است.
+در workspace فعلی، JVM tests برابر ۱٬۰۲۵/۱٬۰۲۵ در ۱۱۹ suite، کامپایل MarketDebug برنامه و AndroidTest، و lint با صفر خطا (۱۰۶ هشدار، ۲ hint) موفق شدند. APK آزمایشی موجود از کد برنامهٔ قدیمی‌تر `cf0ac9d` ساخته و با گواهی Android Debug امضا شده؛ SHA-256: `36a954e19c2a9ae5831e2dd22c1ea196a0d72483cff9e0e6fd447fae924e98ae`. امضای Production تأیید نشده است.
 
-Run `38444931145` روی commit تستی `c68b95f`، Verify را با موفقیت گذراند. هرکدام از API26 Debug/Preview و API36 Debug/Preview چهار شکست از ۱۱۴ داشتند (۱۶ اجرای ناموفق): `HostEditValidationTest`, `HostListPresentationTest`, `SettingsToggleAccessibilityTest`, `SnippetAccessibilityTest`. تست‌های font slider و palette در این اجرا موفق شدند. API37 Debug/Preview هر دو با `adb: device offline` و boot timeout پیش از تست متوقف شدند. گزارش‌های HTML برای API26/36 در artifactهای workflow هستند؛ root causeها و harness follow-up در `LOOP_CHECKPOINT.md` ثبت شده‌اند. هیچ Crash واقعی در این دور بازتولید نشده است؛ نبود Crash تأیید نشده.
+Run `38448985782` روی commit تستی `7727c4f`، Verify را با موفقیت گذراند. هرکدام از API26 Debug/Preview و API36 Debug/Preview به‌ترتیب ۴/۴/۳/۳ شکست از ۱۱۴ داشتند (۱۴ اجرای ناموفق): HostEdit، HostList و SettingsToggle در هر دو API؛ TerminalKeyboard تنها در API26. Snippet موفق شد. تست‌های font slider و palette در این اجرا موفق شدند. API37 Debug/Preview هر دو با `adb: device offline` و boot timeout پیش از تست متوقف شدند. گزارش‌های HTML برای API26/36 در artifactهای workflow هستند؛ root causeها و harness follow-up در `LOOP_CHECKPOINT.md` ثبت شده‌اند. هیچ Crash واقعی در این دور بازتولید نشده است؛ نبود Crash تأیید نشده.
 
-`loop2_gate.py`, `market_release_gate.py` و `git diff --check` در نسخهٔ محلی فعلی موفق‌اند. محیط محلی `adb` ندارد و AVD API36 به علت نبود `kernel-ranchu` اجرا نمی‌شود؛ در نتیجه UI، TalkBack و device matrix را نمی‌توان محلی تأیید کرد.
+در workspace فعلی ۱٬۰۲۵ تست JVM، کامپایل برنامه و AndroidTest، و Lint با صفر خطا موفق‌اند؛ `loop2_gate.py`, `market_release_gate.py` و `git diff --check` نیز موفق‌اند. تغییرهای تازه هنوز uncommitted هستند و runtime CI تازه ندارند. محیط محلی `adb` ندارد و AVD API36 به علت نبود `kernel-ranchu` اجرا نمی‌شود؛ در نتیجه UI، TalkBack و device matrix را نمی‌توان محلی تأیید کرد.
 
 ## علت‌های تأییدشده و موارد نامشخص
 
@@ -42,9 +42,9 @@ Run `38444931145` روی commit تستی `c68b95f`، Verify را با موفقی
 
 ## خروجی‌ها و وضعیت انتشار
 
-- شاخهٔ فعلی `main` است؛ آخرین commit پوش‌شده `ac623d9` است. اصلاح‌های harness پس از آن در workspace محلی‌اند، کامپایل شده‌اند و برای تأیید runtime به اجرای CI بعدی نیاز دارند.
+- شاخهٔ فعلی `main` است؛ آخرین commit پوش‌شده هنگام ثبت checkpoint `7727c4f` است. اصلاح‌های harness پس از آن در workspace محلی‌اند، کامپایل شده‌اند و برای تأیید runtime به اجرای CI بعدی نیاز دارند.
 - تغییرات مطابق درخواست کاربر مستقیماً به `main` پوش شده‌اند؛ لینک شاخه: https://github.com/ashkansuridr-bit/terminal/tree/main . PR جدیدی ایجاد نشده است.
-- آخرین CI کامل: https://github.com/ashkansuridr-bit/terminal/actions/runs/38444931145 (Verify موفق، ۱۶ شکست UI در API26/36، API37 boot timeout).
+- آخرین CI کامل: https://github.com/ashkansuridr-bit/terminal/actions/runs/38448985782 (Verify موفق، ۱۴ شکست UI در API26/36، API37 boot timeout).
 - اجرای CI برای `82b2861` (نتیجه باید دوباره بررسی شود): https://github.com/ashkansuridr-bit/terminal/actions/runs/38395092348
 - APK تولیدی/امضاشده: تأیید نشده؛ خروجی Debug با گواهی Debug، نسخهٔ Production محسوب نمی‌شود.
 - کلیپ معرفی فارسی: `TerminalSSH-Promo-fa.mp4` و `TerminalSSH-Promo-fa-no-bgm.mp4` در ریشه؛ جزئیات hash و محدودیت شناسایی موسیقی در `docs/terminal-control-studio/VIDEO_DELIVERY.md` و بازبینی مستقل در `VIDEO_REVIEW.md`.

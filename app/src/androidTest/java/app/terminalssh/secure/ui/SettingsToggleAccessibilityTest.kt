@@ -29,27 +29,33 @@ class SettingsToggleAccessibilityTest {
 
         try {
             app.settings.confirmMultilinePaste = true
-            ActivityScenario.launch(MainActivity::class.java).use {
-                val context = instrumentation.targetContext
-                val settingsTab = context.getString(R.string.tab_settings)
-                val label = context.getString(R.string.settings_paste_confirm)
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                val appContext = instrumentation.targetContext
+                lateinit var settingsTab: String
+                lateinit var label: String
+                lateinit var settingsSearch: String
+                scenario.onActivity { activity ->
+                    settingsTab = activity.getString(R.string.tab_settings)
+                    label = activity.getString(R.string.settings_paste_confirm)
+                    settingsSearch = activity.getString(R.string.settings_search)
+                }
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
                 device.findObject(By.text(settingsTab)).click()
                 assertTrue(
                     "Settings tab was tapped but its searchable settings screen did not appear",
-                    device.wait(Until.hasObject(By.desc(context.getString(R.string.settings_search))), TIMEOUT_MS),
+                    device.wait(Until.hasObject(By.desc(settingsSearch)), TIMEOUT_MS),
                 )
                 assertTrue(
                     "Toggle row was not fully reachable by vertical scrolling",
                     device.scrollUntilFullyVisible(
                         By.desc(label),
                         maxAttempts = 20,
-                        appPackage = context.packageName,
+                        appPackage = appContext.packageName,
                     ),
                 )
 
-                val density = context.resources.displayMetrics.density
+                val density = appContext.resources.displayMetrics.density
                 val initial = stableSnapshot(label)
                 assertTrue("toggle row was not clickable", initial.clickable)
                 assertFalse("unchanged setting should not expose a reset gesture", initial.longClickable)
@@ -80,15 +86,19 @@ class SettingsToggleAccessibilityTest {
                 assertTrue("Persisted false value was not reflected by switch semantics", awaitUiState(TIMEOUT_MS) {
                     device.findObject(By.desc(label))?.isChecked == false
                 })
+                assertTrue("Toggle stayed disabled after its setting had persisted", awaitUiState(TIMEOUT_MS) {
+                    stableSnapshotOrNull(label)?.clickable == true
+                })
 
                 // Exercise the physical touch path independently from ACTION_CLICK.
                 // This guards against an accessibility action working while the row's
                 // actual tap target is clipped or its pointer handler is disconnected.
                 assertTrue(
                     "The switch row became clipped after the accessibility action",
-                    device.scrollUntilFullyVisible(By.desc(label), maxAttempts = 20, appPackage = context.packageName),
+                    device.scrollUntilFullyVisible(By.desc(label), maxAttempts = 20, appPackage = appContext.packageName),
                 )
                 val falseSnapshot = stableSnapshot(label)
+                assertTrue("Switch was still disabled before physical tap", falseSnapshot.clickable)
                 assertTrue(
                     "The touch target must remain fully visible after re-scrolling; " +
                         "screenBounds=${falseSnapshot.bounds}, visibleBounds=${falseSnapshot.visibleBounds}, " +
@@ -107,6 +117,7 @@ class SettingsToggleAccessibilityTest {
                 })
 
                 val trueSnapshot = stableSnapshot(label)
+                assertTrue("Switch was still disabled before the second physical tap", trueSnapshot.clickable)
                 assertTrue(
                     "Second physical tap target must remain fully visible; " +
                         "screenBounds=${trueSnapshot.bounds}, visibleBounds=${trueSnapshot.visibleBounds}",

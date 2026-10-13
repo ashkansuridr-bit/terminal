@@ -1,5 +1,6 @@
 package app.terminalssh.secure.ui
 
+import android.content.Context
 import androidx.test.core.app.ActivityScenario
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -34,6 +35,7 @@ class HostListPresentationTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val device = UiDevice.getInstance(instrumentation)
     private val context = instrumentation.targetContext
+    private lateinit var activityContext: Context
     private lateinit var app: TerminalApp
     private lateinit var seeded: List<HostProfile>
 
@@ -63,6 +65,7 @@ class HostListPresentationTest {
     fun hostsAreGroupedAndCarryTheirOwnRecency() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
+                activityContext = activity
                 // The test fixture is written directly to the durable store before
                 // launch. Refresh a retained ViewModel so this checks rendering rather
                 // than a stale initial snapshot left by another UI test.
@@ -88,8 +91,9 @@ class HostListPresentationTest {
 
     @Test
     fun aSearchThatMatchesNothingExplainsItselfAndOffersTheWayBack() {
-        ActivityScenario.launch(MainActivity::class.java).use {
-            val search = context.getString(R.string.hosts_search)
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity -> activityContext = activity }
+            val search = activityContext.getString(R.string.hosts_search)
             assertTrue(
                 "the search field should appear once there are several hosts",
                 device.wait(Until.hasObject(By.text(search)), TIMEOUT_MS),
@@ -102,7 +106,7 @@ class HostListPresentationTest {
             input.text = "zzzznotahost"
 
             assertVisible(R.string.hosts_no_results_title)
-            val clear = context.getString(R.string.hosts_clear_search)
+            val clear = activityContext.getString(R.string.hosts_clear_search)
             assertTrue(device.wait(Until.hasObject(By.text(clear)), TIMEOUT_MS))
 
             device.findObject(By.text(clear)).click()
@@ -111,12 +115,12 @@ class HostListPresentationTest {
             // soft keyboard is still up and covers most of a 600px screen, and dismissing
             // it with Back would close the Activity instead.
             assertReachable(R.string.hosts_section_favorites)
-            assertFalse(device.hasObject(By.text(context.getString(R.string.hosts_no_results_title))))
+            assertFalse(device.hasObject(By.text(activityContext.getString(R.string.hosts_no_results_title))))
         }
     }
 
     private fun assertVisible(stringRes: Int) {
-        val text = context.getString(stringRes)
+        val text = activityContext.getString(stringRes)
         assertTrue("\"$text\" was not on screen", device.wait(Until.hasObject(By.text(text)), TIMEOUT_MS))
     }
 
@@ -126,7 +130,7 @@ class HostListPresentationTest {
      * cannot tell them apart is measuring the screen height.
      */
     private fun assertReachable(stringRes: Int) {
-        assertReachableText(context.getString(stringRes))
+        assertReachableText(activityContext.getString(stringRes))
     }
 
     private fun assertReachableText(text: String) {

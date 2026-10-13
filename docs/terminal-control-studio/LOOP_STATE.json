@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-13T18:33:16+00:00",
+  "capturedAt": "2026-10-13T19:04:05+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
   "lastVerifiedCommit": "c68b95ff033ffd029b586fb2a04b57890e1e8806",
@@ -402,7 +402,7 @@
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS on current local workspace: :app:compileMarketDebugKotlin (same Gradle invocation as unit and lint checks).",
+    "marketDebugCompile": "PASS in latest local Gradle invocation.",
     "marketDebugUnitTests": {
       "passed": 1025,
       "failed": 0,
@@ -413,17 +413,17 @@
     },
     "marketDebugAssemble": "PASS on cf0ac9d: :app:assembleMarketDebug",
     "diffCheck": "PASS after current local edits",
-    "instrumentation": "CI run 38444931145 on c68b95f: Verify PASS. API26 Debug/Preview and API36 Debug/Preview each had 4 failed of 114 (16 failed executions; same HostEdit, HostList, SettingsToggle and Snippet tests). API37 Debug/Preview boot timed out after adb reported device offline; no tests ran. Release candidates skipped. Current follow-up is uncommitted, JVM-tested and compiled only. Local strict follow-up removes ACTION_CLICK fallback and verifies full target visibility; compiled, no device runtime yet.",
-    "apiDeviceMatrix": "Run 38444931145 exercised API26/36 Debug+Preview, 114 tests per variant with four common failures; API37 Debug+Preview failed before tests with adb device offline/boot timeout. API31/34 are not in this workflow. Local API36 AVD lacks kernel-ranchu; no device is attached. Owner-reported phone test is not independently captured. Current local instrumentation changes compile but were not device-run.",
+    "instrumentation": "Latest completed CI run 38448985782 on 7727c4f: Verify PASS. API26 Debug/Preview each 4/114 failed; API36 Debug/Preview each 3/114 failed. HostEdit, HostList and SettingsToggle failed across API26/36; TerminalKeyboard modifier/Tab failed only API26; Snippet passed. API37 Debug/Preview were blocked before tests by adb device offline/emulator boot timeout. Current local changes compile and unit tests pass but have no runtime device evidence.",
+    "apiDeviceMatrix": "Run 38448985782 exercised API26/36 and attempted API37. API26/36 ran 114 each with 4/3 failures per variant. API37 Debug/Preview failed before test execution due adb device offline and boot timeout. API31/34 are not in workflow. Local API36 AVD lacks kernel-ranchu; no device attached.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS on current local workspace: :app:compileMarketDebugAndroidTestKotlin; runtime not run locally.",
+    "marketDebugAndroidTestCompile": "PASS in latest local Gradle invocation; runtime not run locally.",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
       "warnings": 106,
       "hints": 2,
-      "evidence": "Current local workspace: :app:lintMarketDebug; 0 errors, 106 warnings, 2 hints. Compose copy suffix uses stringResource."
+      "evidence": "Latest local Gradle invocation."
     },
     "gplayDebugAssemble": "PASS",
     "marketPreviewAssemble": "PASS on cf0ac9d: :app:assembleMarketPreview (R8/minified; debug certificate)",
@@ -447,7 +447,9 @@
       "rootCopy": "TerminalSSH-0.7.2-MarketDebug-TEST.apk",
       "rootCopySHA256": "36a954e19c2a9ae5831e2dd22c1ea196a0d72483cff9e0e6fd447fae924e98ae"
     },
-    "marketDebugAndroidTestAssemble": "PASS on cf0ac9d: :app:assembleMarketDebugAndroidTest"
+    "marketDebugAndroidTestAssemble": "PASS on cf0ac9d: :app:assembleMarketDebugAndroidTest",
+    "latestLocalVerification": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m; python3 scripts/loop2_gate.py; python3 scripts/market_release_gate.py; git diff --check; parse JUnit XML and LOOP_STATE JSON",
+    "latestLocalResult": "PASS: 1,025 JVM tests across 119 suites, 0 failures/errors/skips; MarketDebug app and AndroidTest compilation; MarketDebug lint (0 errors, 106 warnings, 2 hints); loop2_gate.py; market_release_gate.py; git diff --check. Instrumentation runtime not run locally (no adb/device; API36 emulator image lacks kernel-ranchu)."
   },
   "knownIssues": [
     "Build warns AGP 8.13.2 has not been validated by Google against compileSdk 37.0; build succeeds.",
@@ -462,30 +464,31 @@
     "Run 38442115157 on ac623d9: Verify passed; the same six UI tests failed in each API26/36 Debug/Preview run (24 failed executions total); API37 Debug/Preview boot timed out before tests; release candidates skipped.",
     "Current uncommitted instrumentation corrections address mixed app-window/UiAutomator bounds, stale HostList ViewModel fixtures, and missing Terminal-tab synchronization in SnippetAccessibilityTest; compilation and source gates pass locally, runtime is pending.",
     "Run 38444931145 on c68b95f: Verify passed; API26/36 Debug+Preview each reported four common UI failures (HostEdit, HostList, SettingsToggle, Snippet); API37 Debug+Preview failed boot with adb device offline; release candidates skipped.",
-    "Current local follow-up has JVM/compile/lint/source-gate evidence only. It adds custom theme create/edit and localized profile duplication, adjusts the default Snippets position, and hardens four UI tests; fresh runtime CI is required."
+    "Current local follow-up has JVM/compile/lint/source-gate evidence only. It adds custom theme create/edit and localized profile duplication, adjusts the default Snippets position, and hardens four UI tests; fresh runtime CI is required.",
+    "Run 38448985782 on 7727c4f: Verify passed; API26 Debug/Preview each had 4/114 failures and API36 Debug/Preview each 3/114 (14 failed executions total). HostEdit, HostList and SettingsToggle fail across API26/36; TerminalKeyboard modifier/Tab additionally fails on API26; Snippet passed. API37 boot blocked before tests. Local follow-up remains runtime-unverified."
   ],
-  "nextStep": "Commit and push the reviewed follow-up directly to main per owner instruction. Inspect fresh API26/36/37 CI, download all completed reports, then use evidence to resolve any remaining UI failures. Keep TCS-05/TCS-07/TCS-10 incomplete until required runtime gates pass.",
+  "nextStep": "Review diff; commit and push local accessibility/test follow-up directly to main as explicitly requested; inspect new API26/36/37 CI reports and continue fixing evidenced failures. Do not mark TCS-05/TCS-07/TCS-10 complete without runtime gates.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
-    "command": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug --no-daemon --no-configuration-cache --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m; python3 scripts/loop2_gate.py; python3 scripts/market_release_gate.py; git diff --check; python3 -m json.tool docs/terminal-control-studio/LOOP_STATE.json",
-    "result": "PASS: 1,025 JVM tests (0 failures/errors/skips), MarketDebug app and AndroidTest compilation, lint (0 errors, 106 warnings, 2 hints), both source gates, diff check, and JSON parse. Lint caught and the follow-up fixed a locale-stale LocalContext.getString call.",
-    "androidTest": "Kotlin compilation only. Runtime unavailable locally because adb/device is absent and configured API36 image lacks kernel-ranchu.",
-    "applicationSource": "Current local workspace includes uncommitted TCS-05 custom theme/profile UI and default Snippets order change, plus instrumentation follow-up."
+    "command": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m; python3 scripts/loop2_gate.py; python3 scripts/market_release_gate.py; git diff --check; parse JUnit XML and LOOP_STATE JSON",
+    "result": "PASS: 1,025 JVM tests across 119 suites, 0 failures/errors/skips; MarketDebug app and AndroidTest compilation; MarketDebug lint (0 errors, 106 warnings, 2 hints); loop2_gate.py; market_release_gate.py; git diff --check. Instrumentation runtime not run locally (no adb/device; API36 emulator image lacks kernel-ranchu).",
+    "androidTest": "Kotlin compilation PASS; runtime unavailable locally because adb/device is absent and configured API36 image lacks kernel-ranchu.",
+    "applicationSource": "Local uncommitted follow-up changes host accessibility semantics, SettingsRow toggle semantics, locale-aware assertions and keyboard click synchronization; TCS-05 theme/profile UI is already committed at 7727c4f."
   },
   "latestCi": {
-    "runId": "38444931145",
-    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38444931145",
-    "headSha": "c68b95ff033ffd029b586fb2a04b57890e1e8806",
+    "runId": "38448985782",
+    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38448985782",
+    "headSha": "7727c4fe60279af4e7ae8d50c5463ffc92bc5c48",
     "verify": "PASS: source/artifact gates, JVM tests, lint and Debug builds",
     "instrumentation": {
       "api26Debug": "FAIL: 4 failed of 114",
       "api26Preview": "FAIL: 4 failed of 114",
-      "api36Debug": "FAIL: 4 failed of 114",
-      "api36Preview": "FAIL: 4 failed of 114",
+      "api36Debug": "FAIL: 3 failed of 114",
+      "api36Preview": "FAIL: 3 failed of 114",
       "api37Debug": "BLOCKED: adb device offline; emulator boot timeout before test execution",
       "api37Preview": "BLOCKED: adb device offline; emulator boot timeout before test execution",
-      "totalFailedExecutions": 16
+      "totalFailedExecutions": 14
     },
     "releaseCandidates": "SKIPPED because instrumentation matrix did not pass"
   },
@@ -549,5 +552,5 @@
       "status": "UNIT_VERIFIED"
     }
   ],
-  "deliveryCommit": "ac623d92c9daeabc7bbf4f8cc1816e7cc294f797"
+  "deliveryCommit": "7727c4fe60279af4e7ae8d50c5463ffc92bc5c48"
 }

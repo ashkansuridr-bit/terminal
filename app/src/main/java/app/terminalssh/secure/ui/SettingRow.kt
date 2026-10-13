@@ -54,6 +54,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import app.terminalssh.secure.R
 import app.terminalssh.secure.settings.BoolSetting
@@ -115,41 +116,33 @@ fun SettingRow(
             .fillMaxWidth()
             .defaultMinSize(minWidth = 240.dp, minHeight = 48.dp)
             .clip(RoundedCornerShape(12.dp))
-            // Publish a single labeled switch whose action is explicit. Applying
-            // clearAndSetSemantics after combinedClickable erased its click action on
-            // API 26, leaving a focusable but non-activatable row.
             .then(
-                if (spec is BoolSetting && booleanValue != null) Modifier.clearAndSetSemantics {
-                    contentDescription = title
-                    role = Role.Switch
-                    toggleableState = ToggleableState(booleanValue)
-                    if (saving) {
-                        disabled()
-                    } else {
-                        onClick(label = title) {
-                            persist { store.set(spec, !booleanValue) }
-                            true
+                if (spec is BoolSetting && booleanValue != null) {
+                    Modifier
+                        .semantics(mergeDescendants = true) {
+                            contentDescription = title
+                            if (changed) onLongClick(label = resetLabel) {
+                                resetChangedSetting()
+                                true
+                            }
                         }
-                        if (changed) onLongClick(label = resetLabel) {
-                            resetChangedSetting()
-                            true
-                        }
-                    }
-                } else Modifier,
-            )
-            // Keep reset gestures off sliders and choice chips. Their child controls own
-            // adjustable/selection semantics that a clickable parent would erase.
-            .then(if (resetFromHeading) Modifier else Modifier.combinedClickable(
-                enabled = !saving,
-                role = if (spec is BoolSetting) Role.Switch else null,
-                onClick = {
-                    if (spec is BoolSetting && booleanValue != null) {
-                        persist { store.set(spec, !booleanValue) }
-                    }
+                        .toggleable(
+                            value = booleanValue,
+                            enabled = !saving,
+                            role = Role.Switch,
+                        ) { checked -> persist { store.set(spec, checked) } }
+                } else if (resetFromHeading) {
+                    Modifier
+                } else {
+                    Modifier.combinedClickable(
+                        enabled = !saving,
+                        role = null,
+                        onClick = {},
+                        onLongClick = resetChangedSetting,
+                        onLongClickLabel = resetLabel,
+                    )
                 },
-                onLongClick = resetChangedSetting,
-                onLongClickLabel = resetLabel,
-            ))
+            )
             .padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {

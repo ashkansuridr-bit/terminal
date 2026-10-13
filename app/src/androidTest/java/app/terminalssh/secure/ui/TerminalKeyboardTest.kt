@@ -336,6 +336,16 @@ class TerminalKeyboardTest {
         return null
     }
 
+    /** Waits for a settled actionable key node rather than a transient named layout node. */
+    private fun waitForClickableAppDesc(desc: String, within: Long = UI_TIMEOUT_MS): AccessibilityNodeInfo? {
+        val deadline = SystemClock.uptimeMillis() + within
+        while (SystemClock.uptimeMillis() < deadline) {
+            findAppNode { it.contentDescription == desc && it.isClickable }?.let { return it }
+            SystemClock.sleep(100)
+        }
+        return null
+    }
+
     /** Asserts a node carrying [desc] appears in the application windows in time. */
     private fun assertAppDescVisible(desc: String) {
         val node = waitForAppDesc(desc)
@@ -764,7 +774,7 @@ class TerminalKeyboardTest {
                     modifierControl(shiftName).isChecked
             })
 
-            val tabKey = waitForAppDesc(tabName)
+            val tabKey = waitForClickableAppDesc(tabName)
             assertTrue("Tab key must expose an accessibility click action", tabKey?.isClickable == true)
             try {
                 assertTrue("Tab key accessibility action was rejected", tabKey!!.performAction(AccessibilityNodeInfo.ACTION_CLICK))

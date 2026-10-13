@@ -320,3 +320,13 @@
 - Latest local Gradle invocation succeeded: 1,025 JVM tests across 119 XML suites (0 failures/errors/skips), MarketDebug app compilation, AndroidTest Kotlin compilation, and lint (0 errors, 106 warnings, 2 hints). Both release/source gates, diff check and JSON parse passed.
 - Device instrumentation remains unrun locally. The strict accessibility assertion and product editor flows must go through fresh CI/device verification; TCS-05, TCS-07 and TCS-10 remain `IMPLEMENTED_NOT_TESTED`, overall `VERIFIED_COMPLETE` 0/11.
 - Exact next action: recheck `git diff`, commit/push to `main` (owner explicitly directed main-page updates), then inspect API26/36/37 workflow results and all available reports.
+
+
+## Checkpoint 2026-10-13 — run 38448985782 and strict follow-up
+
+- Current base commit: `7727c4fe60279af4e7ae8d50c5463ffc92bc5c48` on `main`; local source/test follow-up is uncommitted.
+- CI run [38448985782](https://github.com/ashkansuridr-bit/terminal/actions/runs/38448985782) passed Verify. API26 Debug/Preview each failed 4/114 tests; API36 Debug/Preview each failed 3/114 (14 failed executions). `HostEditValidationTest`, `HostListPresentationTest` and `SettingsToggleAccessibilityTest` failed on both API levels; API26 also failed the TerminalKeyboard modifier/Tab test. Snippet passed in all four variants. API37 Debug/Preview failed before test execution with `adb: device offline` and emulator boot timeout. Release candidates were skipped.
+- Local uncommitted changes now unify settings switch physical/accessibility semantics with `Modifier.toggleable`, expose plain host names to accessibility while preserving visual bidi isolation, resolve expected strings from Activity resources, wait for accessible keyboard actions to become clickable, and make HostEdit assertions follow the active Activity/editor.
+- Latest local verification PASS: 1,025 JVM tests across 119 suites (0 failures/errors/skips), MarketDebug app compile, AndroidTest Kotlin compile, and lint (0 errors, 106 warnings, 2 hints). `loop2_gate.py`, `market_release_gate.py`, `git diff --check`, and JSON parsing pass. No local device runtime is possible (`adb` absent; API36 image lacks `kernel-ranchu`).
+- TCS-05 theme/profile implementation is committed in `7727c4f`; do not infer runtime completion from its local compile. TCS-05, TCS-07 and TCS-10 remain incomplete; strict `VERIFIED_COMPLETE` remains 0/11.
+- Next exact step: commit and push the reviewed follow-up to `main` per owner instruction, inspect its fresh API26/36/37 CI reports, then fix remaining test/product failures from artifact evidence.

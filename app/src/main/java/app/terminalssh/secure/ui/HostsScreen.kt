@@ -62,9 +62,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -469,7 +471,12 @@ private fun HostRow(
         Spacer(Modifier.width(Space.md))
 
         Column(Modifier.weight(1f)) {
-            Text(ltr(profile.displayName), style = MaterialTheme.typography.titleMedium, maxLines = 1)
+            Text(
+                ltr(profile.displayName),
+                modifier = Modifier.clearAndSetSemantics { text = AnnotatedString(profile.displayName) },
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+            )
             Text(
                 ltr(profile.subtitle),
                 style = MaterialTheme.typography.bodySmall,
