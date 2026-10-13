@@ -116,16 +116,13 @@ class HostEditValidationTest {
 
     private fun setFieldText(label: String, value: String) {
         // Compose exposes the named OutlinedTextField wrapper separately from its
-        // EditText child on API 26+. Click the named wrapper, then set text on the
-        // actual focused editor rather than assuming its child repeats the label.
-        val field = AppWindowAccessibility.waitFor(TIMEOUT_MS) {
-            it.contentDescription?.toString() == label
-        } ?: throw AssertionError("Named field '$label' was not exposed in the app accessibility tree")
-        try {
-            assertTrue("Named field '$label' did not expose its click action", AppWindowAccessibility.click(field))
-        } finally {
-            field.recycle()
-        }
+        // EditText child on API 26+. The wrapper is not always marked clickable in
+        // Android 8's tree, but its visible bounds still contain the real touch target.
+        val field = device.wait(Until.findObject(By.desc(label)), TIMEOUT_MS)
+            ?: throw AssertionError("Named field '$label' was not exposed in the app accessibility tree")
+        val bounds = field.visibleBounds
+        assertTrue("Named field '$label' must have a visible touch target: $bounds", bounds.width() > 0 && bounds.height() > 0)
+        assertTrue("Touching named field '$label' was rejected", device.click(bounds.centerX(), bounds.centerY()))
         val editor = device.wait(
             Until.findObject(By.clazz("android.widget.EditText").focused(true)),
             TIMEOUT_MS,

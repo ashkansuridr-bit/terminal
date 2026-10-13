@@ -65,10 +65,10 @@ class HostListPresentationTest {
                 "Seeded host fixture was not durable: ${app.hosts.hosts().map { it.id to it.lastConnectedAt }}",
                 seeded.all { wanted -> app.hosts.hosts().any { it.id == wanted.id } },
             )
-            // LazyColumn does not expose offscreen rows until a swipe composes them.
-            // Reach this seeded row through the same viewport-checked path as headings.
-            assertReachableText("Recent gamma")
+            // Synchronize on an initial visible group before asking the lazy list to
+            // compose and expose an offscreen recent row to accessibility services.
             assertVisible(R.string.hosts_section_favorites)
+            assertReachableText("Recent gamma")
             assertReachable(R.string.hosts_section_recent)
             assertReachable(R.string.hosts_section_all)
 

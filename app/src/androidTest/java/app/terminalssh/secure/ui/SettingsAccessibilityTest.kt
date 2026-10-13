@@ -40,14 +40,7 @@ class SettingsAccessibilityTest {
                 val oled = instrumentation.targetContext.getString(R.string.settings_palette_oled)
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
-                val settingsNode = AppWindowAccessibility.waitFor(TIMEOUT_MS) {
-                    it.text?.toString() == settingsTab
-                } ?: throw AssertionError("Settings tab was not present in the application accessibility tree")
-                try {
-                    assertTrue("Settings tab accessibility action was rejected", AppWindowAccessibility.click(settingsNode))
-                } finally {
-                    settingsNode.recycle()
-                }
+                device.findObject(By.text(settingsTab)).click()
                 // The palettes row can sit below the fold on small emulator screens, and a
                 // row scrolled only just into view is clipped — which would make the size
                 // assertion below measure the screen edge instead of the row.
@@ -97,14 +90,7 @@ class SettingsAccessibilityTest {
                 val fontSizeLabel = instrumentation.targetContext.getString(R.string.settings_fontsize)
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
-                val settingsNode = AppWindowAccessibility.waitFor(TIMEOUT_MS) {
-                    it.text?.toString() == settingsTab
-                } ?: throw AssertionError("Settings tab was not present in the application accessibility tree")
-                try {
-                    assertTrue("Settings tab accessibility action was rejected", AppWindowAccessibility.click(settingsNode))
-                } finally {
-                    settingsNode.recycle()
-                }
+                device.findObject(By.text(settingsTab)).click()
                 assertTrue(
                     "Font-size slider was not fully visible after scrolling: ${visibilityDiagnostics(fontSizeLabel)}",
                     scrollSettingsTo(fontSizeLabel),

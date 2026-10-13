@@ -1,10 +1,13 @@
 package app.terminalssh.secure.ui
 
+import android.graphics.Rect
+import android.os.SystemClock
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.Until
 import app.terminalssh.secure.R
 import app.terminalssh.secure.TerminalApp
@@ -44,11 +47,12 @@ class SettingsToggleAccessibilityTest {
 
                 val toggle = device.findObject(By.desc(label))
                 val density = context.resources.displayMetrics.density
-                assertTrue("toggle row was not clickable", toggle.isClickable)
-                assertFalse("unchanged setting should not expose a reset gesture", toggle.isLongClickable)
-                assertTrue("toggle row did not expose switch state", toggle.isChecked)
-                assertTrue("toggle row was ${toggle.visibleBounds.height()}px tall", toggle.visibleBounds.height() >= 48 * density)
-                assertTrue("toggle row did not include its label and control", toggle.visibleBounds.width() >= 240 * density)
+                val initial = stableSnapshot(label)
+                assertTrue("toggle row was not clickable", initial.clickable)
+                assertFalse("unchanged setting should not expose a reset gesture", initial.longClickable)
+                assertTrue("toggle row did not expose switch state", initial.checked)
+                assertTrue("toggle row was ${initial.bounds.height()}px tall", initial.bounds.height() >= 48 * density)
+                assertTrue("toggle row did not include its label and control", initial.bounds.width() >= 240 * density)
 
                 val toggleNode = AppWindowAccessibility.waitFor(TIMEOUT_MS) {
                     it.contentDescription?.toString() == label && it.isCheckable
@@ -78,24 +82,31 @@ class SettingsToggleAccessibilityTest {
                 // Exercise the physical touch path independently from ACTION_CLICK.
                 // This guards against an accessibility action working while the row's
                 // actual tap target is clipped or its pointer handler is disconnected.
-                val falseToggle = device.findObject(By.desc(label))
-                val falseBounds = falseToggle.visibleBounds
-                assertTrue("The touch target must remain fully visible", falseBounds.height() >= 48 * density)
+                assertTrue(
+                    "The switch row became clipped after the accessibility action",
+                    device.scrollUntilFullyVisible(By.desc(label), maxAttempts = 20, appPackage = context.packageName),
+                )
+                val falseBounds = stableSnapshot(label).bounds
+                assertTrue(
+                    "The touch target must remain fully visible after re-scrolling; bounds=$falseBounds, " +
+                        "display=${device.displayWidth}x${device.displayHeight}, scrollables=${device.findObjects(By.scrollable(true)).map { it.visibleBounds }}",
+                    falseBounds.height() >= 48 * density,
+                )
                 assertTrue("Physical tap on the switch row was rejected", device.click(falseBounds.centerX(), falseBounds.centerY()))
                 assertTrue("Physical tap did not persist true", awaitUiState(TIMEOUT_MS) {
-                    app.settings.confirmMultilinePaste && device.findObject(By.desc(label))?.isChecked == true
+                    app.settings.confirmMultilinePaste && stableSnapshotOrNull(label)?.checked == true
                 })
 
-                val trueBounds = device.findObject(By.desc(label)).visibleBounds
+                val trueBounds = stableSnapshot(label).bounds
                 assertTrue("Second physical tap target must remain fully visible", trueBounds.height() >= 48 * density)
                 assertTrue("Second physical tap on the switch row was rejected", device.click(trueBounds.centerX(), trueBounds.centerY()))
                 assertTrue("Second physical tap did not persist false", awaitUiState(TIMEOUT_MS) {
-                    !app.settings.confirmMultilinePaste && device.findObject(By.desc(label))?.isChecked == false
+                    !app.settings.confirmMultilinePaste && stableSnapshotOrNull(label)?.checked == false
                 })
 
-                val changedToggle = device.findObject(By.desc(label))
-                assertTrue("changed setting should expose its reset gesture", changedToggle.isLongClickable)
-                changedToggle.longClick()
+                val changedToggle = stableSnapshot(label)
+                assertTrue("changed setting should expose its reset gesture", changedToggle.longClickable)
+                longClickFreshNode(label)
                 assertTrue("Long-press reset did not restore the default true value", awaitUiState(TIMEOUT_MS) {
                     app.settings.confirmMultilinePaste
                 })
@@ -116,5 +127,50 @@ class SettingsToggleAccessibilityTest {
          * reasons that have nothing to do with the code.
          */
         const val TIMEOUT_MS = 60_000L
+    }
+
+    private data class SwitchSnapshot(
+        val bounds: Rect,
+        val checked: Boolean,
+        val clickable: Boolean,
+        val longClickable: Boolean,
+    )
+
+    /** Reacquire an accessibility object after Compose recomposition instead of reading stale handles. */
+    private fun stableSnapshot(label: String): SwitchSnapshot =
+        stableSnapshotOrNull(label) ?: throw AssertionError("Switch '$label' was not stable in the accessibility tree")
+
+    private fun stableSnapshotOrNull(label: String): SwitchSnapshot? {
+        val deadline = SystemClock.uptimeMillis() + TIMEOUT_MS
+        while (SystemClock.uptimeMillis() < deadline) {
+            val node = runCatching { device.wait(Until.findObject(By.desc(label)), 1_000) }.getOrNull()
+            if (node != null) {
+                try {
+                    return SwitchSnapshot(node.visibleBounds, node.isChecked, node.isClickable, node.isLongClickable)
+                } catch (_: StaleObjectException) {
+                    // Reacquire the node after Compose replaces the semantics tree.
+                }
+            }
+            SystemClock.sleep(100)
+        }
+        return null
+    }
+
+    /** UiObject2 owns the long-press action; UiDevice only provides swipe/tap primitives. */
+    private fun longClickFreshNode(label: String) {
+        val deadline = SystemClock.uptimeMillis() + TIMEOUT_MS
+        while (SystemClock.uptimeMillis() < deadline) {
+            val node = runCatching { device.wait(Until.findObject(By.desc(label)), 1_000) }.getOrNull()
+            if (node != null) {
+                try {
+                    node.longClick()
+                    return
+                } catch (_: StaleObjectException) {
+                    // Reacquire after a Compose semantics update.
+                }
+            }
+            SystemClock.sleep(100)
+        }
+        throw AssertionError("Switch '$label' did not accept a long press")
     }
 }

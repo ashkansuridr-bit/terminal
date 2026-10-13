@@ -116,13 +116,17 @@ class SnippetAccessibilityTest {
                 }
                 val band = device.findObjects(By.scrollable(true))
                     .mapNotNull { runCatching { it.visibleBounds }.getOrNull() }
-                    .filter { it.height() in minTargetPx..(160 * density).toInt() && it.width() > minTargetPx }
+                    // The viewport's height is a scroll-container dimension, not an
+                    // accessibility touch target. API 26 can report a 48px row at
+                    // density 1; comparing it to 48dp incorrectly rejects it on denser
+                    // devices and exits before sending any swipe.
+                    .filter { it.height() in (24 * density).toInt()..(160 * density).toInt() && it.width() > minTargetPx }
                     .maxByOrNull { it.width() } ?: return false
                 val y = band.centerY()
                 val (from, to) = if (direction == LayoutDirection.Ltr) {
-                    (band.right - minTargetPx) to (band.left + minTargetPx)
+                    (band.right - (band.width() / 10)) to (band.left + (band.width() / 10))
                 } else {
-                    (band.left + minTargetPx) to (band.right - minTargetPx)
+                    (band.left + (band.width() / 10)) to (band.right - (band.width() / 10))
                 }
                 if (from == to) return false
                 device.swipe(from, y, to, y, 18)
