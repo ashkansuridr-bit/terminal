@@ -2,7 +2,7 @@
 
 ## وضعیت فعلی
 
-پیاده‌سازی Terminal Control Studio و اصلاحات پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit پوش‌شده در این checkpoint `895aea1` است. NEW-005 مسیر تنظیم/پاک‌کردن پروفایل میزبان را به editor وصل کرده؛ CI run `38400520050` در صف است و تست دستگاه هنوز تأیید نشده. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون Gateهای UI/دستگاه هنوز برای هیچ Feature کامل نشده‌اند.
+پیاده‌سازی Terminal Control Studio و اصلاحات پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit پوش‌شده روی `main`، `93135b0` است. NEW-005 مسیر تنظیم پروفایل برای میزبان را به ویرایشگر وصل کرده و NEW-006 نام‌های دسترس‌پذیری Alt/Shift/Snippets را محلی‌سازی و semantics کنترل Modifier را یکپارچه کرده است. Verify محلی روی این Commit موفق است؛ آزمون دستگاه هنوز تأیید نشده است. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون Gateهای UI/دستگاه هنوز برای هیچ Feature کامل نشده‌اند.
 
 ## تغییرات و علت‌ها
 
@@ -18,7 +18,7 @@
 
 ## راستی‌آزمایی
 
-در دور جاری، `:app:testMarketDebugUnitTest`، app/AndroidTest compile، lint، و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۲۱ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند؛ lint صفر خطا، ۱۰۴ هشدار و ۲ hint داشت. APK فعلی MarketDebug است، SHA-256 آن `66b444cc092643aa295bc4bdf5594b6efa7addac06d15b96e0b42a8f47c8a831` است و `apksigner` گواهی Android Debug را تأیید کرد؛ امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه محلی اجرا نشده است. CI run `38400520050` برای Commit `895aea1` در صف است. در run قبلی `38399699440` برای `94b7842`، Verify موفق شد و instrumentation API26/36/37 هنگام آخرین بررسی همچنان در حال اجرا بود. اجرای قبلی `38396679291` در API26/36 assertionهای UI داشت و API37 پیش از شروع تست Timeout بوت Emulator داد. NEW-005 و اصلاحات مستندات در worktree فعلی هنوز دستگاهی تست نشده‌اند.
+روی Commit `93135b0`، `:app:testMarketDebugUnitTest`، app/AndroidTest compile، lint، و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۲۱ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند؛ lint صفر خطا، ۱۰۵ هشدار و ۲ hint داشت. APK فعلی MarketDebug است، SHA-256 آن `feb9be8b5ec04bd9874c6215a4feba90670cb0071b1b6816bf262db53e2fe534` است و `apksigner` گواهی Android Debug را تأیید کرد؛ امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه محلی اجرا نشده است. بررسی semantics دسترس‌پذیری مشخص کرد نام/وضعیت/اکشن کلیک باید روی همان گره قابل‌کلیک باشد؛ تست اکنون همین شرط را می‌سنجد اما نتیجه runtime وابسته به اجرای CI جدید است. CI run `38401934345` برای Commit `93135b0`، Verify موفق دارد؛ شش job دستگاهی API26/36/37 هنوز در حال اجرا هستند. در runهای قبلی `38399699440`، `38400520050` و `38400681521` نیز Verify موفق بود ولی instrumentation هنگام آخرین بررسی هنوز در حال اجرا بود. اجرای قبلی `38396679291` در API26/36 assertionهای UI داشت و API37 پیش از شروع تست Timeout بوت Emulator داد. NEW-005 و NEW-006 هنوز روی Emulator نتیجهٔ نهایی ندارند؛ نتیجهٔ اجرای تازه باید از run `38401934345` خوانده شود.
 
 ## علت‌های تأییدشده و موارد نامشخص
 
@@ -26,7 +26,7 @@
 
 ## دستگاه و انتشار
 
-`adb` در `/root/android-sdk/platform-tools` موجود است، اما هیچ Emulator یا دستگاهی متصل نیست. نصب تصویر Android 36 به‌دلیل کمتر از ۱ گیگابایت فضای آزاد متوقف شد؛ فضای موقت دانلود پاک شد. Compose UI، TalkBack، نصب روی دستگاه، ماتریس API و SSH/SFTP واقعی همچنان بررسی نشده‌اند. AGP 8.13.2 دربارهٔ compileSdk 37 هشدار سازگاری می‌دهد، هرچند Build موفق است.
+در محیط فعلی `adb` موجود نیست و هیچ Emulator یا دستگاهی برای اجرای محلی وصل نیست. نصب تصویر Android 36 به‌دلیل کمتر از ۱ گیگابایت فضای آزاد متوقف شد؛ فضای موقت دانلود پاک شد. Compose UI، TalkBack، نصب روی دستگاه، ماتریس API و SSH/SFTP واقعی همچنان بررسی نشده‌اند. AGP 8.13.2 دربارهٔ compileSdk 37 هشدار سازگاری می‌دهد، هرچند Build موفق است.
 
 وضعیت انتشار: **NOT VERIFIED**. APK موجود Debug و غیر Production است.
 
@@ -38,9 +38,9 @@
 
 ## خروجی‌ها و وضعیت انتشار
 
-- شاخهٔ کاری فعلی: `main` (اصلاح NEW-003 و گزارش‌های همگام‌شده هنوز در درخت کاری‌اند).
-- آخرین Commit کد پوش‌شده: `584cc8b`.
-- PR مرتبط: https://github.com/ashkansuridr-bit/terminal/pull/4 (به‌دلیل پوش مستقیم، وضعیت وب آن را جداگانه بررسی کنید؛ PR معیار وضعیت شاخه نیست).
+- شاخهٔ کاری فعلی: `main`؛ Commit `93135b0` مستقیم پوش شده و درخت کاری پاک است.
+- آخرین Commit پوش‌شده: `93135b0` (`fix: localize toolbar accessibility controls`).
+- تغییرات مطابق درخواست کاربر مستقیماً به `main` پوش شده‌اند؛ لینک شاخه: https://github.com/ashkansuridr-bit/terminal/tree/main . PR جدیدی ایجاد نشده است.
 - اجرای CI قدیمی‌تر با شکست instrumentation: https://github.com/ashkansuridr-bit/terminal/actions/runs/38393877043
 - اجرای CI برای `82b2861` (نتیجه باید دوباره بررسی شود): https://github.com/ashkansuridr-bit/terminal/actions/runs/38395092348
 - APK تولیدی/امضاشده: تأیید نشده؛ خروجی Debug با گواهی Debug، نسخهٔ Production محسوب نمی‌شود.

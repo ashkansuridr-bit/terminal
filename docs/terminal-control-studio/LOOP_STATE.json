@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T14:40:00+00:00",
+  "capturedAt": "2026-10-13T13:00:00+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "895aea1dc57b27a13507c9746b495396bd860025",
+  "lastVerifiedCommit": "93135b0cbb2699c0aa2141254eda4c01c0736521",
   "features": [
     {
       "id": "TCS-01",
@@ -190,14 +190,10 @@
       "title": "دسترسی‌پذیری و زبان‌ها",
       "phase": "VERIFY",
       "changedFiles": [
-        "StudioToolbar.kt",
-        "TerminalKeyboardTest.kt",
-        "strings.xml (fa/ar/en/es/fr/ru)",
-        "values-en/strings.xml",
-        "values-es/strings.xml",
-        "values-fr/strings.xml",
-        "values-ru/strings.xml",
-        "values/strings.xml"
+        "app/src/main/java/app/terminalssh/secure/ui/toolbar/StudioToolbar.kt",
+        "app/src/androidTest/java/app/terminalssh/secure/ui/TerminalKeyboardTest.kt",
+        "app/src/androidTest/java/app/terminalssh/secure/ui/SnippetAccessibilityTest.kt",
+        "app/src/main/res/values*/strings.xml"
       ],
       "dependencies": [],
       "status": "IMPLEMENTED_NOT_TESTED",
@@ -205,17 +201,17 @@
         "TalkBack/locale UI"
       ],
       "executedTests": [
-        "Resource parity check PASS in values, ar, en, es, fr, ru",
-        "All six default special-key accessibility descriptions present in fa/ar/en/es/fr/ru resources; XML parity check PASS",
-        "MarketDebug app compile PASS; AndroidTest Kotlin compile PASS; JVM 1,014/1,014 PASS; lint PASS (0 errors, 104 warnings, 2 hints)"
+        "Alt/Shift/Snippets built-in spoken labels localized in fa/ar/en/es/fr/ru; XML parity check PASS",
+        "MarketDebug app compile PASS; AndroidTest Kotlin compile PASS; JVM 1,021/1,021 PASS; lint 0 errors, 105 warnings, 2 hints; MarketDebug assemble PASS",
+        "Latest GitHub run 38401934345 Verify job PASS; API26/36/37 instrumentation jobs pending."
       ],
-      "lastResult": "Built-in Escape/Tab/arrows now expose locale-aware spoken names only when no user description overrides them; test asserts all six active-locale names.",
+      "lastResult": "NEW-006 fixes hardcoded English accessible names for Alt, Shift and Snippets. Modifier controls expose label, checked state and explicit accessibility onClick together through clearAndSetSemantics while combinedClickable continues handling touch/long-press/repeat. Runtime semantics still require instrumentation confirmation.",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": "pending",
-      "lastReviewedAt": "2026-10-13T10:44:38+00:00",
+      "commitSha": "93135b0",
+      "lastReviewedAt": "2026-10-13T16:55:00+00:00",
       "remainingIssues": [
-        "API26/36/37 instrumentation is pending; other built-in descriptions (Alt/Shift and app actions) remain English literals."
+        "CI/device instrumentation must confirm single accessible clickable semantics node and localized labels across API26/36/37."
       ]
     },
     {
@@ -380,34 +376,34 @@
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS after durable import and recovery state fixes",
+    "marketDebugCompile": "PASS on 93135b0",
     "marketDebugUnitTests": {
       "passed": 1021,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
       "suites": 118,
-      "evidence": "Current worktree after durable import and recovery state fixes: :app:testMarketDebugUnitTest"
+      "evidence": "Current worktree :app:testMarketDebugUnitTest on source committed as 93135b0"
     },
-    "marketDebugAssemble": "PASS after durable import and recovery state fixes",
-    "diffCheck": "PASS on current worktree",
-    "instrumentation": "Run 38393877043 for 22e8782 completed: API26/36 Debug+Preview UI assertions failed; API37 Debug+Preview emulator boot timed out before tests. Follow-up removed the confirmed duplicate navigation label semantics. CI runs 38395092348 (82b2861), 38396293920 (8b8794e), and 38396679291 (584cc8b) were in progress at checkpoint; current source runtime still unverified.",
-    "apiDeviceMatrix": "BLOCKED: no emulator/device; disk capacity insufficient to install system image",
+    "marketDebugAssemble": "PASS on 93135b0",
+    "diffCheck": "PASS before commit 93135b0",
+    "instrumentation": "Run 38401934345 for 93135b0: Verify PASS; API26/36/37 Debug and Preview instrumentation still running at 2026-10-13T13:00Z. Older runs 38399699440 (94b7842), 38400520050 (895aea1), 38400681521 (d784dcf) also in progress at last check.",
+    "apiDeviceMatrix": "Local E2E BLOCKED: adb executable/device unavailable. GitHub run 38401934345 has API26/36/37 Debug/Preview tests in progress; runtime status pending.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS after durable import and recovery state fixes",
+    "marketDebugAndroidTestCompile": "PASS on 93135b0",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
-      "warnings": 104,
+      "warnings": 105,
       "hints": 2,
-      "evidence": "Current worktree :app:lintMarketDebug"
+      "evidence": "Current worktree :app:lintMarketDebug on source committed as 93135b0"
     },
     "gplayDebugAssemble": "PASS",
     "marketPreviewAssemble": "PASS on earlier exact source; current TCS-04 source MarketDebug assembled; Preview current-source rebuild not repeated",
     "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
     "apkSignature": "Current MarketDebug APK verified with Android Debug certificate; production signing not verified",
-    "sourceGates": "PASS on current worktree: loop2_gate.py and market_release_gate.py",
+    "sourceGates": "PASS on 93135b0: scripts/loop2_gate.py and scripts/market_release_gate.py",
     "marketPreviewApk": {
       "path": "app/build/outputs/apk/market/preview/app-market-preview.apk",
       "sha256": "b5a1fa1985408c88dadd4efc3eaa9d274df131b7b2d05165ca4d05f427f89c64",
@@ -417,10 +413,10 @@
     "api37": "Pending in run 38384380095; prior run 38320080882 had emulator boot failure.",
     "currentMarketDebugApk": {
       "path": "app/build/outputs/apk/market/debug/app-market-debug.apk",
-      "sizeBytes": 43631054,
-      "sha256": "ad51b3385f17112ffafb0402ca2f0d0447b4db87a0d1cc2938d6354006e75250",
+      "sizeBytes": 43636502,
+      "sha256": "feb9be8b5ec04bd9874c6215a4feba90670cb0071b1b6816bf262db53e2fe534",
       "signature": "Android Debug certificate; apksigner verification PASS",
-      "builtFrom": "Current worktree based on 8008eba",
+      "builtFrom": "Source committed as 93135b0",
       "releaseStatus": "not production-signed"
     }
   },
@@ -430,9 +426,10 @@
     "Lint passed with 104 warnings and 2 hints (no errors); warnings not fully triaged.",
     "No local emulator/device attached; SAF UI, gesture runtime, process recreation and accessibility runtime need CI/device evidence.",
     "CI run 38393877043 failed API26/API36 UI assertions on commit 22e8782; these are not established as fixed by later source yet.",
-    "Macro secret detection catches common credential-shaped forms but cannot identify arbitrary secret values; editor warns users not to store secrets."
+    "Macro secret detection catches common credential-shaped forms but cannot identify arbitrary secret values; editor warns users not to store secrets.",
+    "No adb executable/device attached in current workspace; TalkBack and UI runtime checks require CI/device evidence."
   ],
-  "nextStep": "Monitor CI 38399699440 and 38400520050; classify API26/36 instrumentation failures and API37 boot outcomes; then continue independent TCS gaps. Keep device UI unverified until corresponding fresh CI passes.",
+  "nextStep": "Inspect workflow run 38401934345 for 93135b0 on main; verify API26/36/37 debug/preview modifier accessibility and localization tests. Then triage any runtime failures and continue TCS features. Do not mark device UI complete before passing instrumentation.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
@@ -453,10 +450,10 @@
     "sourceGates": "loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS; four new host-override strings present in fa/en/ar/es/fr/ru"
   },
   "latestCi": {
-    "commit": "895aea1dc57b27a13507c9746b495396bd860025",
-    "run": "38400520050",
-    "result": "queued",
-    "details": "This run contains NEW-005 host-specific profile controls, README test/API claims correction, and updated third-party notices/contributor guidance. The preceding commit 94b7842 Verify passed; its API26/36/37 instrumentation is still running and will be inspected separately."
+    "commit": "93135b0cbb2699c0aa2141254eda4c01c0736521",
+    "run": "38401934345",
+    "result": "in_progress; Verify job PASS; six API26/36/37 instrumentation jobs running",
+    "details": "Includes localized Alt/Shift/Snippets labels and one-clickable-semantics-node regression. Previous runs 38399699440, 38400520050, and docs run 38400681521 also remain in progress; do not treat them as current-source runtime proof."
   },
   "remainingFeatureCount": 11,
   "verifiedCompleteCount": 0,
@@ -499,6 +496,14 @@
       "rootCause": "ToolbarRepository persisted hostOverrides and TerminalScreen honored them, but only import/API callers could create or remove overrides.",
       "fix": "Added localized apply/clear controls to the editor when launched from an active SSH session. Assignment is host-scoped and does not modify the global active profile; controls are disabled while the profile draft is dirty. Added API26/36/37 instrumentation coverage and expanded editor button touch bounds.",
       "tests": "Existing repository precedence/clear test strengthened to assert global selection is unchanged; new end-to-end instrumentation scenario compiles but is not runtime-verified yet.",
+      "status": "IMPLEMENTED_NOT_TESTED"
+    },
+    {
+      "id": "NEW-006",
+      "title": "Built-in Alt, Shift and Snippets accessibility names were English-only; modifier name/state and click semantics could split across nodes",
+      "rootCause": "The renderer localized Ctrl and special keys but left these built-ins as English literals. A semantics review also showed merged parent semantics might not own the clickable action.",
+      "fix": "Added localized labels to all six shipped locales. Modifier keys now set content description, toggle state, role, disabled state, and accessibility onClick on one clearAndSetSemantics node while retaining combinedClickable for touch gesture behavior. Regression test asserts that the named checked UiObject2 is clickable.",
+      "tests": "MarketDebug app compile, AndroidTest Kotlin compile, 1,021/1,021 JVM tests, lint (0 errors), MarketDebug assemble, both source gates, six-locale resource parity PASS; device instrumentation pending.",
       "status": "IMPLEMENTED_NOT_TESTED"
     }
   ]

@@ -189,3 +189,12 @@
 - Latest CI run `38400520050` for `895aea1` is queued. Preceding CI `38399699440` for `94b7842` had Verify success and all six instrumentation jobs started; final device results are still pending.
 - Local gates for source in `895aea1` (prior to documentation-only follow-up) passed: 1,021/1,021 JVM tests, app/AndroidTest compile, lint, MarketDebug assemble, source/release validators, APK signature verification with debug cert. Host-profile UI instrumentation compiles but needs the fresh run to verify runtime behavior.
 - Next: inspect both runs' finished job/test logs and fix product causes; continue TCS work while those emulator jobs run. 0/11 features meet strict `VERIFIED_COMPLETE`; no production release claim.
+
+## Localization and unified toolbar accessibility follow-up (2026-10-13)
+
+- Independent review caught that a merged semantics parent might leave a separate clickable child. Modifier controls now explicitly expose name, role, checked/disabled state, and accessibility click action on one `clearAndSetSemantics` node; `combinedClickable` remains the touch handler for long press/repeat. The instrumentation regression asserts that the named checkable control is also clickable.
+- Localized built-in Alt, Shift, and Snippets accessible action names in fa/en/ar/es/fr/ru. XML resource parity PASS.
+- Commit `93135b0` pushed directly to `main`. Local gates on this source: MarketDebug JVM 1,021 passed, 0 failed/errors/skipped (118 suites); app Kotlin compile PASS; AndroidTest Kotlin compile PASS; lint PASS (0 errors, 105 warnings, 2 hints); MarketDebug APK assemble and Debug-certificate signature verification PASS; `loop2_gate.py`, `market_release_gate.py`, and `git diff --check` PASS.
+- APK SHA-256: `feb9be8b5ec04bd9874c6215a4feba90670cb0071b1b6816bf262db53e2fe534`. No production signing. This workspace has no `adb` executable or attached device, so instrumentation and TalkBack runtime remain unverified.
+- CI run `38401934345` for 93135b0 has Verify PASS; all six API26/36/37 Debug/Preview instrumentation jobs were in progress at the latest query. Older runs 38399699440, 38400520050 and 38400681521 also remained in progress. Inspect the current run and update status only from actual results.
+- Licensing/open-source disclosure is in README, `LICENSE`, `NOTICE.md`, `release/THIRD_PARTY_NOTICES.md`, and this report: app source Apache-2.0; third-party dependency licences remain separate; promotional MP4 is not covered by the source licence.
