@@ -2,15 +2,15 @@
 
 This APK was copied to the repository root from the MarketDebug build output for convenient review. It is an evaluation artifact, not a store release.
 
-- Source commit: `c90198718dfe27bc1a412293f5536dd480db4fa0`
+- Source commit: `cf0ac9d`
 - Variant: `MarketDebug`
 - Version name/code: `0.7.2` / `12`
 - Application ID: `app.terminalssh.secure.debug` (confirm from Gradle build configuration)
 - File: [`TerminalSSH-0.7.2-MarketDebug-TEST.apk`](TerminalSSH-0.7.2-MarketDebug-TEST.apk)
-- Size: 43,636,502 bytes
-- SHA-256: `5ea6f3d21ab6012d34731fd3abb5e7b833bf3b072eed589f4a22c3229cebeb2f`
+- Size: 41,512,168 bytes
+- SHA-256: `36a954e19c2a9ae5831e2dd22c1ea196a0d72483cff9e0e6fd447fae924e98ae`
 - Signature: Android Debug certificate; `apksigner verify --verbose` passed.
 
-Install only for testing. It is not signed with a publisher's production key and must not be represented as a production or store-ready build. No local device installation or runtime smoke test was available when this artifact was documented. CI run [38428061570](https://github.com/ashkansuridr-bit/terminal/actions/runs/38428061570) is validating source commit `c901987`; UI instrumentation results are pending. The owner reports a successful manual test on a physical Android phone. Local ADB/device runtime verification is unavailable in this workspace.
+Install only for testing. It is not signed with a publisher's production key and must not be represented as a production or store-ready build. No local device installation or runtime smoke test was available when this artifact was documented. The latest completed CI run [38428298877](https://github.com/ashkansuridr-bit/terminal/actions/runs/38428298877) tested parent commit `1ef74e3`: Verify passed, API26/36 UI assertions failed, and API37 emulator boot failed. The current correction batch is committed as `cf0ac9d`; a fresh run is pending. The owner reports a successful manual test on a physical Android phone. Local ADB/device runtime verification is unavailable in this workspace.
 
 The application source is licensed under Apache-2.0. The APK includes third-party components subject to their own licenses; see [`NOTICE.md`](NOTICE.md).

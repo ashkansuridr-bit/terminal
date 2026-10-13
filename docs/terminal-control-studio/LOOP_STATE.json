@@ -309,8 +309,6 @@
         "API 26/36 instrumentation debug + preview"
       ],
       "executedTests": [
-        "MarketDebug app Kotlin compile PASS",
-        "MarketDebug AndroidTest Kotlin compile PASS",
         "CI instrumentation for source c901987 pending",
         "Run 38428298877 evidence: switch row non-clickable in API26/36 instrumentation accessibility tree",
         "MarketDebug app Kotlin compile PASS",
@@ -318,12 +316,20 @@
         "MarketDebug JVM task PASS (UP-TO-DATE; last recorded execution 1,022/1,022)",
         "loop2_gate.py PASS",
         "market_release_gate.py PASS",
-        "git diff --check PASS"
+        "git diff --check PASS",
+        "MarketDebug app compile PASS (fresh rebuild)",
+        "MarketDebug AndroidTest compile PASS (fresh rebuild)",
+        "MarketDebug JVM 1,022/1,022 PASS (118 suites, rerun-tasks)",
+        "MarketDebug lint PASS: 0 errors, 106 warnings, 2 hints",
+        "MarketPreview assemble PASS (R8/minified)",
+        "MarketDebug and MarketDebug AndroidTest APK assembly PASS",
+        "apksigner verify PASS (Android Debug certificate only)",
+        "loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS"
       ],
-      "lastResult": "Explicit switch click/state/reset semantics and focused accessibility test recovery changes implemented locally. Compilation and source gates pass; fresh runtime matrix is still required.",
-      "lastFailure": "CI run 38428298877: API26/36 settings switch was exposed as non-clickable; other UI assertions remain in the TCS-07 failure list. API37 boot unavailable.",
+      "lastResult": "The switch accessibility defect observed in CI has an explicit click/state/reset semantics fix. Local compilation, full JVM rerun, lint, Preview R8 build, Debug and instrumentation APK builds, artifact signature verification, and source gates pass; current-source device matrix remains pending.",
+      "lastFailure": "CI 38428298877 source 1ef74e3 exposed non-clickable switch semantics plus unresolved API26/36 UI assertions. API37 emulator failed to boot. Fresh CI for cf0ac9d pending.",
       "fixAttempts": 3,
-      "commitSha": "c901987",
+      "commitSha": "cf0ac9d",
       "lastReviewedAt": "2026-10-13T16:30:00+00:00",
       "remainingIssues": [
         "Fresh API26/36 Debug+Preview instrumentation",
@@ -376,51 +382,52 @@
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS on local correction source",
+    "marketDebugCompile": "PASS on cf0ac9d",
     "marketDebugUnitTests": {
       "passed": 1022,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
       "suites": 118,
-      "evidence": "Local current correction source: task PASS (UP-TO-DATE); last non-up-to-date execution was 1,022/1,022 across 118 suites."
+      "evidence": "Local current source cf0ac9d: :app:testMarketDebugUnitTest --rerun-tasks"
     },
-    "marketDebugAssemble": "PASS on c901987",
-    "diffCheck": "PASS before APK/metadata commit",
-    "instrumentation": "Latest completed run 38428298877 on 1ef74e3: Verify passed; API26/36 Debug+Preview instrumentation failed UI assertions; API37 emulator boot failed; release candidates skipped. Local correction batch not yet pushed or runtime-tested.",
-    "apiDeviceMatrix": "CI run 38428298877: API26/36 UI jobs failed assertions, API37 boot failure. Local adb executable/device absent. Owner-reported phone test PASS; independent logs unavailable.",
+    "marketDebugAssemble": "PASS on cf0ac9d: :app:assembleMarketDebug",
+    "diffCheck": "PASS before cf0ac9d commit and APK metadata refresh",
+    "instrumentation": "Latest completed run 38428298877 tested parent 1ef74e3; API26/36 UI assertions failed; API37 boot failed. Fresh CI for cf0ac9d has been triggered after push.",
+    "apiDeviceMatrix": "Run 38428298877: API26/36 UI failures; API37 boot failure. No local adb; owner-reported physical phone test PASS; independent local run unavailable.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS on local correction source",
+    "marketDebugAndroidTestCompile": "PASS on cf0ac9d",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
       "warnings": 106,
       "hints": 2,
-      "evidence": "Current source c901987: :app:lintMarketDebug"
+      "evidence": "Local current source cf0ac9d: :app:lintMarketDebug"
     },
     "gplayDebugAssemble": "PASS",
-    "marketPreviewAssemble": "PASS on earlier exact source; current TCS-04 source MarketDebug assembled; Preview current-source rebuild not repeated",
+    "marketPreviewAssemble": "PASS on cf0ac9d: :app:assembleMarketPreview (R8/minified; debug certificate)",
     "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
     "apkSignature": "Current MarketDebug APK verified with Android Debug certificate; production signing not verified",
-    "sourceGates": "PASS on local correction source: loop2_gate.py, market_release_gate.py, git diff --check",
+    "sourceGates": "PASS on cf0ac9d: loop2_gate.py, market_release_gate.py, git diff --check",
     "marketPreviewApk": {
       "path": "app/build/outputs/apk/market/preview/app-market-preview.apk",
-      "sha256": "b5a1fa1985408c88dadd4efc3eaa9d274df131b7b2d05165ca4d05f427f89c64",
-      "signature": "Android Debug certificate; apksigner verification PASS",
+      "sha256": "ef40d93344bb653e5b9472e706c5a1f06d63ef5b574cb0904c27da22b11379c4",
+      "signature": "Android Debug certificate; debug/test only",
       "releaseStatus": "not production-signed"
     },
     "api37": "Pending in run 38384380095; prior run 38320080882 had emulator boot failure.",
     "currentMarketDebugApk": {
-      "path": "app/build/outputs/apk/market/debug/app-market-debug.apk",
-      "sizeBytes": 43636502,
-      "sha256": "5ea6f3d21ab6012d34731fd3abb5e7b833bf3b072eed589f4a22c3229cebeb2f",
-      "signature": "Android Debug certificate; apksigner verification PASS",
-      "builtFrom": "c901987",
+      "path": "TerminalSSH-0.7.2-MarketDebug-TEST.apk",
+      "sizeBytes": 41512168,
+      "sha256": "36a954e19c2a9ae5831e2dd22c1ea196a0d72483cff9e0e6fd447fae924e98ae",
+      "signature": "Android Debug certificate; apksigner verify --verbose PASS",
+      "builtFrom": "cf0ac9d",
       "releaseStatus": "not production-signed",
       "rootCopy": "TerminalSSH-0.7.2-MarketDebug-TEST.apk",
-      "rootCopySHA256": "5ea6f3d21ab6012d34731fd3abb5e7b833bf3b072eed589f4a22c3229cebeb2f"
-    }
+      "rootCopySHA256": "36a954e19c2a9ae5831e2dd22c1ea196a0d72483cff9e0e6fd447fae924e98ae"
+    },
+    "marketDebugAndroidTestAssemble": "PASS on cf0ac9d: :app:assembleMarketDebugAndroidTest"
   },
   "knownIssues": [
     "Build warns AGP 8.13.2 has not been validated by Google against compileSdk 37.0; build succeeds.",
@@ -429,9 +436,10 @@
     "No local emulator/device attached; SAF UI, gesture runtime, process recreation and accessibility runtime need CI/device evidence.",
     "Macro secret detection catches common credential-shaped forms but cannot identify arbitrary secret values; editor warns users not to store secrets.",
     "Owner reports successful manual Android phone testing; no local ADB target is attached for independent reproduction.",
-    "Run 38428298877 on 1ef74e3 completed with API26/36 UI assertion failures and API37 emulator boot failure; local correction batch remains uncommitted pending lint/Preview build and fresh CI."
+    "Run 38428298877 on 1ef74e3 completed with API26/36 UI assertion failures and API37 emulator boot failure; local correction batch remains uncommitted pending lint/Preview build and fresh CI.",
+    "Fresh CI run for cf0ac9d is pending; preceding run 38428298877 had API26/36 UI failures and API37 emulator boot failure."
   ],
-  "nextStep": "Commit refreshed root MarketDebug test APK and evidence metadata; inspect CI 38428061570 and follow any current-source failures to root cause; continue remaining TCS features.",
+  "nextStep": "Inspect fresh CI for cf0ac9d, diagnose remaining instrumented UI failures, and keep TCS-07/TCS-10 open until device/UI acceptance passes.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
