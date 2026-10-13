@@ -11,6 +11,7 @@ data class ToolbarImportPreview(
     val macros: Int,
     val activeProfile: String,
     val warnings: List<String>,
+    val omittedActions: Int = 0,
 )
 
 /** Parsed, immutable configuration the user can review before an import replaces the current one. */
@@ -202,6 +203,7 @@ class ToolbarRepository(
                 macros = state.customMacros.size,
                 activeProfile = state.activeProfileId,
                 warnings = ToolbarValidator.validate(state),
+                omittedActions = decoded.omittedActions,
             ),
         )
     }

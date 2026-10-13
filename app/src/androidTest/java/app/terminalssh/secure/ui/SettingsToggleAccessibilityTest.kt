@@ -64,12 +64,10 @@ class SettingsToggleAccessibilityTest {
                 assertTrue("toggle row did not include its label and control", initial.bounds.width() >= 240 * density)
 
                 val toggleNode = AppWindowAccessibility.waitFor(TIMEOUT_MS) {
-                    it.contentDescription?.toString() == label && it.isCheckable
-                } ?: throw AssertionError("The labeled setting must remain exposed as a switch")
-                var actionAccepted = false
-                try {
-                    assertTrue("The labeled switch must expose an accessibility click action", toggleNode.isClickable)
-                    actionAccepted = AppWindowAccessibility.click(toggleNode)
+                    it.contentDescription?.toString() == label && it.isCheckable && it.isClickable
+                } ?: throw AssertionError("The labeled setting must expose one checkable node with an accessibility click action")
+                val actionAccepted = try {
+                    AppWindowAccessibility.click(toggleNode)
                 } finally {
                     toggleNode.recycle()
                 }

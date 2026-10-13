@@ -535,6 +535,7 @@
     <string name="tcs_import_preview_summary">Profiles: %1$d · themes: %2$d · macros: %3$d · active profile: %4$s · validation warnings: %5$d</string>
     <string name="tcs_import_replace_warning">This replaces all custom profiles, themes, macros, and host overrides. It does not merge them.</string>
     <string name="tcs_import_warnings_present">The file has validation warnings. Review the imported configuration after applying it.</string>
+    <string name="tcs_import_omitted_actions">%1$d key action is unsupported and will be omitted by this app.</string>
     <string name="tcs_import_replace">Replace configuration</string>
     <string name="tcs_host_profile_global">This connection uses the global key profile.</string>
     <string name="tcs_host_profile_override">This connection has a custom key profile.</string>

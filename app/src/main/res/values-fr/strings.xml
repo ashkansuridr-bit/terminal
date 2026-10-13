@@ -488,6 +488,7 @@
     <string name="tcs_import_preview_summary">Profils : %1$d · thèmes : %2$d · macros : %3$d · profil actif : %4$s · avertissements : %5$d</string>
     <string name="tcs_import_replace_warning">Cette action remplace tous les profils, thèmes, macros et hôtes personnalisés ; elle ne les fusionne pas.</string>
     <string name="tcs_import_warnings_present">Le fichier contient des avertissements de validation. Vérifiez la configuration après son application.</string>
+    <string name="tcs_import_omitted_actions">%1$d action de touche non prise en charge sera omise par l’application.</string>
     <string name="tcs_import_replace">Remplacer la configuration</string>
     <string name="tcs_host_profile_global">Cette connexion utilise le profil global de touches.</string>
     <string name="tcs_host_profile_override">Cette connexion a un profil de touches personnalisé.</string>

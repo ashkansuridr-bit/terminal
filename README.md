@@ -45,15 +45,15 @@ Terminal SSH یک برنامهٔ اندرویدی برای اتصال SSH، اس
 
 ## وضعیت فعلی و محدودیت راستی‌آزمایی
 
-کد نسخهٔ `0.7.2` است (`versionCode` برابر 12). در آخرین بررسی محلی، 1,025 تست JVM موفق شدند؛ کامپایل Kotlin برنامه و تست‌های اندروید و Lint نیز موفق بود. Lint صفر خطا، 106 هشدار و 2 نکتهٔ راهنما گزارش کرد.
+کد نسخهٔ `0.7.2` است (`versionCode` برابر 12). آخرین بررسی محلی 1,026 تست JVM را با موفقیت گذراند؛ کامپایل برنامه و تست‌های Android، ساخت APK و Lint نیز موفق بودند. Lint صفر خطا، 106 هشدار و 2 نکتهٔ راهنما گزارش کرد.
 
-آخرین اجرای کامل GitHub Actions شمارهٔ [38448985782](https://github.com/ashkansuridr-bit/terminal/actions/runs/38448985782) روی commit `7727c4f`، گیت Verify را گذراند. API26 Debug/Preview هرکدام ۴ شکست از ۱۱۴ تست و API36 Debug/Preview هرکدام ۳ شکست از ۱۱۴ داشتند؛ API37 Debug/Preview پیش از تست با `adb: device offline` و timeout بوت متوقف شدند. تست‌های HostEdit، HostList و SettingsToggle هنوز در شکست‌های گزارش‌شده‌اند؛ Snippet در این اجرا موفق شد. اصلاحات بعدی تست و semantics در workspace اکنون محلی کامپایل و تست JVM شده‌اند، اما اجرای دستگاهی تازه لازم است. جزئیات در [ماتریس تست](docs/terminal-control-studio/TEST_MATRIX.md) آمده است.
+آخرین اجرای کامل GitHub Actions شمارهٔ [38452720047](https://github.com/ashkansuridr-bit/terminal/actions/runs/38452720047) روی `ab331c7`، گیت Verify را گذراند. API26 Debug/Preview هرکدام ۳ شکست از ۱۱۴ تست و API36 Debug/Preview هرکدام ۲ شکست از ۱۱۴ داشتند. در API26 شکست‌های HostList و SettingsToggle و کلید Tab باقی ماند؛ در API36 شکست‌های HostList و SettingsToggle باقی ماندند. API37 Debug/Preview پیش از اجرای تست با خطای `adb: device offline` و timeout بوت متوقف شدند. اصلاحات تازهٔ HostList، SettingsToggle و تست دسترسی‌پذیری Tab هنوز به اجرای CI نیاز دارند. جزئیات در [ماتریس تست](docs/terminal-control-studio/TEST_MATRIX.md) آمده است.
 
 محیط محلی ابزار `adb` یا دستگاه متصل نداشت. اتصال به سرور آزمایشی SSH/SFTP، اجرای TalkBack روی دستگاه، ماتریس کامل نسخه‌های اندروید و امضای تولیدی نیز تأیید نشده‌اند. به همین دلیل این پروژه را آمادهٔ انتشار عمومی معرفی نمی‌کنیم.
 
 ## APK آزمایشی
 
-فایل [TerminalSSH-0.7.2-MarketDebug-TEST.apk](TerminalSSH-0.7.2-MarketDebug-TEST.apk) از سورس commit `108d7d2` ساخته و با گواهی Debug اندروید امضا شده است (SHA-256: `aff97cf78f6e31ab21406c5877ae666a2609f61af5eec212f93cce738c2b5a4b`). این فایل فقط برای ارزیابی است؛ **امضای تولیدی ندارد و نسخهٔ انتشار فروشگاهی نیست**. شناسهٔ بسته و مقدار SHA-256 و روش بررسی در [ANDROID_TEST_BUILD.md](ANDROID_TEST_BUILD.md) ثبت شده‌اند.
+فایل [TerminalSSH-0.7.2-MarketDebug-TEST.apk](TerminalSSH-0.7.2-MarketDebug-TEST.apk) با `:app:assembleMarketDebug` ساخته و با گواهی Debug اندروید امضا شده است (SHA-256: `01e0409dae251ccfaf1656c956f86165dbef1040e14dd9261e0ad1d54e404aec`). این فایل فقط برای ارزیابی است؛ **امضای تولیدی ندارد و نسخهٔ انتشار فروشگاهی نیست**. شناسهٔ بسته و روش بررسی در [ANDROID_TEST_BUILD.md](ANDROID_TEST_BUILD.md) ثبت شده‌اند.
 
 ## ساخت از سورس
 

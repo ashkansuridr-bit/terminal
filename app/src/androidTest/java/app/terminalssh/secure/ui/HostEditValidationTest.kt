@@ -1,6 +1,7 @@
 package app.terminalssh.secure.ui
 
 import android.content.res.Configuration
+import android.graphics.Rect
 import android.view.accessibility.AccessibilityWindowInfo
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -84,6 +85,12 @@ class HostEditValidationTest {
             setFieldText(usernameLabel, "tester")
             setFieldText(portLabel, "0")
             dismissImeIfVisible()
+            val enteredFields = visibleAppText()
+            assertTrue(
+                "Host and username must be present before checking port validation; " +
+                    "visibleAppText=$enteredFields",
+                enteredFields.contains(savedHost) && enteredFields.contains("tester"),
+            )
             clickWhenAvailable(By.text(save), "Save after invalid port")
             assertTrue(
                 "Expected port validation message '$portRangeError' after entering port 0; " +
@@ -145,6 +152,12 @@ class HostEditValidationTest {
                 "focusedEditables=${focusedEditors.map { it.contentDescription to it.text }}",
         )
         val editor = focusedEditors.single()
+        val editorBounds = editor.visibleBounds
+        assertTrue(
+            "Focused editor for '$label' was outside its tapped field; " +
+                "fieldBounds=$visibleBounds editorBounds=$editorBounds",
+            Rect.intersects(Rect(visibleBounds), editorBounds),
+        )
         editor.setText(value)
         device.waitForIdle()
         // The later validation/save assertions verify the form model, which is the

@@ -9,6 +9,13 @@ import kotlin.test.assertTrue
 
 class ToolbarEditorTest {
 
+    @Test fun importRequiresCleanProfileAndNoPendingMacroOrTheme() {
+        assertTrue(ToolbarImportPolicy.canImport(false, false, false))
+        assertFalse(ToolbarImportPolicy.canImport(true, false, false))
+        assertFalse(ToolbarImportPolicy.canImport(false, true, false))
+        assertFalse(ToolbarImportPolicy.canImport(false, false, true))
+    }
+
     private fun key(id: String, action: ToolbarAction = TextAction(id)) =
         ToolKeySpec(id = id, label = id, action = action)
 

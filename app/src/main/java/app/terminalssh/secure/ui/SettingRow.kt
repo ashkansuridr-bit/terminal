@@ -121,6 +121,13 @@ fun SettingRow(
                     Modifier
                         .semantics(mergeDescendants = true) {
                             contentDescription = title
+                            // API 26's Compose accessibility bridge does not always merge
+                            // the state semantics from the nested toggleable modifier into
+                            // this labeled row. Publish the switch role and value on the
+                            // same merged node that carries the accessible name; toggleable
+                            // below remains the sole owner of the actual click action.
+                            role = Role.Switch
+                            toggleableState = if (booleanValue) ToggleableState.On else ToggleableState.Off
                             if (changed) onLongClick(label = resetLabel) {
                                 resetChangedSetting()
                                 true

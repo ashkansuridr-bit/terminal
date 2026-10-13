@@ -44,7 +44,11 @@ data class ToolbarConfigState(
 
 /** The outcome of reading a configuration document. */
 sealed interface ToolbarDecode {
-    data class Ok(val state: ToolbarConfigState) : ToolbarDecode
+    data class Ok(
+        val state: ToolbarConfigState,
+        /** Number of toolbar key actions this reader could not decode and therefore omitted. */
+        val omittedActions: Int = 0,
+    ) : ToolbarDecode
     data class Failed(val reason: String) : ToolbarDecode
 }
 
@@ -90,12 +94,22 @@ object ToolbarCodec {
                     ?.toMap()
                     .orEmpty(),
             )
-            ToolbarDecode.Ok(state)
+            ToolbarDecode.Ok(state, countOmittedActions(parsed))
         } catch (invalid: IllegalArgumentException) {
             ToolbarDecode.Failed(invalid.message ?: "invalid configuration")
         } catch (bad: IndexOutOfBoundsException) {
             ToolbarDecode.Failed("truncated configuration")
         }
+    }
+
+    /** Counts undecodable key actions so import can warn before replacing the user's config. */
+    private fun countOmittedActions(value: JsonValue): Int = when (value) {
+        is JsonValue.Obj -> value.entries.entries.fold(0) { count, (name, child) ->
+            val omittedHere = if (name == "action" && child.decodeAction() == null) 1 else 0
+            count + omittedHere + countOmittedActions(child)
+        }
+        is JsonValue.Arr -> value.items.fold(0) { count, child -> count + countOmittedActions(child) }
+        else -> 0
     }
 
     // --- profiles ---

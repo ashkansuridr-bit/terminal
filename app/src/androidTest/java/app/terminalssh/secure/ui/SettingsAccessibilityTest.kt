@@ -1,5 +1,6 @@
 package app.terminalssh.secure.ui
 
+import android.content.Context
 import android.graphics.Rect
 import android.os.SystemClock
 import android.os.Bundle
@@ -27,6 +28,7 @@ class SettingsAccessibilityTest {
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val device = UiDevice.getInstance(instrumentation)
+    private lateinit var activityContext: Context
 
     @Test
     fun terminalPalettesAreNamedLargeAndExposeSelection() {
@@ -35,16 +37,24 @@ class SettingsAccessibilityTest {
 
         try {
             app.settings.themeName = "persian_neon"
-            ActivityScenario.launch(MainActivity::class.java).use {
-                val settingsTab = instrumentation.targetContext.getString(R.string.tab_settings)
-                val persianNeon = instrumentation.targetContext.getString(R.string.settings_palette_persian_neon)
-                val oled = instrumentation.targetContext.getString(R.string.settings_palette_oled)
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                lateinit var settingsTab: String
+                lateinit var persianNeon: String
+                lateinit var oled: String
+                lateinit var settingsSearch: String
+                scenario.onActivity { activity ->
+                    activityContext = activity
+                    settingsTab = activity.getString(R.string.tab_settings)
+                    persianNeon = activity.getString(R.string.settings_palette_persian_neon)
+                    oled = activity.getString(R.string.settings_palette_oled)
+                    settingsSearch = activity.getString(R.string.settings_search)
+                }
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
                 device.findObject(By.text(settingsTab)).click()
                 assertTrue(
                     "Settings tab was tapped but its searchable settings screen did not appear",
-                    device.wait(Until.hasObject(By.desc(instrumentation.targetContext.getString(R.string.settings_search))), TIMEOUT_MS),
+                    device.wait(Until.hasObject(By.desc(settingsSearch)), TIMEOUT_MS),
                 )
                 // The palettes row can sit below the fold on small emulator screens, and a
                 // row scrolled only just into view is clipped — which would make the size
@@ -90,15 +100,22 @@ class SettingsAccessibilityTest {
 
         try {
             app.settings.fontSizeSp = 17
-            ActivityScenario.launch(MainActivity::class.java).use {
-                val settingsTab = instrumentation.targetContext.getString(R.string.tab_settings)
-                val fontSizeLabel = instrumentation.targetContext.getString(R.string.settings_fontsize)
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                lateinit var settingsTab: String
+                lateinit var fontSizeLabel: String
+                lateinit var settingsSearch: String
+                scenario.onActivity { activity ->
+                    activityContext = activity
+                    settingsTab = activity.getString(R.string.tab_settings)
+                    fontSizeLabel = activity.getString(R.string.settings_fontsize)
+                    settingsSearch = activity.getString(R.string.settings_search)
+                }
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
                 device.findObject(By.text(settingsTab)).click()
                 assertTrue(
                     "Settings tab was tapped but its searchable settings screen did not appear",
-                    device.wait(Until.hasObject(By.desc(instrumentation.targetContext.getString(R.string.settings_search))), TIMEOUT_MS),
+                    device.wait(Until.hasObject(By.desc(settingsSearch)), TIMEOUT_MS),
                 )
                 assertTrue(
                     "Font-size slider was not fully visible after scrolling: ${visibilityDiagnostics(fontSizeLabel)}",
@@ -212,7 +229,7 @@ class SettingsAccessibilityTest {
 
     /** Scrolls the actual app accessibility viewport and accepts only a fully visible control. */
     private fun scrollSettingsTo(description: String, horizontal: Boolean = false): Boolean {
-        val density = instrumentation.targetContext.resources.displayMetrics.density
+        val density = activityContext.resources.displayMetrics.density
         repeat(28) {
             // Compare bounds from the same UiAutomator window. On API 26/36,
             // AccessibilityNodeInfo.getBoundsInScreen and UiObject2.visibleBounds
@@ -248,7 +265,7 @@ class SettingsAccessibilityTest {
             }
             if (scrollable != null) {
                 val direction = if (horizontal) {
-                    if (instrumentation.targetContext.resources.configuration.layoutDirection.toComposeLayoutDirection() == LayoutDirection.Ltr) {
+                    if (activityContext.resources.configuration.layoutDirection.toComposeLayoutDirection() == LayoutDirection.Ltr) {
                         Direction.LEFT
                     } else Direction.RIGHT
                 } else Direction.UP

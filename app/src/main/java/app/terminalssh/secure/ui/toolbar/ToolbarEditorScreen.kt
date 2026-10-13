@@ -64,6 +64,7 @@ import app.terminalssh.secure.toolbar.TextAction
 import app.terminalssh.secure.toolbar.ToolbarEditSession
 import app.terminalssh.secure.toolbar.ToolbarEditor
 import app.terminalssh.secure.toolbar.ToolbarImportCandidate
+import app.terminalssh.secure.toolbar.ToolbarImportPolicy
 import app.terminalssh.secure.toolbar.ToolbarGesture
 import app.terminalssh.secure.toolbar.ToolbarGestures
 import app.terminalssh.secure.toolbar.ToolbarKeyPalette
@@ -154,7 +155,7 @@ fun ToolbarEditorScreen(
             transferMessage = null
             scope.launch {
                 try {
-                    importCandidate = withContext(Dispatchers.IO) {
+                    val candidate = withContext(Dispatchers.IO) {
                         val bytes = context.contentResolver.openInputStream(source)?.use {
                             SecretIo.readBounded(it, ToolbarRepository.MAX_IMPORT_BYTES)
                         } ?: error("Cannot read configuration source")
@@ -168,6 +169,19 @@ fun ToolbarEditorScreen(
                         } finally {
                             bytes.fill(0)
                         }
+                    }
+                    // The document picker is an external Activity. The editor may have
+                    // become dirty before its result is delivered, so re-check the same
+                    // import gate immediately before presenting a replacement candidate.
+                    if (ToolbarImportPolicy.canImport(
+                            isDirty = session.isDirty,
+                            hasPendingMacros = pendingMacros.isNotEmpty(),
+                            hasPendingThemes = pendingThemes.isNotEmpty(),
+                        )
+                    ) {
+                        importCandidate = candidate
+                    } else {
+                        transferMessage = R.string.tcs_import_unsaved_block
                     }
                 } catch (cancelled: CancellationException) {
                     throw cancelled
@@ -462,7 +476,11 @@ fun ToolbarEditorScreen(
                 }
                 SmallButton(
                     stringResource(R.string.tcs_import),
-                    enabled = !transferBusy && !session.isDirty && pendingMacros.isEmpty() && pendingThemes.isEmpty(),
+                    enabled = !transferBusy && ToolbarImportPolicy.canImport(
+                        isDirty = session.isDirty,
+                        hasPendingMacros = pendingMacros.isNotEmpty(),
+                        hasPendingThemes = pendingThemes.isNotEmpty(),
+                    ),
                 ) {
                     importLauncher.launch(arrayOf("application/json", "text/*"))
                 }
@@ -639,6 +657,13 @@ fun ToolbarEditorScreen(
                     if (preview.warnings.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
                         Text(stringResource(R.string.tcs_import_warnings_present), color = MaterialTheme.colorScheme.error)
+                    }
+                    if (preview.omittedActions > 0) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            stringResource(R.string.tcs_import_omitted_actions, preview.omittedActions),
+                            color = MaterialTheme.colorScheme.error,
+                        )
                     }
                     if (transferBusy) {
                         Spacer(Modifier.height(8.dp))

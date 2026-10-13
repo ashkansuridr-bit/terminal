@@ -163,6 +163,15 @@ object ToolbarEditor {
     }
 }
 
+/** Shared guard for starting and completing a SAF import around editor draft changes. */
+object ToolbarImportPolicy {
+    fun canImport(
+        isDirty: Boolean,
+        hasPendingMacros: Boolean,
+        hasPendingThemes: Boolean,
+    ): Boolean = !isDirty && !hasPendingMacros && !hasPendingThemes
+}
+
 /**
  * An editor session with undo/redo.
  *

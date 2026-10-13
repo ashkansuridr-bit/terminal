@@ -10,6 +10,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -774,6 +775,22 @@ class TerminalKeyboardTest {
                     modifierControl(shiftName).isChecked
             })
 
+            // The toolbar is a horizontally scrolling LazyRow; on narrow API 26
+            // emulators Tab is outside the composed viewport until the row is swiped.
+            // Keep the accessibility action assertion, but first bring the key into
+            // view just as a TalkBack user would by navigating the toolbar.
+            val tabVisible = device.scrollUntilFullyVisible(
+                By.desc(tabName),
+                maxAttempts = 8,
+                horizontalDirection = LayoutDirection.Ltr,
+                appPackage = instrumentation.targetContext.packageName,
+            ) || device.scrollUntilFullyVisible(
+                By.desc(tabName),
+                maxAttempts = 8,
+                horizontalDirection = LayoutDirection.Rtl,
+                appPackage = instrumentation.targetContext.packageName,
+            )
+            assertTrue("Tab key did not enter the accessible toolbar viewport: ${appWindowTree()}", tabVisible)
             val tabKey = waitForClickableAppDesc(tabName)
             assertTrue("Tab key must expose an accessibility click action", tabKey?.isClickable == true)
             try {

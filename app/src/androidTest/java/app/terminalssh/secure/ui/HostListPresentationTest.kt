@@ -72,8 +72,15 @@ class HostListPresentationTest {
                 ViewModelProvider(activity)[AppViewModel::class.java].reloadHostMetadata()
             }
             assertTrue(
-                "Seeded host fixture was not durable: ${app.hosts.hosts().map { it.id to it.lastConnectedAt }}",
-                seeded.all { wanted -> app.hosts.hosts().any { it.id == wanted.id } },
+                "Seeded host fixture properties were not durable: " +
+                    app.hosts.hosts().filter { stored -> seeded.any { it.id == stored.id } }
+                        .map { it.id to (it.favorite to it.lastConnectedAt) },
+                seeded.all { wanted ->
+                    app.hosts.hosts().any { stored ->
+                        stored.id == wanted.id && stored.favorite == wanted.favorite &&
+                            stored.lastConnectedAt == wanted.lastConnectedAt
+                    }
+                },
             )
             // Synchronize on an initial visible group before asking the lazy list to
             // compose and expose an offscreen recent row to accessibility services.
@@ -168,12 +175,48 @@ class HostListPresentationTest {
             device.waitForIdle()
         }
         val target = device.findObject(By.text(text))
+        val storedFixture = app.hosts.hosts()
+            .filter { stored -> seeded.any { it.id == stored.id } }
+            .map { it.id to (it.favorite to it.lastConnectedAt) }
         assertTrue(
             "\"$text\" was not fully reachable after $swipeCount swipes; " +
                 "targetBounds=${runCatching { target?.visibleBounds }.getOrNull()}, previousTargetBounds=$lastTargetBounds, " +
-                "viewportBounds=$lastViewportBounds, display=${device.displayWidth}x${device.displayHeight}",
+                "viewportBounds=$lastViewportBounds, display=${device.displayWidth}x${device.displayHeight}, " +
+                "storedFixture=$storedFixture, " +
+                "appTree=${accessibilityTreeSnapshot()}",
             hasFullyVisibleBounds(target),
         )
+    }
+
+    /** Captures the composed list's actual accessible contents when an expected group is missing. */
+    private fun accessibilityTreeSnapshot(): String {
+        val root = instrumentation.uiAutomation.rootInActiveWindow ?: return "<no active app window>"
+        val rows = mutableListOf<String>()
+        fun collect(node: android.view.accessibility.AccessibilityNodeInfo) {
+            if (rows.size >= 120) return
+            val text = node.text?.toString()?.takeIf(String::isNotBlank)
+            val description = node.contentDescription?.toString()?.takeIf(String::isNotBlank)
+            if (text != null || description != null || node.isScrollable) {
+                val bounds = Rect().also(node::getBoundsInScreen)
+                rows += "text=$text desc=$description scroll=${node.isScrollable} bounds=$bounds"
+            }
+            for (index in 0 until node.childCount) {
+                val child = node.getChild(index) ?: continue
+                try {
+                    collect(child)
+                } finally {
+                    child.recycle()
+                }
+            }
+        }
+        return try {
+            collect(root)
+            rows.joinToString("; ")
+        } catch (_: StaleObjectException) {
+            "<accessibility tree changed while collecting diagnostics>"
+        } finally {
+            root.recycle()
+        }
     }
 
     private fun hasFullyVisibleBounds(node: UiObject2?): Boolean {

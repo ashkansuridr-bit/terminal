@@ -115,6 +115,9 @@ class ToolbarCodecTest {
         )
         val decoded = ToolbarCodec.decode(document.encode())
         assertTrue(decoded is ToolbarDecode.Ok)
+        assertEquals(1, decoded.omittedActions)
+        val preview = ToolbarRepository(InMemoryToolbarPrefs()).prepareImport(document.encode())?.preview
+        assertEquals(1, preview?.omittedActions)
         val keys = decoded.state.customProfiles.single().layout.keys
         assertEquals(listOf("a"), keys.map { it.id })
     }

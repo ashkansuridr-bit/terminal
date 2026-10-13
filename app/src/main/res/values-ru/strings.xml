@@ -490,6 +490,7 @@
     <string name="tcs_import_preview_summary">Профили: %1$d · темы: %2$d · макросы: %3$d · активный профиль: %4$s · предупреждения: %5$d</string>
     <string name="tcs_import_replace_warning">Будут заменены все пользовательские профили, темы, макросы и привязки хостов; объединения не будет.</string>
     <string name="tcs_import_warnings_present">В файле есть предупреждения проверки. Проверьте импортированную конфигурацию после применения.</string>
+    <string name="tcs_import_omitted_actions">Приложение пропустит неподдерживаемое действие клавиши: %1$d.</string>
     <string name="tcs_import_replace">Заменить конфигурацию</string>
     <string name="tcs_host_profile_global">Для этого подключения используется общий профиль клавиш.</string>
     <string name="tcs_host_profile_override">Для этого подключения задан отдельный профиль клавиш.</string>

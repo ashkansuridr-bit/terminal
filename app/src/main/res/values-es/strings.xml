@@ -488,6 +488,7 @@
     <string name="tcs_import_preview_summary">Perfiles: %1$d · temas: %2$d · macros: %3$d · perfil activo: %4$s · avisos de validación: %5$d</string>
     <string name="tcs_import_replace_warning">Esto reemplaza todos los perfiles, temas, macros y vínculos de hosts personalizados; no los combina.</string>
     <string name="tcs_import_warnings_present">El archivo contiene avisos de validación. Revisa la configuración después de aplicarla.</string>
+    <string name="tcs_import_omitted_actions">La aplicación omitirá %1$d acción de tecla no compatible.</string>
     <string name="tcs_import_replace">Reemplazar configuración</string>
     <string name="tcs_host_profile_global">Esta conexión usa el perfil global de teclas.</string>
     <string name="tcs_host_profile_override">Esta conexión tiene un perfil de teclas personalizado.</string>

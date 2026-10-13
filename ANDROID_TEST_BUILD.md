@@ -1,14 +1,17 @@
-# Android test build — 0.7.2 MarketDebug
+# Android test build — MarketDebug
 
-This APK was copied to the repository root from the MarketDebug build output for convenient review. It is an evaluation artifact, not a store release.
+The APK in the repository root is a review artifact built with `:app:assembleMarketDebug`. It is intended for installation and testing only.
 
-- Source commit: `cf0ac9d`
 - Variant: `MarketDebug`
 - Version name/code: `0.7.2` / `12`
-- Application ID: `app.terminalssh.secure.debug` (confirm from Gradle build configuration)
+- Application ID: `app.terminalssh.secure.debug`
 - File: [`TerminalSSH-0.7.2-MarketDebug-TEST.apk`](TerminalSSH-0.7.2-MarketDebug-TEST.apk)
-- Size: 41,512,168 bytes
-- SHA-256: `36a954e19c2a9ae5831e2dd22c1ea196a0d72483cff9e0e6fd447fae924e98ae`
-- Signature: Android Debug certificate; `apksigner verify --verbose` passed.
+- Size: 41,555,788 bytes
+- SHA-256: `01e0409dae251ccfaf1656c956f86165dbef1040e14dd9261e0ad1d54e404aec`
+- Signature: Android Debug certificate; `apksigner verify --verbose` passed with APK Signature Scheme v2.
 
-Install only for testing. It is not signed with a publisher's production key and must not be represented as a production or store-ready build. This APK was rebuilt from commit `108d7d23b7bc71b6eb6810369d510e1bfe2b02ea` with `:app:assembleMarketDebug`. It is signed with the Android Debug certificate; `/root/android-sdk/build-tools/37.0.0/apksigner verify --verbose` passed. Size: 43704018 bytes; SHA-256: `aff97cf78f6e31ab21406c5877ae666a2609f61af5eec212f93cce738c2b5a4b`. The latest completed CI run [38448985782](https://github.com/ashkansuridr-bit/terminal/actions/runs/38448985782) tested commit `7727c4f`: Verify passed; API26 Debug/Preview each had 4/114 UI failures and API36 Debug/Preview each had 3/114 (14 failed executions). API37 Debug/Preview timed out before tests. Local changes after that run pass 1,025 JVM tests, app/test compilation and lint, but still await device runtime CI. The owner reports a successful manual test on a physical Android phone; this workspace has not captured an independent device run. Local instrumentation is blocked: the SDK emulator image under `/root/android-sdk/system-images/android-36` lacks `kernel-ranchu`, and no device is attached.
+This artifact is not signed with the publisher's production key and is not a store-ready release. The verifier confirms package signature integrity only; it does not prove runtime behavior on every Android version.
+
+The latest completed CI run is [38452720047](https://github.com/ashkansuridr-bit/terminal/actions/runs/38452720047), testing `ab331c7`. Verify passed. API26 Debug and Preview each ran 114 tests with 3 failures; API36 Debug and Preview each ran 114 tests with 2 failures. HostList and SettingsToggle failed in all four variants; the Tab keyboard accessibility test also failed on API26. API37 Debug and Preview could not start because the emulators stayed offline and timed out before tests. The owner reports a successful manual test on a physical Android phone; this workspace has no attached device or runnable emulator for an independent replay.
+
+For the current local source, 1,026 JVM tests passed with no failures, errors, or skips. MarketDebug app and AndroidTest Kotlin compilation, lint, APK assembly, and debug-signature verification passed. A new instrumentation run is required to verify the latest UI-test and accessibility fixes. See the [test matrix](docs/terminal-control-studio/TEST_MATRIX.md) and [APK verification record](docs/terminal-control-studio/APK_VERIFICATION.md).
