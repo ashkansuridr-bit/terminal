@@ -80,10 +80,16 @@ class ToolbarRepositoryTest {
 
     @Test fun duplicateProfileGetsUniqueIdAndName() {
         val (repository, _) = repo()
-        val copy = repository.duplicateProfile("shell")
+        val source = repository.profileById("shell")!!
+        val copy = repository.duplicateProfile("shell", "copie")
         assertNotNull(copy)
         assertEquals("shell_copy", copy.id)
+        assertEquals("${source.name} copie", copy.name)
         assertFalse(copy.builtIn)
+        assertEquals(source.layout, copy.layout)
+        assertEquals(source.themeId, copy.themeId)
+        repository.saveProfile(copy.copy(name = "Independent"))
+        assertEquals(source.name, repository.profileById("shell")!!.name)
         val second = repository.duplicateProfile("shell")
         assertEquals("shell_copy2", second!!.id)
     }

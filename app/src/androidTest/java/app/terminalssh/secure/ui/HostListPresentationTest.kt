@@ -75,11 +75,7 @@ class HostListPresentationTest {
             // Synchronize on an initial visible group before asking the lazy list to
             // compose and expose an offscreen recent row to accessibility services.
             assertVisible(R.string.hosts_section_favorites)
-            assertTrue(
-                "A persisted favorite fixture must render before scrolling to Recent; " +
-                    "stored=${app.hosts.hosts().map { it.displayName to it.favorite }}",
-                device.wait(Until.hasObject(By.text("Starred alpha")), TIMEOUT_MS),
-            )
+            assertReachableText("Starred alpha")
             assertReachableText("Recent gamma")
             assertReachable(R.string.hosts_section_recent)
             assertReachable(R.string.hosts_section_all)

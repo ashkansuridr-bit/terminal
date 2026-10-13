@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T18:08:53+00:00",
+  "capturedAt": "2026-10-13T18:33:16+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "ac623d92c9daeabc7bbf4f8cc1816e7cc294f797",
+  "lastVerifiedCommit": "c68b95ff033ffd029b586fb2a04b57890e1e8806",
   "features": [
     {
       "id": "TCS-01",
@@ -119,28 +119,42 @@
     },
     {
       "id": "TCS-05",
-      "title": "ویرایشگر، چینش و undo/redo",
-      "phase": "VERIFY",
+      "title": "ویرایشگر، چینش، undo/redo، پوسته‌های سفارشی و تکثیر پروفایل",
+      "phase": "IMPLEMENT_VERIFY",
       "changedFiles": [
-        "ToolbarEditor.kt",
-        "ToolbarEditorScreen.kt"
+        "app/src/main/java/app/terminalssh/secure/toolbar/ToolbarThemeEditor.kt",
+        "app/src/main/java/app/terminalssh/secure/toolbar/ToolbarRepository.kt",
+        "app/src/main/java/app/terminalssh/secure/ui/toolbar/ToolbarEditorScreen.kt",
+        "app/src/test/java/app/terminalssh/secure/toolbar/ToolbarThemeEditorTest.kt",
+        "app/src/test/java/app/terminalssh/secure/toolbar/ToolbarRepositoryTest.kt",
+        "app/src/main/res/values/strings.xml",
+        "app/src/main/res/values-en/strings.xml",
+        "app/src/main/res/values-es/strings.xml",
+        "app/src/main/res/values-fr/strings.xml",
+        "app/src/main/res/values-ru/strings.xml",
+        "app/src/main/res/values-ar/strings.xml"
       ],
       "dependencies": [],
       "status": "IMPLEMENTED_NOT_TESTED",
       "requiredTests": [
-        "JVM editor tests",
-        "Compose UI"
+        "JVM theme validation and profile-copy isolation",
+        "MarketDebug compile",
+        "Compose UI create/edit theme and duplicate profile",
+        "API26/36/37 device verification"
       ],
       "executedTests": [
-        "JVM editor tests PASS"
+        ":app:testMarketDebugUnitTest PASS (1025 tests, zero failures/errors/skips)",
+        " :app:compileMarketDebugKotlin PASS",
+        " :app:compileMarketDebugAndroidTestKotlin PASS"
       ],
-      "lastResult": "Verified as noted",
+      "lastResult": "Custom theme create/edit form and localized profile duplication are implemented locally. Pure JVM tests and application/AndroidTest compilation pass; UI runtime is not yet tested.",
       "lastFailure": null,
-      "fixAttempts": 0,
-      "commitSha": "f2e7524",
-      "lastReviewedAt": "2026-10-12T15:42:38+00:00",
+      "fixAttempts": 1,
+      "commitSha": null,
+      "lastReviewedAt": "2026-10-13T18:26:42+00:00",
       "remainingIssues": [
-        "Compose UI blocked"
+        "Fresh API26/36/37 CI after push",
+        "Compose UI persistence/runtime checks; no local device or emulator"
       ]
     },
     {
@@ -208,16 +222,17 @@
         "CI run 38428298877, HEAD 1ef74e3: API26/36 Debug+Preview UI assertions failed; API37 emulator boot failed before test execution",
         "Owner-reported physical Android phone test PASS; no independent device log attached",
         "Fresh triage: 38433137725 results recorded; current MarketDebug AndroidTest Kotlin harness compile PASS, runtime not run",
-        "CI run 38439434500 on 5048075: Verify PASS; API26 Debug 6/114 failed, API26 Preview 5/114 failed, API36 Debug 6/114 failed, API36 Preview 7/114 failed (24 failed executions); API37 Debug+Preview emulator boot timed out before tests"
+        "CI run 38439434500 on 5048075: Verify PASS; API26 Debug 6/114 failed, API26 Preview 5/114 failed, API36 Debug 6/114 failed, API36 Preview 7/114 failed (24 failed executions); API37 Debug+Preview emulator boot timed out before tests",
+        "Run 38444931145 on c68b95f: same four HostEdit/HostList/SettingsToggle/Snippet failures in API26/36 Debug+Preview (16 executions); Palette and font slider tests passed; API37 boot timed out."
       ],
-      "lastResult": "Current harness correction commit 5048075 passed Verify/build/unit/lint gates; runtime UI assertions still fail on API26/36. New focused follow-up is locally compiled but awaits a fresh CI run.",
-      "lastFailure": "Run 38439434500: 24 API26/36 UI test failures across four suites; API37 emulators timed out before test execution.",
-      "fixAttempts": 2,
+      "lastResult": "Run 38444931145 reduced API26/36 shared UI failures from six to four per variant; palette/font-slider accessibility tests pass. New locally built harness correction is pending a fresh matrix.",
+      "lastFailure": "Run 38444931145: four shared failures in each API26/36 variant; API37 Debug/Preview boot timeout before tests.",
+      "fixAttempts": 3,
       "commitSha": "93135b0",
-      "lastReviewedAt": "2026-10-13T17:45:00+00:00",
+      "lastReviewedAt": "2026-10-13T18:26:42+00:00",
       "remainingIssues": [
-        "Run fresh API26/36 Debug+Preview instrumentation after the current uncommitted harness corrections",
-        "API37 runtime instrumentation; both 5048075 emulator jobs timed out before tests",
+        "Fresh API26/36 Debug/Preview instrumentation after local harness fixes",
+        "API37 runtime instrumentation; adb device offline/boot timeout",
         "TalkBack/device accessibility verification"
       ]
     },
@@ -292,13 +307,13 @@
       "title": "ترمیم شکست‌های Instrumentation و semantics دسترس‌پذیری",
       "phase": "VERIFY_CI",
       "changedFiles": [
-        "SettingRow.kt",
-        "HostEditValidationTest.kt",
-        "HostListPresentationTest.kt",
-        "SettingsAccessibilityTest.kt",
-        "SettingsToggleAccessibilityTest.kt",
-        "SnippetAccessibilityTest.kt",
-        "TerminalKeyboardTest.kt"
+        "app/src/main/java/app/terminalssh/secure/ui/SettingRow.kt",
+        "app/src/androidTest/java/app/terminalssh/secure/ui/HostEditValidationTest.kt",
+        "app/src/androidTest/java/app/terminalssh/secure/ui/HostListPresentationTest.kt",
+        "app/src/androidTest/java/app/terminalssh/secure/ui/SettingsAccessibilityTest.kt",
+        "app/src/androidTest/java/app/terminalssh/secure/ui/SettingsToggleAccessibilityTest.kt",
+        "app/src/androidTest/java/app/terminalssh/secure/ui/SnippetAccessibilityTest.kt",
+        "app/src/main/java/app/terminalssh/secure/toolbar/ToolbarPresets.kt"
       ],
       "dependencies": [],
       "status": "IMPLEMENTED_NOT_TESTED",
@@ -328,17 +343,18 @@
         "apksigner verify PASS (Android Debug certificate only)",
         "loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS",
         "Fresh triage: 38433137725 results recorded; current MarketDebug AndroidTest Kotlin harness compile PASS, runtime not run",
-        "CI run 38439434500 on 5048075: Verify PASS; API26 Debug 6/114 failed, API26 Preview 5/114 failed, API36 Debug 6/114 failed, API36 Preview 7/114 failed (24 failed executions); API37 Debug+Preview emulator boot timed out before tests"
+        "CI run 38439434500 on 5048075: Verify PASS; API26 Debug 6/114 failed, API26 Preview 5/114 failed, API36 Debug 6/114 failed, API36 Preview 7/114 failed (24 failed executions); API37 Debug+Preview emulator boot timed out before tests",
+        "Run 38444931145 on c68b95f: API26/36 Debug+Preview each had four failures; palette/font slider passed; API37 boot blocked. Follow-up changes locally compile and JVM tests pass, runtime pending."
       ],
-      "lastResult": "Current harness correction commit 5048075 passed Verify/build/unit/lint gates; runtime UI assertions still fail on API26/36. New focused follow-up is locally compiled but awaits a fresh CI run.",
-      "lastFailure": "Run 38439434500: 24 API26/36 UI test failures across four suites; API37 emulators timed out before test execution.",
-      "fixAttempts": 4,
+      "lastResult": "Latest c68b95f instrumentation left four shared failures per API26/36 variant. Local follow-up fixes viewport/field/toggle interactions and advances Snippets in the default profile; JVM and compile pass, fresh CI pending.",
+      "lastFailure": "Run 38444931145: HostEdit, HostList, SettingsToggle, Snippet fail in all API26/36 variants; API37 boot timed out.",
+      "fixAttempts": 3,
       "commitSha": "cf0ac9d",
-      "lastReviewedAt": "2026-10-13T17:45:00+00:00",
+      "lastReviewedAt": "2026-10-13T18:26:42+00:00",
       "remainingIssues": [
-        "Run fresh API26/36 Debug+Preview instrumentation after the current uncommitted harness corrections",
-        "API37 runtime instrumentation; both 5048075 emulator jobs timed out before tests",
-        "TalkBack/device accessibility verification"
+        "Fresh API26/36 Debug/Preview CI after follow-up",
+        "API37 runtime instrumentation boot stability",
+        "No local device/ADB for independent reproduction"
       ]
     },
     {
@@ -386,34 +402,34 @@
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS on cf0ac9d",
+    "marketDebugCompile": "PASS on current local workspace: :app:compileMarketDebugKotlin (same Gradle invocation as unit and lint checks).",
     "marketDebugUnitTests": {
-      "passed": 1022,
+      "passed": 1025,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
-      "suites": 118,
-      "evidence": "Local current source cf0ac9d: :app:testMarketDebugUnitTest --rerun-tasks"
+      "suites": 119,
+      "evidence": "Local current workspace: :app:testMarketDebugUnitTest; 119 XML suites, 1,025 tests, 0 failures/errors/skips; includes ToolbarThemeEditorTest and profile duplication regression coverage."
     },
     "marketDebugAssemble": "PASS on cf0ac9d: :app:assembleMarketDebug",
-    "diffCheck": "PASS before cf0ac9d commit and APK metadata refresh",
-    "instrumentation": "CI run 38442115157 on ac623d9: Verify PASS; API26 Debug/Preview and API36 Debug/Preview each reported 6 failed of 114 (24 failed executions; same six UI tests per variant). API37 Debug/Preview timed out waiting for emulator boot before tests; release candidates skipped. Current follow-up is uncommitted and locally compiled only.",
-    "apiDeviceMatrix": "Run 38442115157 executed API26/36 Debug+Preview, 114 tests each, with the same six UI failures in all four variants. API37 Debug+Preview boot timed out. API31/34 are not in the workflow. Local ADB/device unavailable; API36 AVD lacks kernel-ranchu. Owner reports successful phone testing, not independently captured.",
+    "diffCheck": "PASS after current local edits",
+    "instrumentation": "CI run 38444931145 on c68b95f: Verify PASS. API26 Debug/Preview and API36 Debug/Preview each had 4 failed of 114 (16 failed executions; same HostEdit, HostList, SettingsToggle and Snippet tests). API37 Debug/Preview boot timed out after adb reported device offline; no tests ran. Release candidates skipped. Current follow-up is uncommitted, JVM-tested and compiled only. Local strict follow-up removes ACTION_CLICK fallback and verifies full target visibility; compiled, no device runtime yet.",
+    "apiDeviceMatrix": "Run 38444931145 exercised API26/36 Debug+Preview, 114 tests per variant with four common failures; API37 Debug+Preview failed before tests with adb device offline/boot timeout. API31/34 are not in this workflow. Local API36 AVD lacks kernel-ranchu; no device is attached. Owner-reported phone test is not independently captured. Current local instrumentation changes compile but were not device-run.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS on current uncommitted follow-up: :app:compileMarketDebugAndroidTestKotlin; no local runtime target.",
+    "marketDebugAndroidTestCompile": "PASS on current local workspace: :app:compileMarketDebugAndroidTestKotlin; runtime not run locally.",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
       "warnings": 106,
       "hints": 2,
-      "evidence": "Local current source cf0ac9d: :app:lintMarketDebug"
+      "evidence": "Current local workspace: :app:lintMarketDebug; 0 errors, 106 warnings, 2 hints. Compose copy suffix uses stringResource."
     },
     "gplayDebugAssemble": "PASS",
     "marketPreviewAssemble": "PASS on cf0ac9d: :app:assembleMarketPreview (R8/minified; debug certificate)",
     "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
     "apkSignature": "Current MarketDebug APK verified with Android Debug certificate; production signing not verified",
-    "sourceGates": "PASS locally after the current instrumentation follow-up: loop2_gate.py, market_release_gate.py, git diff --check; JSON parses.",
+    "sourceGates": "PASS on current local workspace: loop2_gate.py, market_release_gate.py, git diff --check, and LOOP_STATE JSON parse.",
     "marketPreviewApk": {
       "path": "app/build/outputs/apk/market/preview/app-market-preview.apk",
       "sha256": "ef40d93344bb653e5b9472e706c5a1f06d63ef5b574cb0904c27da22b11379c4",
@@ -444,30 +460,32 @@
     "Local emulator test36 is configured but not runnable: /root/android-sdk/system-images/android-36/google_apis/x86_64 lacks kernel-ranchu; no physical device is attached to this workspace.",
     "Run 38439434500 on 5048075: Verify passed; API26/36 instrumentation still had 24 failures; API37 Debug+Preview timed out before tests; release-candidates skipped.",
     "Run 38442115157 on ac623d9: Verify passed; the same six UI tests failed in each API26/36 Debug/Preview run (24 failed executions total); API37 Debug/Preview boot timed out before tests; release candidates skipped.",
-    "Current uncommitted instrumentation corrections address mixed app-window/UiAutomator bounds, stale HostList ViewModel fixtures, and missing Terminal-tab synchronization in SnippetAccessibilityTest; compilation and source gates pass locally, runtime is pending."
+    "Current uncommitted instrumentation corrections address mixed app-window/UiAutomator bounds, stale HostList ViewModel fixtures, and missing Terminal-tab synchronization in SnippetAccessibilityTest; compilation and source gates pass locally, runtime is pending.",
+    "Run 38444931145 on c68b95f: Verify passed; API26/36 Debug+Preview each reported four common UI failures (HostEdit, HostList, SettingsToggle, Snippet); API37 Debug+Preview failed boot with adb device offline; release candidates skipped.",
+    "Current local follow-up has JVM/compile/lint/source-gate evidence only. It adds custom theme create/edit and localized profile duplication, adjusts the default Snippets position, and hardens four UI tests; fresh runtime CI is required."
   ],
-  "nextStep": "Complete strict review and local compile/gates for the current API26/36 instrumentation fixes; commit and push directly to main, then inspect the fresh matrix. Keep TCS-07/TCS-10 open until UI/runtime gates pass.",
+  "nextStep": "Commit and push the reviewed follow-up directly to main per owner instruction. Inspect fresh API26/36/37 CI, download all completed reports, then use evidence to resolve any remaining UI failures. Keep TCS-05/TCS-07/TCS-10 incomplete until required runtime gates pass.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
-    "command": "./gradlew :app:compileMarketDebugAndroidTestKotlin --no-daemon --no-configuration-cache --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m; python3 scripts/loop2_gate.py; python3 scripts/market_release_gate.py; git diff --check",
-    "result": "PASS: AndroidTest Kotlin compilation, both source gates, git diff --check, and LOOP_STATE JSON parse.",
+    "command": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug --no-daemon --no-configuration-cache --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m; python3 scripts/loop2_gate.py; python3 scripts/market_release_gate.py; git diff --check; python3 -m json.tool docs/terminal-control-studio/LOOP_STATE.json",
+    "result": "PASS: 1,025 JVM tests (0 failures/errors/skips), MarketDebug app and AndroidTest compilation, lint (0 errors, 106 warnings, 2 hints), both source gates, diff check, and JSON parse. Lint caught and the follow-up fixed a locale-stale LocalContext.getString call.",
     "androidTest": "Kotlin compilation only. Runtime unavailable locally because adb/device is absent and configured API36 image lacks kernel-ranchu.",
-    "applicationSource": "No application product source changed in current follow-up; root test APK remains based on app source cf0ac9d."
+    "applicationSource": "Current local workspace includes uncommitted TCS-05 custom theme/profile UI and default Snippets order change, plus instrumentation follow-up."
   },
   "latestCi": {
-    "runId": "38442115157",
-    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38442115157",
-    "headSha": "ac623d92c9daeabc7bbf4f8cc1816e7cc294f797",
+    "runId": "38444931145",
+    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38444931145",
+    "headSha": "c68b95ff033ffd029b586fb2a04b57890e1e8806",
     "verify": "PASS: source/artifact gates, JVM tests, lint and Debug builds",
     "instrumentation": {
-      "api26Debug": "FAIL: 6 failed of 114",
-      "api26Preview": "FAIL: 6 failed of 114",
-      "api36Debug": "FAIL: 6 failed of 114",
-      "api36Preview": "FAIL: 6 failed of 114",
-      "api37Debug": "BLOCKED: emulator boot timeout before test execution",
-      "api37Preview": "BLOCKED: emulator boot timeout before test execution",
-      "totalFailedExecutions": 24
+      "api26Debug": "FAIL: 4 failed of 114",
+      "api26Preview": "FAIL: 4 failed of 114",
+      "api36Debug": "FAIL: 4 failed of 114",
+      "api36Preview": "FAIL: 4 failed of 114",
+      "api37Debug": "BLOCKED: adb device offline; emulator boot timeout before test execution",
+      "api37Preview": "BLOCKED: adb device offline; emulator boot timeout before test execution",
+      "totalFailedExecutions": 16
     },
     "releaseCandidates": "SKIPPED because instrumentation matrix did not pass"
   },

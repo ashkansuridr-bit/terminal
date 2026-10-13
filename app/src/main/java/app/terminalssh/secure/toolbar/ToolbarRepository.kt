@@ -137,12 +137,12 @@ class ToolbarRepository(
         deleteProfile(id)
     }
 
-    fun duplicateProfile(id: String): ToolbarProfile? {
+    fun duplicateProfile(id: String, copySuffix: String = "copy"): ToolbarProfile? {
         val source = profileById(id) ?: return null
         val newId = uniqueProfileId("${source.id}_copy")
         val copy = source.copy(
             id = newId,
-            name = "${source.name} copy".take(40),
+            name = "${source.name} ${copySuffix.trim().ifBlank { "copy" }}".take(40),
             builtIn = false,
         )
         saveProfile(copy)

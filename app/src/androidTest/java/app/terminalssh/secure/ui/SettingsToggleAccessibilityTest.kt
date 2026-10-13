@@ -49,7 +49,6 @@ class SettingsToggleAccessibilityTest {
                     ),
                 )
 
-                val toggle = device.findObject(By.desc(label))
                 val density = context.resources.displayMetrics.density
                 val initial = stableSnapshot(label)
                 assertTrue("toggle row was not clickable", initial.clickable)
@@ -61,15 +60,14 @@ class SettingsToggleAccessibilityTest {
                 val toggleNode = AppWindowAccessibility.waitFor(TIMEOUT_MS) {
                     it.contentDescription?.toString() == label && it.isCheckable
                 } ?: throw AssertionError("The labeled setting must remain exposed as a switch")
+                var actionAccepted = false
                 try {
                     assertTrue("The labeled switch must expose an accessibility click action", toggleNode.isClickable)
-                    assertTrue(
-                        "Accessibility service click action was rejected for the labeled switch",
-                        AppWindowAccessibility.click(toggleNode),
-                    )
+                    actionAccepted = AppWindowAccessibility.click(toggleNode)
                 } finally {
                     toggleNode.recycle()
                 }
+                assertTrue("Accessibility ACTION_CLICK was rejected by the labeled switch", actionAccepted)
                 assertTrue(
                     "Toggle action did not persist false " +
                         "(value=${app.settings.confirmMultilinePaste}, " +
@@ -95,9 +93,10 @@ class SettingsToggleAccessibilityTest {
                     "The touch target must remain fully visible after re-scrolling; " +
                         "screenBounds=${falseSnapshot.bounds}, visibleBounds=${falseSnapshot.visibleBounds}, " +
                         "display=${device.displayWidth}x${device.displayHeight}, scrollables=${device.findObjects(By.scrollable(true)).map { it.visibleBounds }}",
-                    falseSnapshot.bounds.height() >= 48 * density &&
+                    falseSnapshot.visibleBounds.height() == falseSnapshot.bounds.height() &&
                         falseSnapshot.visibleBounds.width() == falseSnapshot.bounds.width() &&
-                        falseSnapshot.visibleBounds.height() == falseSnapshot.bounds.height(),
+                        falseSnapshot.visibleBounds.height() >= 48 * density &&
+                        falseSnapshot.visibleBounds.width() >= 240 * density,
                 )
                 assertTrue(
                     "Physical tap on the switch row was rejected",
@@ -111,9 +110,10 @@ class SettingsToggleAccessibilityTest {
                 assertTrue(
                     "Second physical tap target must remain fully visible; " +
                         "screenBounds=${trueSnapshot.bounds}, visibleBounds=${trueSnapshot.visibleBounds}",
-                    trueSnapshot.bounds.height() >= 48 * density &&
+                    trueSnapshot.visibleBounds.height() == trueSnapshot.bounds.height() &&
                         trueSnapshot.visibleBounds.width() == trueSnapshot.bounds.width() &&
-                        trueSnapshot.visibleBounds.height() == trueSnapshot.bounds.height(),
+                        trueSnapshot.visibleBounds.height() >= 48 * density &&
+                        trueSnapshot.visibleBounds.width() >= 240 * density,
                 )
                 assertTrue(
                     "Second physical tap on the switch row was rejected",
@@ -168,7 +168,11 @@ class SettingsToggleAccessibilityTest {
                 try {
                     val appNode = AppWindowAccessibility.find {
                         it.contentDescription?.toString() == label && it.isCheckable
-                    } ?: return null
+                    }
+                    if (appNode == null) {
+                        SystemClock.sleep(100)
+                        continue
+                    }
                     try {
                         return SwitchSnapshot(
                             AppWindowAccessibility.bounds(appNode),

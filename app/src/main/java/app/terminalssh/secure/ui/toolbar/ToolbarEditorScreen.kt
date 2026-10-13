@@ -70,6 +70,8 @@ import app.terminalssh.secure.toolbar.ToolbarKeyPalette
 import app.terminalssh.secure.toolbar.ToolbarProfiles
 import app.terminalssh.secure.toolbar.ToolbarProfile
 import app.terminalssh.secure.toolbar.ToolbarRepository
+import app.terminalssh.secure.toolbar.ToolbarTheme
+import app.terminalssh.secure.toolbar.ToolbarThemeEditor
 import app.terminalssh.secure.ui.theme.Turquoise
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -104,14 +106,17 @@ fun ToolbarEditorScreen(
     var addKeyOpen by remember { mutableStateOf(false) }
     var renameOpen by remember { mutableStateOf(false) }
     var createMacroOpen by remember { mutableStateOf(false) }
+    var themeDialog by remember { mutableStateOf<Pair<ToolbarTheme, String>?>(null) }
     var gestureDialog by remember { mutableStateOf<ToolbarGesture?>(null) }
     var discardConfirmOpen by remember { mutableStateOf(false) }
     val pendingMacros = remember(profileId) { mutableListOf<MacroDef>() }
+    var pendingThemes by remember { mutableStateOf<Map<String, ToolbarTheme>>(emptyMap()) }
     var importCandidate by remember { mutableStateOf<ToolbarImportCandidate?>(null) }
     var transferBusy by remember { mutableStateOf(false) }
     var transferMessage by remember { mutableStateOf<Int?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val profileCopySuffix = stringResource(R.string.tcs_profile_copy_suffix)
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
@@ -176,7 +181,15 @@ fun ToolbarEditorScreen(
     }
 
     fun requestDismiss() {
-        if (session.isDirty || pendingMacros.isNotEmpty()) discardConfirmOpen = true else onDismiss()
+        if (session.isDirty || pendingMacros.isNotEmpty() || pendingThemes.isNotEmpty()) discardConfirmOpen = true else onDismiss()
+    }
+
+    fun commitPending() {
+        pendingThemes.values.forEach(repository::saveTheme)
+        pendingThemes = emptyMap()
+        pendingMacros.forEach(repository::saveMacro)
+        pendingMacros.clear()
+        if (session.isDirty) repository.saveProfile(session.current.copy(builtIn = false))
     }
 
     fun normaliseSelection(profile: ToolbarProfile) {
@@ -255,13 +268,15 @@ fun ToolbarEditorScreen(
                         // Keep any in-flight edit to the profile currently being edited before
                         // switching, so a user who moves a key then taps another profile does
                         // not lose the change silently.
-                        if (session.isDirty) {
-                            pendingMacros.forEach(repository::saveMacro)
-                            pendingMacros.clear()
-                            repository.saveProfile(session.current.copy(builtIn = false))
-                        }
+                        commitPending()
                         profileId = profile.id
                     }
+                }
+            }
+            SmallButton(stringResource(R.string.tcs_profile_duplicate), enabled = !transferBusy) {
+                commitPending()
+                if (repository.duplicateProfile(profileId, profileCopySuffix) != null) {
+                    profileId = repository.state.value.customProfiles.last().id
                 }
             }
 
@@ -293,10 +308,26 @@ fun ToolbarEditorScreen(
 
             SectionLabel(stringResource(R.string.tcs_theme))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(repository.allThemes, key = { it.id }) { theme ->
+                items((repository.allThemes.associateBy { it.id } + pendingThemes).values.toList(), key = { it.id }) { theme ->
                     Chip(text = theme.name, selected = theme.id == working.themeId) {
                         edit { it.copy(themeId = theme.id) }
                     }
+                }
+                item(key = "create-custom-theme") {
+                    Chip(text = stringResource(R.string.tcs_theme_create), selected = false) {
+                        val source = pendingThemes[working.themeId] ?: repository.themeById(working.themeId) ?: app.terminalssh.secure.toolbar.ToolbarThemes.default
+                        val baseId = "${source.id}_custom"
+                        val ids = (repository.allThemes.map { it.id } + pendingThemes.keys).toSet()
+                        var id = baseId
+                        var suffix = 2
+                        while (id in ids) id = "${baseId}_${suffix++}"
+                        themeDialog = source to id
+                    }
+                }
+            }
+            (pendingThemes[working.themeId] ?: state.customThemes.firstOrNull { it.id == working.themeId })?.let { customTheme ->
+                TextButton(onClick = { themeDialog = customTheme to customTheme.id }) {
+                    Text(stringResource(R.string.tcs_theme_edit))
                 }
             }
 
@@ -418,8 +449,7 @@ fun ToolbarEditorScreen(
                 }
                 SmallButton(stringResource(R.string.tcs_save), accent = true) {
                     val saved = working.copy(builtIn = false)
-                    pendingMacros.forEach(repository::saveMacro)
-                    pendingMacros.clear()
+                    commitPending()
                     repository.saveProfile(saved)
                     repository.setActiveProfile(saved.id)
                     repository.setActiveTheme(saved.themeId)
@@ -432,7 +462,7 @@ fun ToolbarEditorScreen(
                 }
                 SmallButton(
                     stringResource(R.string.tcs_import),
-                    enabled = !transferBusy && !session.isDirty && pendingMacros.isEmpty(),
+                    enabled = !transferBusy && !session.isDirty && pendingMacros.isEmpty() && pendingThemes.isEmpty(),
                 ) {
                     importLauncher.launch(arrayOf("application/json", "text/*"))
                 }
@@ -442,7 +472,7 @@ fun ToolbarEditorScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            if (session.isDirty || pendingMacros.isNotEmpty()) Text(
+            if (session.isDirty || pendingMacros.isNotEmpty() || pendingThemes.isNotEmpty()) Text(
                 stringResource(R.string.tcs_import_unsaved_block),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
@@ -552,6 +582,19 @@ fun ToolbarEditorScreen(
                     ToolbarEditor.appendKey(profile.copy(macroIds = (profile.macroIds + macro.id).distinct()), key)
                 }
                 createMacroOpen = false
+            },
+        )
+    }
+
+    themeDialog?.let { (source, id) ->
+        ThemeEditorDialog(
+            source = source,
+            id = id,
+            onDismiss = { themeDialog = null },
+            onSave = { theme ->
+                pendingThemes = pendingThemes + (theme.id to theme)
+                edit { it.copy(themeId = theme.id) }
+                themeDialog = null
             },
         )
     }
@@ -719,6 +762,42 @@ private fun CreateMacroDialog(onDismiss: () -> Unit, onCreate: (String, String) 
             }
         },
         confirmButton = { TextButton(onClick = { onCreate(name.trim(), text) }, enabled = valid) { Text(stringResource(R.string.tcs_create_macro)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+@Composable
+private fun ThemeEditorDialog(
+    source: ToolbarTheme,
+    id: String,
+    onDismiss: () -> Unit,
+    onSave: (ToolbarTheme) -> Unit,
+) {
+    val customSuffix = stringResource(R.string.tcs_theme_custom_suffix)
+    var name by rememberSaveable(id) { mutableStateOf(if (id == source.id) source.name else "${source.name} $customSuffix".take(40)) }
+    var keyBackground by rememberSaveable(id) { mutableStateOf(ToolbarThemeEditor.formatArgb(source.keyBackground)) }
+    var keyLabel by rememberSaveable(id) { mutableStateOf(ToolbarThemeEditor.formatArgb(source.keyLabel)) }
+    var activeBackground by rememberSaveable(id) { mutableStateOf(ToolbarThemeEditor.formatArgb(source.activeBackground)) }
+    var activeLabel by rememberSaveable(id) { mutableStateOf(ToolbarThemeEditor.formatArgb(source.activeLabel)) }
+    var borderColor by rememberSaveable(id) { mutableStateOf(ToolbarThemeEditor.formatArgb(source.borderColor)) }
+    var keySurface by rememberSaveable(id) { mutableStateOf(ToolbarThemeEditor.formatArgb(source.keySurface)) }
+    val edited = ToolbarThemeEditor.updated(source, id, name, keyBackground, keyLabel, activeBackground, activeLabel, borderColor, keySurface)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(if (id == source.id) R.string.tcs_theme_edit else R.string.tcs_theme_create)) },
+        text = {
+            Column(Modifier.fillMaxWidth().heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
+                OutlinedTextField(name, { name = it.take(40) }, label = { Text(stringResource(R.string.tcs_theme_name)) }, singleLine = true)
+                OutlinedTextField(keyBackground, { keyBackground = it.take(9) }, label = { Text(stringResource(R.string.tcs_theme_key_background)) }, singleLine = true)
+                OutlinedTextField(keyLabel, { keyLabel = it.take(9) }, label = { Text(stringResource(R.string.tcs_theme_key_label)) }, singleLine = true)
+                OutlinedTextField(activeBackground, { activeBackground = it.take(9) }, label = { Text(stringResource(R.string.tcs_theme_active_background)) }, singleLine = true)
+                OutlinedTextField(activeLabel, { activeLabel = it.take(9) }, label = { Text(stringResource(R.string.tcs_theme_active_label)) }, singleLine = true)
+                OutlinedTextField(borderColor, { borderColor = it.take(9) }, label = { Text(stringResource(R.string.tcs_theme_border)) }, singleLine = true)
+                OutlinedTextField(keySurface, { keySurface = it.take(9) }, label = { Text(stringResource(R.string.tcs_theme_surface)) }, singleLine = true)
+                if (edited == null) Text(stringResource(R.string.tcs_theme_invalid), color = MaterialTheme.colorScheme.error)
+            }
+        },
+        confirmButton = { TextButton(enabled = edited != null, onClick = { edited?.let(onSave) }) { Text(stringResource(R.string.tcs_theme_save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }

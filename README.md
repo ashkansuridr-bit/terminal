@@ -47,7 +47,7 @@ Terminal SSH یک برنامهٔ اندرویدی برای اتصال SSH، اس
 
 کد نسخهٔ `0.7.2` است (`versionCode` برابر 12). در آخرین بررسی محلی، 1,022 تست JVM موفق شدند؛ کامپایل Kotlin برنامه و تست‌های اندروید، Lint و ساخت `MarketDebug` نیز موفق بود. Lint صفر خطا، 106 هشدار و 2 نکتهٔ راهنما گزارش کرد.
 
-در آخرین اجرای کامل GitHub Actions شمارهٔ [38442115157](https://github.com/ashkansuridr-bit/terminal/actions/runs/38442115157) روی commit `ac623d9`، گیت Verify موفق شد؛ هرکدام از API26 Debug/Preview و API36 Debug/Preview شش آزمون UI از ۱۱۴ آزمون را شکست دادند (۲۴ اجرای ناموفق؛ همان شش آزمون در هر چهار حالت). دو شبیه‌ساز API37 پیش از اجرای تست با timeout بوت متوقف شدند و Release Candidateها اجرا نشدند. اصلاح بعدی harness اکنون در workspace است و پس از کامپایل منتظر CI تازه می‌ماند؛ موفقیت UI تأیید نشده است. جزئیات در checkpoint ثبت شده است.
+در آخرین اجرای کامل GitHub Actions شمارهٔ [38444931145](https://github.com/ashkansuridr-bit/terminal/actions/runs/38444931145) روی commit `c68b95f`، گیت Verify موفق شد. API26 Debug/Preview و API36 Debug/Preview هرکدام ۴ شکست از ۱۱۴ تست داشتند (۱۶ اجرای ناموفق؛ همان چهار تست HostEdit، HostList، SettingsToggle و Snippet). آزمون‌های Palette و اسلایدر فونت که در اجرای پیشین می‌افتادند اکنون موفق شدند. API37 Debug/Preview پیش از اجرای تست با `adb: device offline` و timeout بوت شدند؛ Release Candidateها اجرا نشدند. اصلاح harness بعدی و قابلیت Theme/duplicate profile در workspace با ۱۰۲۵ تست JVM، کامپایل و lint سبز شده‌اند و هنوز runtime CI ندارند؛ UI تکمیل‌شده اعلام نشده است.
 
 محیط محلی ابزار `adb` یا دستگاه متصل نداشت. اتصال به سرور آزمایشی SSH/SFTP، اجرای TalkBack روی دستگاه، ماتریس کامل نسخه‌های اندروید و امضای تولیدی نیز تأیید نشده‌اند. به همین دلیل این پروژه را آمادهٔ انتشار عمومی معرفی نمی‌کنیم.
 
