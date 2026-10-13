@@ -95,11 +95,13 @@ class SettingsToggleAccessibilityTest {
                     "The touch target must remain fully visible after re-scrolling; " +
                         "screenBounds=${falseSnapshot.bounds}, visibleBounds=${falseSnapshot.visibleBounds}, " +
                         "display=${device.displayWidth}x${device.displayHeight}, scrollables=${device.findObjects(By.scrollable(true)).map { it.visibleBounds }}",
-                    falseSnapshot.bounds.height() >= 48 * density && falseSnapshot.visibleBounds.contains(falseSnapshot.bounds),
+                    falseSnapshot.bounds.height() >= 48 * density &&
+                        falseSnapshot.visibleBounds.width() == falseSnapshot.bounds.width() &&
+                        falseSnapshot.visibleBounds.height() == falseSnapshot.bounds.height(),
                 )
                 assertTrue(
                     "Physical tap on the switch row was rejected",
-                    device.click(falseSnapshot.bounds.centerX(), falseSnapshot.bounds.centerY()),
+                    device.click(falseSnapshot.visibleBounds.centerX(), falseSnapshot.visibleBounds.centerY()),
                 )
                 assertTrue("Physical tap did not persist true", awaitUiState(TIMEOUT_MS) {
                     app.settings.confirmMultilinePaste && stableSnapshotOrNull(label)?.checked == true
@@ -109,11 +111,13 @@ class SettingsToggleAccessibilityTest {
                 assertTrue(
                     "Second physical tap target must remain fully visible; " +
                         "screenBounds=${trueSnapshot.bounds}, visibleBounds=${trueSnapshot.visibleBounds}",
-                    trueSnapshot.bounds.height() >= 48 * density && trueSnapshot.visibleBounds.contains(trueSnapshot.bounds),
+                    trueSnapshot.bounds.height() >= 48 * density &&
+                        trueSnapshot.visibleBounds.width() == trueSnapshot.bounds.width() &&
+                        trueSnapshot.visibleBounds.height() == trueSnapshot.bounds.height(),
                 )
                 assertTrue(
                     "Second physical tap on the switch row was rejected",
-                    device.click(trueSnapshot.bounds.centerX(), trueSnapshot.bounds.centerY()),
+                    device.click(trueSnapshot.visibleBounds.centerX(), trueSnapshot.visibleBounds.centerY()),
                 )
                 assertTrue("Second physical tap did not persist false", awaitUiState(TIMEOUT_MS) {
                     !app.settings.confirmMultilinePaste && stableSnapshotOrNull(label)?.checked == false
@@ -164,20 +168,16 @@ class SettingsToggleAccessibilityTest {
                 try {
                     val appNode = AppWindowAccessibility.find {
                         it.contentDescription?.toString() == label && it.isCheckable
-                    }
-                    if (appNode != null) {
-                        try {
-                            return SwitchSnapshot(
-                                AppWindowAccessibility.bounds(appNode),
-                                node.visibleBounds,
-                                node.isChecked,
-                                node.isClickable,
-                                node.isLongClickable,
-                            )
-                        } finally {
-                            appNode.recycle()
-                        }
-                    }
+                    } ?: return null
+                    try {
+                        return SwitchSnapshot(
+                            AppWindowAccessibility.bounds(appNode),
+                            node.visibleBounds,
+                            node.isChecked,
+                            node.isClickable,
+                            node.isLongClickable,
+                        )
+                    } finally { appNode.recycle() }
                 } catch (_: StaleObjectException) {
                     // Reacquire the node after Compose replaces the semantics tree.
                 }

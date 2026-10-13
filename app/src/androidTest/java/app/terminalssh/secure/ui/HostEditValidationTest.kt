@@ -117,8 +117,8 @@ class HostEditValidationTest {
 
     private fun setFieldText(label: String, value: String) {
         // Compose exposes the named OutlinedTextField wrapper separately from its
-        // EditText child on API 26+. The wrapper is not always marked clickable in
-        // Android 8's tree, but its visible bounds still contain the real touch target.
+        // EditText child on API 26+. Compare its visible UiAutomator rectangle to the
+        // full accessibility rectangle by dimensions; the APIs report different insets.
         val field = device.wait(Until.findObject(By.desc(label)), TIMEOUT_MS)
             ?: throw AssertionError("Named field '$label' was not exposed in the app accessibility tree")
         val visibleBounds = field.visibleBounds
@@ -127,14 +127,16 @@ class HostEditValidationTest {
         } ?: throw AssertionError("Named field '$label' disappeared from the app accessibility tree")
         val bounds = try {
             AppWindowAccessibility.bounds(appField)
-        } finally {
-            appField.recycle()
-        }
+        } finally { appField.recycle() }
         assertTrue(
             "Named field '$label' must have a visible touch target: full=$bounds visible=$visibleBounds",
-            bounds.width() > 0 && bounds.height() > 0 && visibleBounds.contains(bounds),
+            bounds.width() > 0 && bounds.height() > 0 &&
+                visibleBounds.width() == bounds.width() && visibleBounds.height() == bounds.height(),
         )
-        assertTrue("Touching named field '$label' was rejected", device.click(bounds.centerX(), bounds.centerY()))
+        assertTrue(
+            "Touching named field '$label' was rejected",
+            device.click(visibleBounds.centerX(), visibleBounds.centerY()),
+        )
         val editor = device.wait(
             Until.findObject(By.clazz("android.widget.EditText").focused(true)),
             TIMEOUT_MS,

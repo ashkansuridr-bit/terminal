@@ -60,6 +60,11 @@ class SnippetAccessibilityTest {
 
             assertTrue(device.wait(Until.hasObject(By.text(terminalTab)), TIMEOUT_MS))
             device.findObject(By.text(terminalTab)).click()
+            val showKeyboard = instrumentation.targetContext.getString(R.string.show_keyboard)
+            assertTrue(
+                "Terminal toolbar did not appear after selecting the Terminal tab",
+                device.wait(Until.hasObject(By.desc(showKeyboard)), TIMEOUT_MS),
+            )
             // The snippets key is deep in the horizontal toolbar; scroll it into view
             // (RTL rows start at the right edge, so the gesture mirrors).
             val direction = terminalLayoutDirection(

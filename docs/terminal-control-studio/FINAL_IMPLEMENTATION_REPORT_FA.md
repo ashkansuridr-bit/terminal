@@ -2,7 +2,7 @@
 
 ## وضعیت فعلی — آخرین به‌روزرسانی 2026-10-13
 
-تغییرات Terminal Control Studio مستقیماً روی `main` ثبت می‌شوند، مطابق دستور صریح مالک مخزن. آخرین commit پوش‌شده و آزمایش‌شده با CI برابر `5048075` است؛ Verify، unit tests، lint و Debug builds موفق‌اند، اما اجرای Instrumentation شمارهٔ [38439434500](https://github.com/ashkansuridr-bit/terminal/actions/runs/38439434500) چهار ماتریس API26/36 را با ۲۴ اجرای ناموفق تمام کرد. دو ماتریس API37 پیش از شروع تست به علت timeout بوت Emulator متوقف شدند. یک اصلاح بعدی فقط در test harness روی workspace کامپایل شده و هنوز commit/CI نشده است. شمار Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است؛ وضعیت انتشار همچنان NOT VERIFIED.
+تغییرات Terminal Control Studio مستقیماً روی `main` ثبت می‌شوند، مطابق دستور صریح مالک مخزن. آخرین commit پوش‌شده `ac623d9` است؛ Verify، unit tests، lint و Debug builds موفق‌اند، اما اجرای Instrumentation شمارهٔ [38442115157](https://github.com/ashkansuridr-bit/terminal/actions/runs/38442115157) چهار ماتریس API26/36 را با ۲۴ اجرای ناموفق تمام کرد (همان شش آزمون در هر ماتریس). دو ماتریس API37 پیش از تست به علت timeout بوت Emulator متوقف شدند. اصلاح‌های بعدی test harness محلی کامپایل شده‌اند و هنوز runtime CI ندارند. شمار Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است؛ وضعیت انتشار همچنان NOT VERIFIED.
 
 ## تغییرات و علت‌ها
 
@@ -20,7 +20,7 @@
 
 روی کد برنامهٔ `cf0ac9d`، JVM tests برابر ۱٬۰۲۲/۱٬۰۲۲ در ۱۱۸ suite، lint با صفر خطا (۱۰۶ هشدار، ۲ hint)، MarketDebug/Preview build، AndroidTest compile و `apksigner verify` برای APK Debug موفق شدند. فایل APK ریشه از کد برنامهٔ `cf0ac9d` ساخته شده و با گواهی Android Debug امضا شده؛ SHA-256: `36a954e19c2a9ae5831e2dd22c1ea196a0d72483cff9e0e6fd447fae924e98ae`. امضای Production تأیید نشده است.
 
-Run `38439434500` روی commit تستی `5048075`، Verify را با موفقیت گذراند. ماتریس‌ها: API26 Debug 6/114 شکست، API26 Preview 5/114، API36 Debug 6/114، API36 Preview 7/114؛ جمعاً ۲۴ تست ناموفق. API37 Debug/Preview به timeout بوت Emulator رسیدند و تستی اجرا نکردند. نتیجهٔ کامل و Root Causeهای قابل اثبات در `LOOP_CHECKPOINT.md` ثبت شده‌اند. اصلاح harness پس از این اجرا محلی کامپایل شده اما هنوز runtime validation ندارد. هیچ Crash واقعی در این دور بازتولید نشده است؛ نبود Crash تأیید نشده.
+Run `38442115157` روی commit تستی `ac623d9`، Verify را با موفقیت گذراند. هرکدام از API26 Debug/Preview و API36 Debug/Preview شش شکست از ۱۱۴ داشتند؛ فهرست همان شش تست در هر چهار ماتریس تکرار شد (۲۴ اجرای ناموفق). API37 Debug/Preview به timeout بوت Emulator رسیدند و تستی اجرا نکردند. گزارش‌های HTML در artifactهای همان workflow هستند و Root Causeهای شواهدپذیر در `LOOP_CHECKPOINT.md` ثبت شده‌اند. اصلاح harness پس از این اجرا محلی کامپایل شده اما هنوز runtime validation ندارد. هیچ Crash واقعی در این دور بازتولید نشده است؛ نبود Crash تأیید نشده.
 
 `loop2_gate.py`, `market_release_gate.py` و `git diff --check` در نسخهٔ محلی فعلی موفق‌اند. محیط محلی `adb` ندارد و AVD API36 به علت نبود `kernel-ranchu` اجرا نمی‌شود؛ در نتیجه UI، TalkBack و device matrix را نمی‌توان محلی تأیید کرد.
 
@@ -42,9 +42,9 @@ Run `38439434500` روی commit تستی `5048075`، Verify را با موفقی
 
 ## خروجی‌ها و وضعیت انتشار
 
-- شاخهٔ فعلی `main` است؛ آخرین commit پوش‌شده در زمان این checkpoint `5048075` است. Harness و به‌روزرسانی مستندات فعلی هنوز محلی‌اند و پس از بازبینی push می‌شوند.
+- شاخهٔ فعلی `main` است؛ آخرین commit پوش‌شده `ac623d9` است. اصلاح‌های harness پس از آن در workspace محلی‌اند، کامپایل شده‌اند و برای تأیید runtime به اجرای CI بعدی نیاز دارند.
 - تغییرات مطابق درخواست کاربر مستقیماً به `main` پوش شده‌اند؛ لینک شاخه: https://github.com/ashkansuridr-bit/terminal/tree/main . PR جدیدی ایجاد نشده است.
-- آخرین CI کامل: https://github.com/ashkansuridr-bit/terminal/actions/runs/38439434500 (Verify موفق، ۲۴ شکست UI در API26/36، API37 boot timeout).
+- آخرین CI کامل: https://github.com/ashkansuridr-bit/terminal/actions/runs/38442115157 (Verify موفق، ۲۴ شکست UI در API26/36، API37 boot timeout).
 - اجرای CI برای `82b2861` (نتیجه باید دوباره بررسی شود): https://github.com/ashkansuridr-bit/terminal/actions/runs/38395092348
 - APK تولیدی/امضاشده: تأیید نشده؛ خروجی Debug با گواهی Debug، نسخهٔ Production محسوب نمی‌شود.
 - کلیپ معرفی فارسی: `TerminalSSH-Promo-fa.mp4` و `TerminalSSH-Promo-fa-no-bgm.mp4` در ریشه؛ جزئیات hash و محدودیت شناسایی موسیقی در `docs/terminal-control-studio/VIDEO_DELIVERY.md` و بازبینی مستقل در `VIDEO_REVIEW.md`.

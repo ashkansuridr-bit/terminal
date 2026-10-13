@@ -7,6 +7,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.Until
@@ -213,18 +214,21 @@ class SettingsAccessibilityTest {
     private fun scrollSettingsTo(description: String, horizontal: Boolean = false): Boolean {
         val density = instrumentation.targetContext.resources.displayMetrics.density
         repeat(28) {
-            val target = AppWindowAccessibility.find {
-                it.contentDescription?.toString() == description
-            }
+            // Compare bounds from the same UiAutomator window. On API 26/36,
+            // AccessibilityNodeInfo.getBoundsInScreen and UiObject2.visibleBounds
+            // report different inset origins and falsely indicate that controls are clipped.
+            val target = runCatching { device.findObject(By.desc(description)) }.getOrNull()
             if (target != null) {
-                try {
-                    val completeBounds = AppWindowAccessibility.bounds(target)
-                    val visibleBounds = runCatching { device.findObject(By.desc(description))?.visibleBounds }.getOrNull()
-                    if (visibleBounds != null && visibleBounds.contains(completeBounds) &&
-                        completeBounds.width() >= (48 * density).toInt() && completeBounds.height() >= (48 * density).toInt()
-                    ) return true
-                } finally {
-                    target.recycle()
+                val visibleBounds = runCatching { target.visibleBounds }.getOrNull()
+                val fullNode = AppWindowAccessibility.find { it.contentDescription?.toString() == description }
+                if (fullNode != null) {
+                    try {
+                        val fullBounds = AppWindowAccessibility.bounds(fullNode)
+                        if (visibleBounds != null && visibleBounds.width() == fullBounds.width() &&
+                            visibleBounds.height() == fullBounds.height() && fullBounds.width() >= (48 * density).toInt() &&
+                            fullBounds.height() >= (48 * density).toInt()
+                        ) return true
+                    } finally { fullNode.recycle() }
                 }
             }
 
@@ -236,9 +240,38 @@ class SettingsAccessibilityTest {
                 else bounds.height() > bounds.width()
             }.maxByOrNull { if (horizontal) it.width() else it.height() } ?: return false
 
-            // Compose's UiObject2.scroll can report success without moving nested lazy
-            // containers. A physical swipe inside the reported app viewport is the
-            // fallback exercised by a human accessibility service as well.
+            val scrollable = device.findObjects(By.scrollable(true)).firstOrNull { node ->
+                runCatching {
+                    val bounds = node.visibleBounds
+                    if (horizontal) bounds.width() > bounds.height() else bounds.height() > bounds.width()
+                }.getOrDefault(false)
+            }
+            if (scrollable != null) {
+                val direction = if (horizontal) {
+                    if (instrumentation.targetContext.resources.configuration.layoutDirection.toComposeLayoutDirection() == LayoutDirection.Ltr) {
+                        Direction.LEFT
+                    } else Direction.RIGHT
+                } else Direction.UP
+                runCatching { scrollable.scroll(direction, 0.7f) }
+                device.waitForIdle()
+                val after = runCatching { device.findObject(By.desc(description)) }.getOrNull()
+                if (after != null) {
+                    val visibleBounds = runCatching { after.visibleBounds }.getOrNull()
+                    val fullNode = AppWindowAccessibility.find { it.contentDescription?.toString() == description }
+                    if (fullNode != null) {
+                        try {
+                            val fullBounds = AppWindowAccessibility.bounds(fullNode)
+                            if (visibleBounds != null && visibleBounds.width() == fullBounds.width() &&
+                                visibleBounds.height() == fullBounds.height() && fullBounds.width() >= (48 * density).toInt() &&
+                                fullBounds.height() >= (48 * density).toInt()
+                            ) return true
+                        } finally { fullNode.recycle() }
+                    }
+                }
+                // Some Compose versions omit ACTION_SCROLL for the outer vertical
+                // container or move less than a full control; gesture fallback below
+                // continues toward the target in UiAutomator's screen coordinates.
+            }
             val (startX, startY, endX, endY) = if (horizontal) {
                 val inset = (24 * density).toInt().coerceAtMost(viewport.width() / 4)
                 if (LayoutDirection.Ltr == instrumentation.targetContext.resources.configuration.layoutDirection.toComposeLayoutDirection()) {

@@ -1,6 +1,7 @@
 package app.terminalssh.secure.ui
 
 import androidx.test.core.app.ActivityScenario
+import androidx.lifecycle.ViewModelProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import android.graphics.Rect
@@ -9,11 +10,11 @@ import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
-import android.view.accessibility.AccessibilityNodeInfo
 import app.terminalssh.secure.R
 import app.terminalssh.secure.TerminalApp
 import app.terminalssh.secure.model.AuthMethod
 import app.terminalssh.secure.model.HostProfile
+import app.terminalssh.secure.vm.AppViewModel
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -60,7 +61,13 @@ class HostListPresentationTest {
 
     @Test
     fun hostsAreGroupedAndCarryTheirOwnRecency() {
-        ActivityScenario.launch(MainActivity::class.java).use {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                // The test fixture is written directly to the durable store before
+                // launch. Refresh a retained ViewModel so this checks rendering rather
+                // than a stale initial snapshot left by another UI test.
+                ViewModelProvider(activity)[AppViewModel::class.java].reloadHostMetadata()
+            }
             assertTrue(
                 "Seeded host fixture was not durable: ${app.hosts.hosts().map { it.id to it.lastConnectedAt }}",
                 seeded.all { wanted -> app.hosts.hosts().any { it.id == wanted.id } },
@@ -173,58 +180,16 @@ class HostListPresentationTest {
         if (node == null) return false
         return try {
             val visible = node.visibleBounds
-            val fullBounds = accessibilityBounds(text = node.text)
-            fullBounds != null && visible.contains(fullBounds)
+            val text = node.text?.toString() ?: return false
+            val full = AppWindowAccessibility.find { it.text?.toString() == text } ?: return false
+            try {
+                val fullBounds = AppWindowAccessibility.bounds(full)
+                // Screen origins differ between these APIs; element dimensions do not.
+                visible.width() == fullBounds.width() && visible.height() == fullBounds.height()
+            } finally { full.recycle() }
         } catch (_: StaleObjectException) {
             false
         }
-    }
-
-    private fun accessibilityBounds(text: String?): Rect? {
-        if (text == null) return null
-        repeat(3) {
-            try {
-                instrumentation.uiAutomation.windows.forEach { window ->
-                    try {
-                        if (window.type != android.view.accessibility.AccessibilityWindowInfo.TYPE_APPLICATION) return@forEach
-                        val root = window.root ?: return@forEach
-                        try {
-                            findBounds(root, text)?.let { return it }
-                        } finally {
-                            root.recycle()
-                        }
-                    } finally {
-                        window.recycle()
-                    }
-                }
-                val activeRoot = instrumentation.uiAutomation.rootInActiveWindow
-                if (activeRoot != null) {
-                    try {
-                        findBounds(activeRoot, text)?.let { return it }
-                    } finally {
-                        activeRoot.recycle()
-                    }
-                }
-            } catch (_: StaleObjectException) {
-                // Retry against a fresh tree if Compose replaced the list during traversal.
-            }
-        }
-        return null
-    }
-
-    private fun findBounds(node: AccessibilityNodeInfo, text: String): Rect? {
-        if (node.text?.toString() == text || node.contentDescription?.toString() == text) {
-            return Rect().also(node::getBoundsInScreen)
-        }
-        for (index in 0 until node.childCount) {
-            val child = node.getChild(index) ?: continue
-            try {
-                findBounds(child, text)?.let { return it }
-            } finally {
-                child.recycle()
-            }
-        }
-        return null
     }
 
     private fun hostListBounds(): Rect? = device.findObjects(By.scrollable(true))
