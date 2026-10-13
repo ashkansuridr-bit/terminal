@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-13T10:39:02+00:00",
+  "capturedAt": "2026-10-13T10:39:19+00:00",
   "branch": "feature/terminal-control-studio-pro",
   "baselineCommit": "67021c1",
   "lastVerifiedCommit": "2976238",
@@ -292,14 +292,13 @@
         "Window snapshot lifecycle review: AccessibilityWindowInfo recycled in finally for terminal navigation, IME polling, and host-form IME detection",
         "MarketDebug AndroidTest Kotlin compilation PASS after window recycling; git diff --check PASS"
       ],
-      "lastResult": "Run 38384380095 for 2fe360f: verify PASS; API26/36/37 Debug+Preview jobs running. Current macro implementation has local app and AndroidTest compilation and JVM evidence; lint/gates checked.",
+      "lastResult": "Run 38384380095 for 2fe360f was superseded and cancelled when 086a5e4 was pushed; verify had passed and six device jobs were still in progress.",
       "lastFailure": "Run 38320080882: API26/36 UI instrumentation failures, including terminal tab lookup, host/settings scrolling/semantics and host form/snippet assertions; API37 emulator boot timed out with adb offline. API36 Debug had 8 failures; Preview 7; API26 Debug 14.",
       "fixAttempts": 2,
-      "commitSha": "2fe360f + local macro work",
-      "lastReviewedAt": "2026-10-13T10:39:02+00:00",
+      "commitSha": "086a5e4",
+      "lastReviewedAt": "2026-10-13T10:39:19+00:00",
       "remainingIssues": [
-        "Await API26/36/37 instrumentation results from PR run 38384380095.",
-        "Latest custom-macro UI changes need fresh PR CI runtime verification.",
+        "Await current-source CI run 38385275105, including API26/36/37 Debug and Preview instrumentation.",
         "No local adb/emulator; production signing remains unverified."
       ]
     },
@@ -335,14 +334,14 @@
         "market_release_gate.py PASS",
         "git diff --check PASS"
       ],
-      "lastResult": "Local source gates pass. UI creation and tap path await instrumentation runtime verification.",
+      "lastResult": "Committed as 086a5e4 and pushed to PR #4. Run 38385275105 has been queued; local app/AndroidTest compilation, JVM tests, lint and source gates pass.",
       "lastFailure": null,
       "fixAttempts": 1,
-      "commitSha": "pending",
-      "lastReviewedAt": "2026-10-13T10:39:02+00:00",
+      "commitSha": "086a5e4",
+      "lastReviewedAt": "2026-10-13T10:39:19+00:00",
       "remainingIssues": [
-        "Credential detection is heuristic and cannot recognize arbitrary secrets; user-facing warning documents this limit.",
-        "Macro UI path requires API26/36/37 instrumentation verification."
+        "Await current-source API26/36/37 instrumentation verification.",
+        "Heuristic credential filtering cannot detect arbitrary secret strings."
       ]
     }
   ],
@@ -358,7 +357,7 @@
     },
     "marketDebugAssemble": "PASS",
     "diffCheck": "PASS (e2bd89c)",
-    "instrumentation": "PR run 38384380095 for 2fe360f: verify PASS; six API26/36/37 Debug+Preview jobs in progress. Macro UI commit not yet pushed.",
+    "instrumentation": "PR run 38385275105 queued for 086a5e4; prior run 38384380095 was cancelled while six API26/36/37 device jobs were running. Its verify gate passed.",
     "apiDeviceMatrix": "BLOCKED: no emulator/device; disk capacity insufficient to install system image",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
@@ -390,7 +389,7 @@
     "No emulator/device is currently attached (adb devices is empty); current UI/instrumentation changes have compile evidence only until fresh PR CI runs.",
     "Macro secret detection catches common credential-shaped forms but cannot detect arbitrary secret values; the editor warns users not to store secrets."
   ],
-  "nextStep": "Commit and push the custom single-line macro path and secret-pattern guard; trigger latest-source CI, then inspect all API26/36/37 instrumentation reports and fix confirmed defects.",
+  "nextStep": "Inspect run 38385275105; diagnose API26/36/37 runtime failures from reports; then fix remaining editor and accessibility gaps.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/feature/terminal-control-studio-pro",
   "pullRequest": "https://github.com/ashkansuridr-bit/terminal/pull/4"
 }
