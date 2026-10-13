@@ -23,9 +23,9 @@ JVM test.
 
 - **Tests.** Pure logic goes in `app/src/test` and must be covered there. Anything that
   depends on AndroidKeyStore, the real clipboard, or Compose goes in `app/src/androidTest`.
-- **Both locales.** Every user-visible string exists in `values/strings.xml` (Persian,
-  the default) and `values-en/strings.xml`. A string in only one is a broken build for
-  half the users.
+- **All supported locales.** Every user-visible string exists in Persian, English,
+  Arabic, Spanish, French, and Russian resources. Keep the translations in sync; a new
+  string that silently falls back to Persian breaks the experience for other users.
 - **RTL correctness.** Wrap left-to-right technical values — host names, ports, versions,
   fingerprints — in `ltr()`. Without it the bidi algorithm reorders them inside Persian
   text and `192.168.1.10:22` renders wrong.
@@ -59,6 +59,13 @@ was wrong before. Conventional prefixes (`fix:`, `feat:`, `docs:`) are used thro
 
 Say in the PR what you actually verified. "Tests pass" is only useful if you say which
 ones and on what — a device, an emulator, or JVM only.
+
+## Open-source licence
+
+The project source is distributed under Apache License 2.0; see [`LICENSE`](LICENSE).
+Third-party libraries retain their own licence terms and attribution requirements; see
+[`NOTICE.md`](NOTICE.md) and `release/THIRD_PARTY_NOTICES.md`. Recheck the resolved
+dependencies for the variant being distributed before publishing an APK or AAB.
 
 ## Security issues
 

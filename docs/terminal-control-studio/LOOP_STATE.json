@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T14:25:00+00:00",
+  "capturedAt": "2026-10-13T14:40:00+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "94b784299fa1750120e79e45317440163a56bdc9 plus uncommitted NEW-005 work",
+  "lastVerifiedCommit": "895aea1dc57b27a13507c9746b495396bd860025",
   "features": [
     {
       "id": "TCS-01",
@@ -112,7 +112,7 @@
       "lastFailure": null,
       "fixAttempts": 0,
       "commitSha": "94b7842",
-      "lastReviewedAt": "2026-10-13T14:25:00+00:00",
+      "lastReviewedAt": "2026-10-13T14:40:00+00:00",
       "remainingIssues": [
         "Android SAF picker interaction, process recreation and cancellation paths require device/CI instrumentation."
       ]
@@ -432,7 +432,7 @@
     "CI run 38393877043 failed API26/API36 UI assertions on commit 22e8782; these are not established as fixed by later source yet.",
     "Macro secret detection catches common credential-shaped forms but cannot identify arbitrary secret values; editor warns users not to store secrets."
   ],
-  "nextStep": "Commit and push NEW-005 host-profile editor path; monitor CI 38399699440 and new CI; classify API26/36 assertions individually and finish remaining independent TCS features.",
+  "nextStep": "Monitor CI 38399699440 and 38400520050; classify API26/36 instrumentation failures and API37 boot outcomes; then continue independent TCS gaps. Keep device UI unverified until corresponding fresh CI passes.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
@@ -453,10 +453,10 @@
     "sourceGates": "loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS; four new host-override strings present in fa/en/ar/es/fr/ru"
   },
   "latestCi": {
-    "commit": "94b784299fa1750120e79e45317440163a56bdc9",
-    "run": "38399699440",
-    "result": "verify success; API26/36/37 instrumentation jobs in progress",
-    "details": "GitHub Actions verify job passed source gates, unit tests, lint and debug builds. Instrumentation jobs started for API26 Debug/Preview, API36 Debug/Preview, and API37 Debug/Preview. The run predates NEW-005 host-specific profile UI and README corrections."
+    "commit": "895aea1dc57b27a13507c9746b495396bd860025",
+    "run": "38400520050",
+    "result": "queued",
+    "details": "This run contains NEW-005 host-specific profile controls, README test/API claims correction, and updated third-party notices/contributor guidance. The preceding commit 94b7842 Verify passed; its API26/36/37 instrumentation is still running and will be inspected separately."
   },
   "remainingFeatureCount": 11,
   "verifiedCompleteCount": 0,

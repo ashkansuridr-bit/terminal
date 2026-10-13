@@ -1,6 +1,6 @@
 # APK verification
 
-The current-source artifact listed below was built from the local worktree based on commit `94b7842` plus the uncommitted NEW-005 host-profile editor path; Android source was unchanged after assembly using Android Build Tools 37.0.0 `apksigner`; it carries the `C=US, O=Android, CN=Android Debug` certificate. It is an evaluation build, not a production-signed release. Older variant artifacts from previous checkpoints are not present in this worktree and are not claimed as current-source builds.
+The current-source artifact listed below was built from the local worktree that became commit `895aea1`; Android source was unchanged after assembly. Android Build Tools 37.0.0 `apksigner`; it carries the `C=US, O=Android, CN=Android Debug` certificate. It is an evaluation build, not a production-signed release. Older variant artifacts from previous checkpoints are not present in this worktree and are not claimed as current-source builds.
 
 | Variant | Artifact | Size | SHA-256 |
 |---|---|---:|---|

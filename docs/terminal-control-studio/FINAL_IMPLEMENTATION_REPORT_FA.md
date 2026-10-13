@@ -2,7 +2,7 @@
 
 ## وضعیت فعلی
 
-پیاده‌سازی Terminal Control Studio و اصلاحات پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit پوش‌شده در این checkpoint `94b7842` است؛ مسیر پروفایل اختصاصی میزبان NEW-005 روی worktree اضافه شده و منتظر Commit بعدی است. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون Gateهای UI/دستگاه هنوز برای هیچ Feature کامل نشده‌اند.
+پیاده‌سازی Terminal Control Studio و اصلاحات پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit پوش‌شده در این checkpoint `895aea1` است. NEW-005 مسیر تنظیم/پاک‌کردن پروفایل میزبان را به editor وصل کرده؛ CI run `38400520050` در صف است و تست دستگاه هنوز تأیید نشده. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون Gateهای UI/دستگاه هنوز برای هیچ Feature کامل نشده‌اند.
 
 ## تغییرات و علت‌ها
 
@@ -18,7 +18,7 @@
 
 ## راستی‌آزمایی
 
-در دور جاری، `:app:testMarketDebugUnitTest`، app/AndroidTest compile، lint، و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۲۱ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند؛ lint صفر خطا، ۱۰۴ هشدار و ۲ hint داشت. APK فعلی MarketDebug است، SHA-256 آن `66b444cc092643aa295bc4bdf5594b6efa7addac06d15b96e0b42a8f47c8a831` است و `apksigner` گواهی Android Debug را تأیید کرد؛ امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه محلی اجرا نشده است. CI run `38399699440` برای Commit `94b7842` در حال اجراست: Verify موفق شده و instrumentation API26/36/37 هنوز تمام نشده است. اجرای قبلی `38396679291` در API26/36 assertionهای UI داشت و API37 پیش از شروع تست Timeout بوت Emulator داد. NEW-005 و اصلاحات مستندات در worktree فعلی هنوز دستگاهی تست نشده‌اند.
+در دور جاری، `:app:testMarketDebugUnitTest`، app/AndroidTest compile، lint، و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۲۱ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند؛ lint صفر خطا، ۱۰۴ هشدار و ۲ hint داشت. APK فعلی MarketDebug است، SHA-256 آن `66b444cc092643aa295bc4bdf5594b6efa7addac06d15b96e0b42a8f47c8a831` است و `apksigner` گواهی Android Debug را تأیید کرد؛ امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه محلی اجرا نشده است. CI run `38400520050` برای Commit `895aea1` در صف است. در run قبلی `38399699440` برای `94b7842`، Verify موفق شد و instrumentation API26/36/37 هنگام آخرین بررسی همچنان در حال اجرا بود. اجرای قبلی `38396679291` در API26/36 assertionهای UI داشت و API37 پیش از شروع تست Timeout بوت Emulator داد. NEW-005 و اصلاحات مستندات در worktree فعلی هنوز دستگاهی تست نشده‌اند.
 
 ## علت‌های تأییدشده و موارد نامشخص
 

@@ -180,3 +180,12 @@
 - CI `38399699440` for `94b7842`: Verify job passed; API26/36/37 instrumentation jobs are in progress. This run does not include NEW-005.
 - Open-source/license material: README points to root Apache-2.0 `LICENSE` and dependency `NOTICE.md`; the report separates MP4/media licensing from project code. NOTICE correctly tells release engineers to verify the resolved shipping dependency graph and include per-artifact attribution; exact full transitive inventory is not certified here.
 - Next: commit/push NEW-005 and README accuracy fixes directly to `main`; run CI; inspect current instrumentation results; continue the remaining TCS implementation. Strict verified-complete count remains 0/11.
+
+## Main update after host-profile feature and open-source docs (2026-10-13)
+
+- Commit `895aea1` is on `main` and `origin/main`. It includes the host-specific profile UI, regression instrumentation, README claim corrections, and licence/contributor documentation updates.
+- README no longer advertises API37 as verified support and no longer claims 930 tests. It states min API26, target/compile 37, current local 1,021 JVM count, and accurately describes known UI failures and API37 boot limitation. Competitor feature table is clearly disclosed as internal, not independent/current benchmarking.
+- `release/THIRD_PARTY_NOTICES.md` now describes source-vs-dependency licensing, principal Android dependencies, video assets, Vazirmatn OFL, and the required per-artifact resolved-graph recheck. `CONTRIBUTING.md` now matches the six supported UI locales and links licensing policy.
+- Latest CI run `38400520050` for `895aea1` is queued. Preceding CI `38399699440` for `94b7842` had Verify success and all six instrumentation jobs started; final device results are still pending.
+- Local gates for source in `895aea1` (prior to documentation-only follow-up) passed: 1,021/1,021 JVM tests, app/AndroidTest compile, lint, MarketDebug assemble, source/release validators, APK signature verification with debug cert. Host-profile UI instrumentation compiles but needs the fresh run to verify runtime behavior.
+- Next: inspect both runs' finished job/test logs and fix product causes; continue TCS work while those emulator jobs run. 0/11 features meet strict `VERIFIED_COMPLETE`; no production release claim.
