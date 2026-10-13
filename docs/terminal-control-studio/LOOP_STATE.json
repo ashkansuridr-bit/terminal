@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T13:01:00+00:00",
+  "capturedAt": "2026-10-13T13:08:00+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "93135b0cbb2699c0aa2141254eda4c01c0736521",
+  "lastVerifiedCommit": "28b679d00d118ede7f52c813bb0473b2846a624b",
   "features": [
     {
       "id": "TCS-01",
@@ -161,7 +161,10 @@
         "app/src/main/res/values-en/strings.xml",
         "app/src/main/res/values-es/strings.xml",
         "app/src/main/res/values-fr/strings.xml",
-        "app/src/main/res/values-ru/strings.xml"
+        "app/src/main/res/values-ru/strings.xml",
+        "app/src/main/java/app/terminalssh/secure/ssh/SshSession.kt",
+        "app/src/main/java/app/terminalssh/secure/ui/toolbar/ToolbarDispatcher.kt",
+        "app/src/test/java/app/terminalssh/secure/toolbar/MacroEngineTest.kt"
       ],
       "dependencies": [],
       "status": "IMPLEMENTED_NOT_TESTED",
@@ -174,15 +177,16 @@
         "MarketDebug app Kotlin compile PASS",
         "MarketDebug AndroidTest Kotlin compile PASS",
         "MarketDebug lint PASS (0 errors, 104 warnings, 2 hints)",
-        "Six-locale gesture resource parity PASS"
+        "Six-locale gesture resource parity PASS",
+        "Reconnect-epoch macro regression: MarketDebug unit suite PASS; stale Enter is not dispatched after delayed reconnect."
       ],
-      "lastResult": "Editor now binds/replaces/clears all six gestures through the existing edit session; undo/redo and Save apply to the persisted profile. Picker filters tap conflicts, repeat/long-press conflicts, Enter, multiline input, invalid snippet choices, and macros that submit Enter. Runtime UI dispatch remains device-unverified. Latest local regression suite remains green at 1,021 tests; CI runtime failures on prior source remain under triage.",
+      "lastResult": "Macro dispatch now captures the concrete SSH shell-channel epoch, refuses to run unless it is still connected on that epoch, and checks the epoch both during each dispatch and between delayed operations. Device UI path still pending.",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": "f2e7524",
-      "lastReviewedAt": "2026-10-13T12:03:11+00:00",
+      "commitSha": "28b679d",
+      "lastReviewedAt": "2026-10-13T13:08:00+00:00",
       "remainingIssues": [
-        "No local emulator/device to verify Compose gesture selection, dispatch, cancellation, or process recreation."
+        "Runtime UI and API26/36/37 instrumentation pending."
       ]
     },
     {
@@ -376,34 +380,34 @@
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS on 93135b0",
+    "marketDebugCompile": "PASS on 28b679d",
     "marketDebugUnitTests": {
-      "passed": 1021,
+      "passed": 1022,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
       "suites": 118,
-      "evidence": "Current worktree :app:testMarketDebugUnitTest on source committed as 93135b0"
+      "evidence": "Current source committed as 28b679d: :app:testMarketDebugUnitTest"
     },
-    "marketDebugAssemble": "PASS on 93135b0",
+    "marketDebugAssemble": "PASS on 28b679d",
     "diffCheck": "PASS before commit 93135b0",
-    "instrumentation": "Run 38401934345 for 93135b0: source/artifact validator gates PASS. Verify unit/lint/build step in progress; instrumentation jobs have not yet completed.",
-    "apiDeviceMatrix": "Local E2E BLOCKED: adb executable/device unavailable. GitHub run 38401934345 has API26/36/37 Debug/Preview tests in progress; runtime status pending.",
+    "instrumentation": "Current commit 28b679d CI run 38402910371 queued. Accessibility commit 93135b0 CI run 38401934345 also queued after older workflow backlog; local adb unavailable.",
+    "apiDeviceMatrix": "BLOCKED locally: adb missing. GitHub instrumentation run for 93135b0 queued; 28b679d run queued.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS on 93135b0",
+    "marketDebugAndroidTestCompile": "PASS on 28b679d",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
       "warnings": 105,
       "hints": 2,
-      "evidence": "Current worktree :app:lintMarketDebug on source committed as 93135b0"
+      "evidence": "Current source committed as 28b679d: :app:lintMarketDebug"
     },
     "gplayDebugAssemble": "PASS",
     "marketPreviewAssemble": "PASS on earlier exact source; current TCS-04 source MarketDebug assembled; Preview current-source rebuild not repeated",
     "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
     "apkSignature": "Current MarketDebug APK verified with Android Debug certificate; production signing not verified",
-    "sourceGates": "PASS on 93135b0: scripts/loop2_gate.py and scripts/market_release_gate.py",
+    "sourceGates": "PASS on 28b679d: loop2_gate.py, market_release_gate.py, git diff --check",
     "marketPreviewApk": {
       "path": "app/build/outputs/apk/market/preview/app-market-preview.apk",
       "sha256": "b5a1fa1985408c88dadd4efc3eaa9d274df131b7b2d05165ca4d05f427f89c64",
@@ -414,9 +418,9 @@
     "currentMarketDebugApk": {
       "path": "app/build/outputs/apk/market/debug/app-market-debug.apk",
       "sizeBytes": 43636502,
-      "sha256": "feb9be8b5ec04bd9874c6215a4feba90670cb0071b1b6816bf262db53e2fe534",
+      "sha256": "a354001d71c3b2dc586e662347172ab4b4cced17b8ebf918b8a63fed27176d0c",
       "signature": "Android Debug certificate; apksigner verification PASS",
-      "builtFrom": "Source committed as 93135b0",
+      "builtFrom": "Source committed as 28b679d",
       "releaseStatus": "not production-signed"
     }
   },
@@ -429,7 +433,7 @@
     "Macro secret detection catches common credential-shaped forms but cannot identify arbitrary secret values; editor warns users not to store secrets.",
     "No adb executable/device attached in current workspace; TalkBack and UI runtime checks require CI/device evidence."
   ],
-  "nextStep": "Inspect workflow run 38401934345 for 93135b0 on main; verify API26/36/37 debug/preview modifier accessibility and localization tests. Then triage any runtime failures and continue TCS features. Do not mark device UI complete before passing instrumentation.",
+  "nextStep": "Inspect queued CI run 38402910371 for macro reconnect fix, and run 38401934345 for accessibility regression. Resolve any remaining confirmed instrumentation failures; continue TCS feature gates.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
@@ -450,10 +454,10 @@
     "sourceGates": "loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS; four new host-override strings present in fa/en/ar/es/fr/ru"
   },
   "latestCi": {
-    "commit": "93135b0cbb2699c0aa2141254eda4c01c0736521",
-    "run": "38401934345",
-    "result": "in_progress; source/artifact validator gates PASS; Verify build/test step still running; six instrumentation jobs not yet assessed",
-    "details": "Includes localized Alt/Shift/Snippets labels and one-clickable-semantics-node regression. Previous runs 38399699440, 38400520050, and docs run 38400681521 also remain in progress; do not treat them as current-source runtime proof."
+    "commit": "28b679d00d118ede7f52c813bb0473b2846a624b",
+    "run": "38402910371",
+    "result": "queued",
+    "details": "Macro reconnect epoch guard and deterministic delayed macro regression. CI queue is backed up by older main runs; local full verification passed."
   },
   "remainingFeatureCount": 11,
   "verifiedCompleteCount": 0,
@@ -505,6 +509,14 @@
       "fix": "Added localized labels to all six shipped locales. Modifier keys now set content description, toggle state, role, disabled state, and accessibility onClick on one clearAndSetSemantics node while retaining combinedClickable for touch gesture behavior. Regression test asserts that the named checked UiObject2 is clickable.",
       "tests": "MarketDebug app compile, AndroidTest Kotlin compile, 1,021/1,021 JVM tests, lint (0 errors), MarketDebug assemble, both source gates, six-locale resource parity PASS; device instrumentation pending.",
       "status": "IMPLEMENTED_NOT_TESTED"
+    },
+    {
+      "id": "NEW-007",
+      "title": "Delayed macros could continue on a replacement SSH shell after automatic reconnect",
+      "rootCause": "Cancellation checked only for Closed state. The same SshSession transitions Reconnecting→Connected after auto-reconnect, so a delayed macro could send remaining steps, such as Enter, to a new shell.",
+      "fix": "Added a monotonic channel epoch advanced on shell install/loss/disconnect. Macro dispatcher captures the epoch, cancels on state/epoch change, and gates each synchronous dispatch against the captured live channel under a lock.",
+      "tests": "Deterministic coroutine unit regression changes epoch during a delay and reconnects to Connected before resume; asserts the later Enter is not dispatched. MarketDebug JVM 1,022/1,022; app and AndroidTest compile, lint, assemble and source gates PASS. GitHub CI run 38402910371 queued.",
+      "status": "UNIT_VERIFIED"
     }
   ]
 }

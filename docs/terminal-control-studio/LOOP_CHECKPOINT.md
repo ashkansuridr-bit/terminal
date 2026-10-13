@@ -198,3 +198,13 @@
 - APK SHA-256: `feb9be8b5ec04bd9874c6215a4feba90670cb0071b1b6816bf262db53e2fe534`. No production signing. This workspace has no `adb` executable or attached device, so instrumentation and TalkBack runtime remain unverified.
 - CI run `38401934345` for 93135b0 passed the source/artifact validator gates; its Verify build/test step was still running at the latest query. Instrumentation job results are not yet known. Older runs 38399699440, 38400520050 and 38400681521 also remained in progress. Inspect the current run and update status only from actual results.
 - Licensing/open-source disclosure is in README, `LICENSE`, `NOTICE.md`, `release/THIRD_PARTY_NOTICES.md`, and this report: app source Apache-2.0; third-party dependency licences remain separate; promotional MP4 is not covered by the source licence.
+
+
+## SSH macro reconnect safety follow-up (2026-10-13)
+
+- NEW-007 confirmed by independent source review: `SshSession` auto-reconnects on the same object, so a delayed macro that only checked for `Closed` could submit later steps (including Enter) to a replacement shell.
+- Added a monotonic shell-channel epoch, invalidated on shell install/loss/disconnect. Macro actions capture the epoch, stop after connection change, and dispatch synchronously only while that exact connected shell remains current. Existing SSH host-key and authentication behavior is unchanged.
+- Added deterministic coroutine regression: simulate reconnect during macro delay, return state to connected under a new epoch, and assert the later Enter is not dispatched.
+- Commit `28b679d` pushed to `main`. Local source validation: JVM 1,022 passed / 0 failed / 0 errors / 0 skipped (118 suites); app compile PASS; AndroidTest Kotlin compile PASS; lint PASS (0 errors, 105 warnings, 2 hints); MarketDebug assemble and Debug signing verification PASS; loop/release gates and diff check PASS. APK SHA-256 `a354001d71c3b2dc586e662347172ab4b4cced17b8ebf918b8a63fed27176d0c`.
+- CI run `38402910371` for `28b679d` is queued; `38401934345` for `93135b0` is also queued. Local adb/device is unavailable; instrumentation is not yet verified.
+- Next: monitor both runs, diagnose current API26/36/37 results, continue feature review. The 11/11 strict device/UI completion gates remain open.

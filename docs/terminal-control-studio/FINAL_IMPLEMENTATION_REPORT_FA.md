@@ -2,7 +2,7 @@
 
 ## وضعیت فعلی
 
-پیاده‌سازی Terminal Control Studio و اصلاحات پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit پوش‌شده روی `main`، `93135b0` است. NEW-005 مسیر تنظیم پروفایل برای میزبان را به ویرایشگر وصل کرده و NEW-006 نام‌های دسترس‌پذیری Alt/Shift/Snippets را محلی‌سازی و semantics کنترل Modifier را یکپارچه کرده است. Verify محلی روی این Commit موفق است؛ آزمون دستگاه هنوز تأیید نشده است. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون Gateهای UI/دستگاه هنوز برای هیچ Feature کامل نشده‌اند.
+پیاده‌سازی Terminal Control Studio و اصلاحات پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit پوش‌شده روی `main`، `28b679d` است. NEW-005 مسیر تنظیم پروفایل میزبان، NEW-006 نام‌های دسترس‌پذیری محلی و semantics یکپارچهٔ Modifier، و NEW-007 لغو امن ماکرو هنگام عوض‌شدن کانال SSH را اضافه می‌کنند. Verify محلی موفق است؛ آزمون دستگاه هنوز تأیید نشده است. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون Gateهای UI/دستگاه هنوز برای هیچ Feature کامل نشده‌اند.
 
 ## تغییرات و علت‌ها
 
@@ -18,7 +18,7 @@
 
 ## راستی‌آزمایی
 
-روی Commit `93135b0`، `:app:testMarketDebugUnitTest`، app/AndroidTest compile، lint، و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۲۱ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند؛ lint صفر خطا، ۱۰۵ هشدار و ۲ hint داشت. APK فعلی MarketDebug است، SHA-256 آن `feb9be8b5ec04bd9874c6215a4feba90670cb0071b1b6816bf262db53e2fe534` است و `apksigner` گواهی Android Debug را تأیید کرد؛ امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه محلی اجرا نشده است. بررسی semantics دسترس‌پذیری مشخص کرد نام/وضعیت/اکشن کلیک باید روی همان گره قابل‌کلیک باشد؛ تست اکنون همین شرط را می‌سنجد اما نتیجه runtime وابسته به اجرای CI جدید است. CI run `38401934345` برای Commit `93135b0`، source gate موفق دارد؛ Verify build/test و شش job دستگاهی API26/36/37 هنوز در حال اجرا هستند. در runهای قبلی `38399699440`، `38400520050` و `38400681521` نیز Verify موفق بود ولی instrumentation هنگام آخرین بررسی هنوز در حال اجرا بود. اجرای قبلی `38396679291` در API26/36 assertionهای UI داشت و API37 پیش از شروع تست Timeout بوت Emulator داد. NEW-005 و NEW-006 هنوز روی Emulator نتیجهٔ نهایی ندارند؛ نتیجهٔ اجرای تازه باید از run `38401934345` خوانده شود.
+روی Commit `28b679d`، `:app:testMarketDebugUnitTest`، app/AndroidTest compile، lint، و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۲۲ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند؛ lint صفر خطا، ۱۰۵ هشدار و ۲ hint داشت. APK فعلی MarketDebug است، SHA-256 آن `a354001d71c3b2dc586e662347172ab4b4cced17b8ebf918b8a63fed27176d0c` است و `apksigner` گواهی Android Debug را تأیید کرد؛ امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه محلی اجرا نشده است. بررسی semantics دسترس‌پذیری مشخص کرد نام/وضعیت/اکشن کلیک باید روی همان گره قابل‌کلیک باشد؛ تست اکنون همین شرط را می‌سنجد اما نتیجه runtime وابسته به اجرای CI جدید است. CI run `38402910371` برای Commit `28b679d` در صف است. اجرای `38401934345` برای `93135b0` نیز به‌علت صف Workflow هنوز منتظر شروع است؛ در نتیجه تست instrumentation این دو تغییر هنوز اجرا نشده. در runهای قبلی Verify موفق شد؛ بعضی instrumentationها پیش از آن با شکست assertion UI یا timeout بوت API37 تمام شدند و بعضی runهای جدیدتر در صف مانده‌اند. اجرای قبلی `38396679291` در API26/36 assertionهای UI داشت و API37 پیش از شروع تست Timeout بوت Emulator داد. NEW-005، NEW-006 و NEW-007 هنوز روی Emulator نتیجهٔ نهایی ندارند؛ نتیجهٔ اجراهای تازه باید از runهای `38401934345` و `38402910371` خوانده شود.
 
 ## علت‌های تأییدشده و موارد نامشخص
 
@@ -38,8 +38,8 @@
 
 ## خروجی‌ها و وضعیت انتشار
 
-- شاخهٔ کاری فعلی: `main`؛ Commit `93135b0` مستقیم پوش شده و درخت کاری پاک است.
-- آخرین Commit پوش‌شده: `93135b0` (`fix: localize toolbar accessibility controls`).
+- شاخهٔ کاری فعلی `main` است؛ آخرین Commit کد `28b679d` مستقیم پوش شده است و مستندات checkpoint فعلی آمادهٔ Commit هستند.
+- آخرین Commit پوش‌شده: `28b679d` (`fix: cancel macros when SSH channel reconnects`).
 - تغییرات مطابق درخواست کاربر مستقیماً به `main` پوش شده‌اند؛ لینک شاخه: https://github.com/ashkansuridr-bit/terminal/tree/main . PR جدیدی ایجاد نشده است.
 - اجرای CI قدیمی‌تر با شکست instrumentation: https://github.com/ashkansuridr-bit/terminal/actions/runs/38393877043
 - اجرای CI برای `82b2861` (نتیجه باید دوباره بررسی شود): https://github.com/ashkansuridr-bit/terminal/actions/runs/38395092348
