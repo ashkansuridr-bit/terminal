@@ -45,6 +45,7 @@ class SettingsToggleAccessibilityTest {
                 val toggle = device.findObject(By.desc(label))
                 val density = context.resources.displayMetrics.density
                 assertTrue("toggle row was not clickable", toggle.isClickable)
+                assertFalse("unchanged setting should not expose a reset gesture", toggle.isLongClickable)
                 assertTrue("toggle row did not expose switch state", toggle.isChecked)
                 assertTrue("toggle row was ${toggle.visibleBounds.height()}px tall", toggle.visibleBounds.height() >= 48 * density)
                 assertTrue("toggle row did not include its label and control", toggle.visibleBounds.width() >= 240 * density)
@@ -61,6 +62,16 @@ class SettingsToggleAccessibilityTest {
                 )
                 assertTrue("Persisted false value was not reflected by switch semantics", awaitUiState(TIMEOUT_MS) {
                     device.findObject(By.desc(label))?.isChecked == false
+                })
+
+                val changedToggle = device.findObject(By.desc(label))
+                assertTrue("changed setting should expose its reset gesture", changedToggle.isLongClickable)
+                changedToggle.longClick()
+                assertTrue("Long-press reset did not restore the default true value", awaitUiState(TIMEOUT_MS) {
+                    app.settings.confirmMultilinePaste
+                })
+                assertTrue("reset value was not reflected by switch semantics", awaitUiState(TIMEOUT_MS) {
+                    device.findObject(By.desc(label))?.isChecked == true
                 })
             }
         } finally {

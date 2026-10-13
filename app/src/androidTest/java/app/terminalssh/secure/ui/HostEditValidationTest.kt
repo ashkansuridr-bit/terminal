@@ -71,14 +71,11 @@ class HostEditValidationTest {
             assertTrue(device.wait(Until.hasObject(By.text(requiredError)), TIMEOUT_MS))
             assertTrue(app.hosts.hosts().none { host -> host.host == savedHost })
 
-            // Each host field is named for accessibility (contentDescription = its label).
-            // Compose text fields can expose a stale UiAutomator text snapshot on Android 8
-            // even after ACTION_SET_TEXT updates the Compose value. Verify the observable
-            // behavior through validation and the persisted HostProfile instead of that
-            // snapshot; otherwise the harness can fail a correct field update.
-            device.findObject(By.desc(hostLabel)).setText(savedHost)
-            device.findObject(By.desc(usernameLabel)).setText("tester")
-            device.findObject(By.desc(portLabel)).setText("0")
+            // Target the editable node itself. A plain By.desc can resolve the named
+            // Compose wrapper rather than its EditText, making ACTION_SET_TEXT a no-op.
+            setFieldText(hostLabel, savedHost)
+            setFieldText(usernameLabel, "tester")
+            setFieldText(portLabel, "0")
             dismissImeIfVisible()
             clickWhenAvailable(By.text(save), "Save after invalid port")
             assertTrue(
@@ -88,7 +85,7 @@ class HostEditValidationTest {
             )
             assertTrue(app.hosts.hosts().none { host -> host.host == savedHost })
 
-            device.findObject(By.desc(portLabel)).setText("22")
+            setFieldText(portLabel, "22")
             dismissImeIfVisible()
             clickWhenAvailable(By.text(save), "Save after valid port")
             assertTrue(device.wait(Until.gone(By.text(save)), TIMEOUT_MS))
@@ -115,6 +112,18 @@ class HostEditValidationTest {
         val button = device.wait(Until.findObject(selector), TIMEOUT_MS)
         if (button == null) throw AssertionError("$label button was not available")
         button.click()
+    }
+
+    private fun setFieldText(label: String, value: String) {
+        val selector = By.clazz("android.widget.EditText").desc(label)
+        val field = device.wait(Until.findObject(selector), TIMEOUT_MS)
+            ?: throw AssertionError(
+                "Editable field '$label' was not exposed as EditText; " +
+                    "editables=${device.findObjects(By.clazz("android.widget.EditText")).map { "${it.contentDescription}:${it.text}" }}",
+            )
+        field.click()
+        field.setText(value)
+        device.waitForIdle()
     }
 
     private fun visibleAppText(): String {

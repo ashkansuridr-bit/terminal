@@ -177,13 +177,30 @@ class SettingsAccessibilityTest {
 
     private fun fullBoundsByDescription(description: String): Rect? {
         repeat(3) {
-            val root = instrumentation.uiAutomation.rootInActiveWindow ?: return null
             try {
-                findBoundsByDescription(root, description)?.let { return it }
+                instrumentation.uiAutomation.windows.forEach { window ->
+                    try {
+                        if (window.type != android.view.accessibility.AccessibilityWindowInfo.TYPE_APPLICATION) return@forEach
+                        val root = window.root ?: return@forEach
+                        try {
+                            findBoundsByDescription(root, description)?.let { return it }
+                        } finally {
+                            root.recycle()
+                        }
+                    } finally {
+                        window.recycle()
+                    }
+                }
+                val activeRoot = instrumentation.uiAutomation.rootInActiveWindow
+                if (activeRoot != null) {
+                    try {
+                        findBoundsByDescription(activeRoot, description)?.let { return it }
+                    } finally {
+                        activeRoot.recycle()
+                    }
+                }
             } catch (_: StaleObjectException) {
                 // Retry against the new Compose semantics tree.
-            } finally {
-                root.recycle()
             }
         }
         return null

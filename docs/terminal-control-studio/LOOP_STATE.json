@@ -189,7 +189,7 @@
     {
       "id": "TCS-07",
       "title": "دسترسی‌پذیری و زبان‌ها",
-      "phase": "VERIFY",
+      "phase": "VERIFY_CI",
       "changedFiles": [
         "app/src/main/java/app/terminalssh/secure/ui/toolbar/StudioToolbar.kt",
         "app/src/androidTest/java/app/terminalssh/secure/ui/TerminalKeyboardTest.kt",
@@ -204,15 +204,19 @@
       "executedTests": [
         "Alt/Shift/Snippets built-in spoken labels localized in fa/ar/en/es/fr/ru; XML parity check PASS",
         "MarketDebug app compile PASS; AndroidTest Kotlin compile PASS; JVM 1,021/1,021 PASS; lint 0 errors, 105 warnings, 2 hints; MarketDebug assemble PASS",
-        "Latest GitHub run 38401934345 source gates PASS; Verify unit/lint/build and API26/36/37 instrumentation remain in progress."
+        "Latest GitHub run 38401934345 source gates PASS; Verify unit/lint/build and API26/36/37 instrumentation remain in progress.",
+        "CI run 38428298877, HEAD 1ef74e3: API26/36 Debug+Preview UI assertions failed; API37 emulator boot failed before test execution",
+        "Owner-reported physical Android phone test PASS; no independent device log attached"
       ],
-      "lastResult": "NEW-006 fixes hardcoded English accessible names for Alt, Shift and Snippets. Modifier controls expose label, checked state and explicit accessibility onClick together through clearAndSetSemantics while combinedClickable continues handling touch/long-press/repeat. Runtime semantics still require instrumentation confirmation.",
-      "lastFailure": null,
-      "fixAttempts": 0,
+      "lastResult": "Current latest CI still has API26/36 UI assertion failures; API37 is blocked by emulator boot failure. Do not count runtime acceptance as verified.",
+      "lastFailure": "Host form validation/list visibility, palette/font accessibility bounds, snippet visibility, symbolic toolbar accessible names; API36 Preview CR-paste navigation tree had no recognized app anchors after retries.",
+      "fixAttempts": 1,
       "commitSha": "93135b0",
-      "lastReviewedAt": "2026-10-13T16:55:00+00:00",
+      "lastReviewedAt": "2026-10-13T16:30:00+00:00",
       "remainingIssues": [
-        "CI/device instrumentation must confirm single accessible clickable semantics node and localized labels across API26/36/37."
+        "Fresh-source API26/36/37 instrumentation",
+        "TalkBack/device accessibility verification",
+        "Resolve current CI UI assertion failures"
       ]
     },
     {
@@ -307,15 +311,23 @@
       "executedTests": [
         "MarketDebug app Kotlin compile PASS",
         "MarketDebug AndroidTest Kotlin compile PASS",
-        "CI instrumentation for source c901987 pending"
+        "CI instrumentation for source c901987 pending",
+        "Run 38428298877 evidence: switch row non-clickable in API26/36 instrumentation accessibility tree",
+        "MarketDebug app Kotlin compile PASS",
+        "MarketDebug AndroidTest Kotlin compile PASS",
+        "MarketDebug JVM task PASS (UP-TO-DATE; last recorded execution 1,022/1,022)",
+        "loop2_gate.py PASS",
+        "market_release_gate.py PASS",
+        "git diff --check PASS"
       ],
-      "lastResult": "Test harness selectors, viewport sizing, state polling and accessibility diagnostics updated from concrete API26/36 failures. Boolean row semantics change requires fresh device instrumentation evidence.",
-      "lastFailure": "Prior source instrumentation failures addressed locally; no runtime verdict yet for c901987.",
-      "fixAttempts": 2,
+      "lastResult": "Explicit switch click/state/reset semantics and focused accessibility test recovery changes implemented locally. Compilation and source gates pass; fresh runtime matrix is still required.",
+      "lastFailure": "CI run 38428298877: API26/36 settings switch was exposed as non-clickable; other UI assertions remain in the TCS-07 failure list. API37 boot unavailable.",
+      "fixAttempts": 3,
       "commitSha": "c901987",
-      "lastReviewedAt": "2026-10-13T16:12:00+00:00",
+      "lastReviewedAt": "2026-10-13T16:30:00+00:00",
       "remainingIssues": [
-        "API26/36/37 runtime matrix for current source",
+        "Fresh API26/36 Debug+Preview instrumentation",
+        "API37 instrumentation (emulator boot failure)",
         "TalkBack/device accessibility verification"
       ]
     },
@@ -364,22 +376,22 @@
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS on c901987",
+    "marketDebugCompile": "PASS on local correction source",
     "marketDebugUnitTests": {
       "passed": 1022,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
       "suites": 118,
-      "evidence": "Current source c901987: :app:testMarketDebugUnitTest"
+      "evidence": "Local current correction source: task PASS (UP-TO-DATE); last non-up-to-date execution was 1,022/1,022 across 118 suites."
     },
     "marketDebugAssemble": "PASS on c901987",
     "diffCheck": "PASS before APK/metadata commit",
-    "instrumentation": "Fresh run 38428061570 on c901987: source/artifact gates passed; combined unit/lint/debug-build step in progress at 16:12 UTC; current-source UI instrumentation pending.",
-    "apiDeviceMatrix": "Run 38428061570 validates current source; no local ADB/device. Owner reports successful manual physical Android phone test.",
+    "instrumentation": "Latest completed run 38428298877 on 1ef74e3: Verify passed; API26/36 Debug+Preview instrumentation failed UI assertions; API37 emulator boot failed; release candidates skipped. Local correction batch not yet pushed or runtime-tested.",
+    "apiDeviceMatrix": "CI run 38428298877: API26/36 UI jobs failed assertions, API37 boot failure. Local adb executable/device absent. Owner-reported phone test PASS; independent logs unavailable.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS on c901987",
+    "marketDebugAndroidTestCompile": "PASS on local correction source",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
@@ -391,7 +403,7 @@
     "marketPreviewAssemble": "PASS on earlier exact source; current TCS-04 source MarketDebug assembled; Preview current-source rebuild not repeated",
     "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
     "apkSignature": "Current MarketDebug APK verified with Android Debug certificate; production signing not verified",
-    "sourceGates": "PASS on c901987: loop2_gate.py, market_release_gate.py, git diff --check",
+    "sourceGates": "PASS on local correction source: loop2_gate.py, market_release_gate.py, git diff --check",
     "marketPreviewApk": {
       "path": "app/build/outputs/apk/market/preview/app-market-preview.apk",
       "sha256": "b5a1fa1985408c88dadd4efc3eaa9d274df131b7b2d05165ca4d05f427f89c64",
@@ -416,8 +428,8 @@
     "Lint passed with 104 warnings and 2 hints (no errors); warnings not fully triaged.",
     "No local emulator/device attached; SAF UI, gesture runtime, process recreation and accessibility runtime need CI/device evidence.",
     "Macro secret detection catches common credential-shaped forms but cannot identify arbitrary secret values; editor warns users not to store secrets.",
-    "Fresh CI run 38428061570 is in progress on c901987; instrumentation must not be counted verified until its runtime matrix completes.",
-    "Owner reports successful manual Android phone testing; no local ADB target is attached for independent reproduction."
+    "Owner reports successful manual Android phone testing; no local ADB target is attached for independent reproduction.",
+    "Run 38428298877 on 1ef74e3 completed with API26/36 UI assertion failures and API37 emulator boot failure; local correction batch remains uncommitted pending lint/Preview build and fresh CI."
   ],
   "nextStep": "Commit refreshed root MarketDebug test APK and evidence metadata; inspect CI 38428061570 and follow any current-source failures to root cause; continue remaining TCS features.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",

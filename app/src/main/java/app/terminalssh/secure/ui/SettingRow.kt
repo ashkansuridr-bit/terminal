@@ -115,8 +115,30 @@ fun SettingRow(
             .fillMaxWidth()
             .defaultMinSize(minWidth = 240.dp, minHeight = 48.dp)
             .clip(RoundedCornerShape(12.dp))
-            // Keep the reset gesture off sliders and choice chips. A clickable parent
-            // merges child semantics, hiding the Slider range and FilterChip selection.
+            // Publish a single labeled switch whose action is explicit. Applying
+            // clearAndSetSemantics after combinedClickable erased its click action on
+            // API 26, leaving a focusable but non-activatable row.
+            .then(
+                if (spec is BoolSetting && booleanValue != null) Modifier.clearAndSetSemantics {
+                    contentDescription = title
+                    role = Role.Switch
+                    toggleableState = ToggleableState(booleanValue)
+                    if (saving) {
+                        disabled()
+                    } else {
+                        onClick(label = title) {
+                            persist { store.set(spec, !booleanValue) }
+                            true
+                        }
+                        if (changed) onLongClick(label = resetLabel) {
+                            resetChangedSetting()
+                            true
+                        }
+                    }
+                } else Modifier,
+            )
+            // Keep reset gestures off sliders and choice chips. Their child controls own
+            // adjustable/selection semantics that a clickable parent would erase.
             .then(if (resetFromHeading) Modifier else Modifier.combinedClickable(
                 enabled = !saving,
                 role = if (spec is BoolSetting) Role.Switch else null,
@@ -128,13 +150,6 @@ fun SettingRow(
                 onLongClick = resetChangedSetting,
                 onLongClickLabel = resetLabel,
             ))
-            .then(
-                if (spec is BoolSetting && booleanValue != null) Modifier.semantics(mergeDescendants = true) {
-                    contentDescription = title
-                    role = Role.Switch
-                    toggleableState = ToggleableState(booleanValue)
-                } else Modifier,
-            )
             .padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {

@@ -28,10 +28,13 @@ class SnippetAccessibilityTest {
     private lateinit var app: TerminalApp
     private val first = SnippetEntry("snippet-accessibility-first", "List files", 2L)
     private val second = SnippetEntry("snippet-accessibility-second", "Show directory", 1L)
+    private var previousToolbarProfile: String? = null
 
     @Before
     fun setUp() {
         app = instrumentation.targetContext.applicationContext as TerminalApp
+        previousToolbarProfile = app.toolbar.state.value.activeProfileId
+        app.toolbar.setActiveProfile("shell")
         app.sessions.closeAll()
         app.hosts.upsertSnippet(first)
         app.hosts.upsertSnippet(second)
@@ -43,6 +46,7 @@ class SnippetAccessibilityTest {
         app.sessions.closeAll()
         app.hosts.deleteSnippet(first.id)
         app.hosts.deleteSnippet(second.id)
+        previousToolbarProfile?.let(app.toolbar::setActiveProfile)
     }
 
     @Test
@@ -60,6 +64,9 @@ class SnippetAccessibilityTest {
             val direction = terminalLayoutDirection(
                 instrumentation.targetContext.resources.configuration.locales[0],
             )
+            val shellKeys = app.toolbar.effectiveProfile("snippet-accessibility-host").layout.keys
+                .map { it.id to it.label }
+            assertTrue("Shell preset no longer includes the real Snippets action: $shellKeys", shellKeys.any { it.first == "snippets" })
             // StudioToolbar clears the visible text from its a11y node on purpose and
             // publishes the localized action name instead. Scroll and click by that
             // stable accessible name, not the visual label that is absent from the tree.
@@ -69,15 +76,14 @@ class SnippetAccessibilityTest {
             } else {
                 LayoutDirection.Ltr
             }
-            val snippetsReachable = listOf(direction, oppositeDirection).any { scrollDirection ->
-                device.scrollUntilFullyVisible(
-                    snippetsKey,
-                    maxAttempts = 16,
-                    horizontalDirection = scrollDirection,
-                    appPackage = instrumentation.targetContext.packageName,
-                )
-            }
-            assertTrue("Snippets toolbar key was not fully reachable by horizontal scrolling", snippetsReachable)
+            val snippetsReachable = scrollToolbarToKey(snippetsKey, listOf(direction, oppositeDirection))
+            assertTrue(
+                "Snippets toolbar key was not fully reachable; profileKeys=$shellKeys, " +
+                    "targetBounds=${runCatching { device.findObject(snippetsKey)?.visibleBounds }.getOrNull()}, " +
+                    "scrollables=${device.findObjects(By.scrollable(true)).map { runCatching { it.visibleBounds }.getOrNull() }}, " +
+                    "display=${device.displayWidth}x${device.displayHeight}",
+                snippetsReachable,
+            )
             assertTrue(
                 "Snippets toolbar key must expose its localized action name",
                 device.wait(Until.hasObject(By.desc(snippetsAction)), TIMEOUT_MS),
@@ -95,6 +101,35 @@ class SnippetAccessibilityTest {
             assertFalse(app.hosts.snippets().any { it.id == first.id })
             assertTrue(app.hosts.snippets().any { it.id == second.id })
         }
+    }
+
+    /** Swipe only inside the compact terminal toolbar viewport, never another page scroller. */
+    private fun scrollToolbarToKey(target: androidx.test.uiautomator.BySelector, directions: List<LayoutDirection>): Boolean {
+        val density = instrumentation.targetContext.resources.displayMetrics.density
+        val minTargetPx = (48 * density).toInt()
+        for (direction in directions) {
+            repeat(20) {
+                val candidate = runCatching { device.findObject(target) }.getOrNull()
+                if (candidate != null) {
+                    val visible = runCatching { candidate.visibleBounds }.getOrNull()
+                    if (visible != null && visible.width() >= minTargetPx && visible.height() >= minTargetPx) return true
+                }
+                val band = device.findObjects(By.scrollable(true))
+                    .mapNotNull { runCatching { it.visibleBounds }.getOrNull() }
+                    .filter { it.height() in minTargetPx..(160 * density).toInt() && it.width() > minTargetPx }
+                    .maxByOrNull { it.width() } ?: return false
+                val y = band.centerY()
+                val (from, to) = if (direction == LayoutDirection.Ltr) {
+                    (band.right - minTargetPx) to (band.left + minTargetPx)
+                } else {
+                    (band.left + minTargetPx) to (band.right - minTargetPx)
+                }
+                if (from == to) return false
+                device.swipe(from, y, to, y, 18)
+                device.waitForIdle()
+            }
+        }
+        return false
     }
 
     private fun idleSession(): SshSession {

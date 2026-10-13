@@ -560,6 +560,22 @@ class TerminalKeyboardTest {
             } catch (t: Throwable) {
                 // Window enumeration itself changed; retry the snapshot.
             }
+            // Some Android releases expose a transient or incomplete `windows`
+            // snapshot during Compose semantics updates. The active root remains
+            // useful as a fallback, while the predicate still filters out IME nodes
+            // for callers that are looking for app-specific controls.
+            try {
+                val root = instrumentation.uiAutomation.rootInActiveWindow
+                if (root != null) {
+                    try {
+                        findDescendant(root, predicate)?.let { return it }
+                    } finally {
+                        root.recycle()
+                    }
+                }
+            } catch (_: Throwable) {
+                // Retry after the next short delay if the active root is stale.
+            }
             SystemClock.sleep(100)
         }
         return null
@@ -692,7 +708,8 @@ class TerminalKeyboardTest {
 
     @Test
     fun modifierKeysExposeAndUpdateToggleState() {
-        app.sessions.add(idleSession(id = "modifier-semantics", title = "Modifier test"))
+        val session = idleSession(id = "modifier-semantics", title = "Modifier test")
+        app.sessions.add(session)
 
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             val terminalTab = instrumentation.targetContext.getString(R.string.tab_terminal)
@@ -735,19 +752,27 @@ class TerminalKeyboardTest {
             assertTrue(modifierControl(shiftName).isChecked)
 
             clickAppDesc(tabName)
-            // The terminal dispatch clears one-shot modifiers synchronously, but the
-            // merged Compose semantics tree can publish the new checked values a frame
-            // later on API 26. Poll fresh accessibility nodes instead of retaining the
-            // pre-dispatch snapshot.
-            assertTrue("Ctrl modifier did not clear after the Tab action", awaitUiState(UI_TIMEOUT_MS) {
+            // First check the input controller itself, then check what accessibility
+            // exposes. That separates dispatch/latch bugs from stale platform snapshots.
+            assertTrue(
+                "Tab did not consume one-shot modifiers; state=${session.terminalInput.modifiers.value}",
+                awaitUiState(UI_TIMEOUT_MS) {
+                    val current = session.terminalInput.modifiers.value
+                    !current.ctrl && !current.alt && !current.shift
+                },
+            )
+            val ctrlCleared = awaitUiState(UI_TIMEOUT_MS) {
                 modifierIsChecked(controlName) == false
-            })
-            assertTrue("Alt modifier did not clear after the Tab action", awaitUiState(UI_TIMEOUT_MS) {
+            }
+            assertTrue("Ctrl semantics did not clear after Tab; tree=${if (ctrlCleared) "" else appWindowTree()}", ctrlCleared)
+            val altCleared = awaitUiState(UI_TIMEOUT_MS) {
                 modifierIsChecked(altName) == false
-            })
-            assertTrue("Shift modifier did not clear after the Tab action", awaitUiState(UI_TIMEOUT_MS) {
+            }
+            assertTrue("Alt semantics did not clear after Tab; tree=${if (altCleared) "" else appWindowTree()}", altCleared)
+            val shiftCleared = awaitUiState(UI_TIMEOUT_MS) {
                 modifierIsChecked(shiftName) == false
-            })
+            }
+            assertTrue("Shift semantics did not clear after Tab; tree=${if (shiftCleared) "" else appWindowTree()}", shiftCleared)
             assertTrue(focusedViewSummary(scenario), waitForFocusedTextEditor(scenario))
         }
     }
@@ -760,7 +785,15 @@ class TerminalKeyboardTest {
         ) ?: throw AssertionError("Modifier '$name' must expose one checkable accessible control")
 
     private fun modifierIsChecked(name: String): Boolean? =
-        device.findObject(By.checkable(true).descStartsWith(name))?.isChecked
+        findAppNode { node ->
+            node.isCheckable && node.contentDescription?.toString()?.startsWith(name) == true
+        }?.let { node ->
+            try {
+                node.isChecked
+            } finally {
+                node.recycle()
+            }
+        }
 
     @Test
     fun symbolicToolbarKeysHaveReadableActionNames() {
@@ -789,7 +822,8 @@ class TerminalKeyboardTest {
                 (listOf(interrupt, endOfInput) + localizedSpecials).forEach { name ->
                     val node = waitForAppDesc(name, within = UI_TIMEOUT_MS)
                     assertTrue(
-                        "Toolbar action '$name' must have a readable name in the accessibility tree",
+                        if (node == null) "Toolbar action '$name' is missing; visibleToolbar=${appWindowTree()}"
+                        else "Toolbar action '$name' must have a readable name in the accessibility tree",
                         node != null,
                     )
                     node?.recycle()
