@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-13T12:52:00+00:00",
+  "capturedAt": "2026-10-13T13:00:00+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
   "lastVerifiedCommit": "584cc8b7b311b9dd0ea94c2350dc4fd1770822be",
@@ -389,7 +389,7 @@
       "suites": 118,
       "evidence": "Current local worktree: ./gradlew :app:testMarketDebugUnitTest"
     },
-    "marketDebugAssemble": "PASS on current worktree",
+    "marketDebugAssemble": "PASS for 584cc8b source (no subsequent source edits)",
     "diffCheck": "PASS on current worktree",
     "instrumentation": "Run 38393877043 for 22e8782 completed: API26/36 Debug+Preview UI assertions failed; API37 Debug+Preview emulator boot timed out before tests. Follow-up removed the confirmed duplicate navigation label semantics. CI runs 38395092348 (82b2861), 38396293920 (8b8794e), and 38396679291 (584cc8b) were in progress at checkpoint; current source runtime still unverified.",
     "apiDeviceMatrix": "BLOCKED: no emulator/device; disk capacity insufficient to install system image",
@@ -407,7 +407,7 @@
     "marketPreviewAssemble": "PASS on earlier exact source; current TCS-04 source MarketDebug assembled; Preview current-source rebuild not repeated",
     "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
     "apkSignature": "Current MarketDebug APK verified with Android Debug certificate; production signing not verified",
-    "sourceGates": "PASS (current worktree: loop2_gate.py and market_release_gate.py)",
+    "sourceGates": "PASS on current source: loop2_gate.py and market_release_gate.py",
     "marketPreviewApk": {
       "path": "app/build/outputs/apk/market/preview/app-market-preview.apk",
       "sha256": "b5a1fa1985408c88dadd4efc3eaa9d274df131b7b2d05165ca4d05f427f89c64",
@@ -417,8 +417,10 @@
     "api37": "Pending in run 38384380095; prior run 38320080882 had emulator boot failure.",
     "currentMarketDebugApk": {
       "path": "app/build/outputs/apk/market/debug/app-market-debug.apk",
-      "sha256": "2f75277bf2ba97e264566c47175bacbec78306a69067b0bb9b7a0e9339484bd4",
+      "sizeBytes": 43631054,
+      "sha256": "443dc646f06bc1dd996004d19ffe4713fc977ebee39c2b92a14731da96253d22",
       "signature": "Android Debug certificate; apksigner verification PASS",
+      "builtFrom": "584cc8b source; no subsequent source edits",
       "releaseStatus": "not production-signed"
     }
   },

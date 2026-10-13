@@ -18,7 +18,7 @@
 
 ## راستی‌آزمایی
 
-در دور جاری، `:app:testMarketDebugUnitTest`, `:app:compileMarketDebugKotlin`, `:app:compileMarketDebugAndroidTestKotlin`, `:app:lintMarketDebug` و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۲۱ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند. Lint بدون خطا بود (۱۰۴ هشدار و ۲ hint). APK خروجی Debug است، SHA-256 آن `2f75277bf2ba97e264566c47175bacbec78306a69067b0bb9b7a0e9339484bd4` است و با `apksigner` گواهی Android Debug تأیید شد؛ بنابراین امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه اجرا نشده است. CI run `38393877043` روی commit `22e8782` Verify را گذراند، ولی instrumentation روی API26 و API36 در Debug و Preview با assertionهای UI شکست خورد؛ API37 در همان run به‌دلیل بوت‌نشدن Emulator تستی اجرا نکرد. runهای `38395092348` و `38396293920` برای `82b2861` و `8b8794e` هنوز در حال اجرا بودند.
+در دور جاری، `:app:testMarketDebugUnitTest`، app/AndroidTest compile، lint، و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۲۱ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند؛ lint صفر خطا، ۱۰۴ هشدار و ۲ hint داشت. APK فعلی MarketDebug است، SHA-256 آن `443dc646f06bc1dd996004d19ffe4713fc977ebee39c2b92a14731da96253d22` است و `apksigner` گواهی Android Debug را تأیید کرد؛ امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه اجرا نشده است. CI run `38393877043` روی commit `22e8782` Verify را گذراند، ولی instrumentation روی API26 و API36 در Debug و Preview با assertionهای UI شکست خورد؛ API37 در همان run به‌دلیل بوت‌نشدن Emulator تستی اجرا نکرد. run جاری برای اصلاح دسترس‌پذیری `38396679291` هنوز در حال اجراست.
 
 ## علت‌های تأییدشده و موارد نامشخص
 
