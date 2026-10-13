@@ -36,6 +36,10 @@ interface MacroSink {
  */
 object MacroEngine {
 
+    private val credentialLikeText = Regex(
+        """(?i)(?:password|passwd|passphrase|secret|token|api[_-]?key|private[_-]?key|credential|authorization)\s*[:=]\s*\S+|(?:sshpass\s+-p\s+\S+)|(?:\b\S+://[^/\s:@]+:[^/\s@]+@)|(?:-----BEGIN [^-]*PRIVATE KEY-----)""",
+    )
+
     const val MAX_STEPS = 64
     const val MAX_TEXT_LENGTH = 4096
     const val MAX_TOTAL_TEXT = 16_384
@@ -55,6 +59,9 @@ object MacroEngine {
                         errors.add("step ${index + 1}: text is too long")
                     }
                     totalText += step.text.length
+                    if (containsCredentialLikeText(step.text)) {
+                        errors.add("step ${index + 1}: text resembles embedded credentials; do not store secrets in macros")
+                    }
                 }
                 is MacroStep.Controls -> {
                     if (!isValidControl(step.letter)) {
@@ -90,6 +97,9 @@ object MacroEngine {
         val code = letter.uppercaseChar().code - '@'.code
         return code in 1..31
     }
+
+    /** Conservative guard for common embedded-secret forms; it cannot identify arbitrary secrets. */
+    fun containsCredentialLikeText(text: String): Boolean = credentialLikeText.containsMatchIn(text)
 
     /** A short human description of what a macro will do, for confirmations and previews. */
     fun describe(def: MacroDef): String {

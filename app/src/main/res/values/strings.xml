@@ -479,4 +479,12 @@
     <string name="tcs_locked_suffix">قفل‌شده</string>
     <string name="tcs_active_suffix">فعال</string>
     <string name="tcs_control_modifier">کلید Control</string>
+
+    <!-- User-defined, single-line macros -->
+    <string name="tcs_create_macro">ساخت ماکرو</string>
+    <string name="tcs_create_macro_title">ساخت ماکرو</string>
+    <string name="tcs_macro_name">نام ماکرو</string>
+    <string name="tcs_macro_text">متن یک‌خطی</string>
+    <string name="tcs_macro_insert_description">این ماکرو فقط یک خط متن را در ترمینال وارد می‌کند و کلید Enter را نمی‌فرستد.</string>
+    <string name="tcs_macro_secret_rejected">متن شبیه اطلاعات ورود است؛ گذرواژه یا راز را در ماکرو ذخیره نکنید.</string>
 </resources>

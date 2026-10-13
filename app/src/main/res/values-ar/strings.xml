@@ -482,4 +482,12 @@
     <string name="tcs_locked_suffix">مقفل</string>
     <string name="tcs_active_suffix">نشط</string>
     <string name="tcs_control_modifier">مفتاح Control</string>
+
+    <!-- User-defined, single-line macros -->
+    <string name="tcs_create_macro">إنشاء ماكرو</string>
+    <string name="tcs_create_macro_title">إنشاء ماكرو</string>
+    <string name="tcs_macro_name">اسم الماكرو</string>
+    <string name="tcs_macro_text">نص من سطر واحد</string>
+    <string name="tcs_macro_insert_description">يُدرج هذا الماكرو سطراً واحداً في الطرفية ولا يضغط على Enter.</string>
+    <string name="tcs_macro_secret_rejected">يشبه هذا النص بيانات اعتماد مضمّنة. لا تحفظ كلمات المرور أو الأسرار في وحدات الماكرو.</string>
 </resources>

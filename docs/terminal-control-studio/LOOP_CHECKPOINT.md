@@ -94,3 +94,12 @@
 - Local evidence after this change: `:app:compileMarketDebugAndroidTestKotlin` PASS; `git diff --check` PASS. Runtime behavior still requires CI/device execution.
 - PR run `38383163665` for `c9714b4`: verify PASS; API 26/36/37 Debug and Preview instrumentation jobs still running at checkpoint time.
 - Next exact step: commit and push the window-resource cleanup with this checkpoint, then inspect the latest CI instrumentation results and follow any remaining failures to root cause. Keep PR #4 open and unmerged.
+
+## User-created macro path (2026-10-13)
+
+- Independent feature audit found the macro engine had no user-facing creation path. Added a localized editor flow to create a named, single-line text macro, add its action key to the draft profile, and persist both on Save. Tapping the custom macro inserts text without Enter, so it does not submit a command by itself.
+- Added a defense-in-depth validator for common credential-shaped forms (named password/token/secret fields, `sshpass -p`, credential-bearing URLs, private-key headers). The editor warns and disables creation when one is detected; dispatcher validation also rejects such imported macro text. Arbitrary secrets cannot be reliably identified; the warning states this limitation.
+- Local verification on latest worktree: MarketDebug app compile PASS; AndroidTest Kotlin compile PASS; JVM 1,014/1,014 PASS across 118 suites; lint PASS (0 errors, 108 warnings, 2 hints); `loop2_gate.py` PASS; `market_release_gate.py` PASS; `git diff --check` PASS.
+- PR run `38384380095` for `2fe360f`: verify PASS; API 26/36/37 Debug and Preview jobs in progress. The macro UI source has not yet been pushed, so it still needs a new CI run.
+- Audit also found end-user import/export UI and gesture editing are not wired; TCS-04/05/06 remain `IMPLEMENTED_NOT_TESTED`, and TCS-07 descriptions are only partly localized. No device/emulator is attached locally; production signing remains unverified.
+- Next exact step: run `git diff --check`, commit/push this macro feature and checkpoint, then inspect the new CI matrix and fix confirmed regressions. Keep PR #4 open and unmerged.

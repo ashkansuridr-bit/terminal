@@ -434,4 +434,12 @@
     <string name="notif_cancel_transfers">Отменить передачи</string>
     <string name="agent_secure_launch_consent">Send the key through separate SSH stdin to the agent environment, without changing the current shell. Start and attach to a fresh isolated tmux session in the home directory. The server and agent can access the key. Both tmux and the agent must already be installed. Continue?</string>
     <string name="agent_key_launch_failed">Secure launch failed. Check the connection and that tmux and the agent are installed.</string>
+
+    <!-- User-defined, single-line macros -->
+    <string name="tcs_create_macro">Создать макрос</string>
+    <string name="tcs_create_macro_title">Создать макрос</string>
+    <string name="tcs_macro_name">Имя макроса</string>
+    <string name="tcs_macro_text">Текст в одну строку</string>
+    <string name="tcs_macro_insert_description">Макрос вставляет одну строку в терминал и не нажимает Enter.</string>
+    <string name="tcs_macro_secret_rejected">Этот текст похож на встроенные учётные данные. Не сохраняйте пароли и секреты в макросах.</string>
 </resources>

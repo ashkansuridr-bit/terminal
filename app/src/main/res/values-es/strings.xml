@@ -432,4 +432,12 @@
     <string name="notif_cancel_transfers">Cancelar transferencias</string>
     <string name="agent_secure_launch_consent">Send the key through separate SSH stdin to the agent environment, without changing the current shell. Start and attach to a fresh isolated tmux session in the home directory. The server and agent can access the key. Both tmux and the agent must already be installed. Continue?</string>
     <string name="agent_key_launch_failed">Secure launch failed. Check the connection and that tmux and the agent are installed.</string>
+
+    <!-- User-defined, single-line macros -->
+    <string name="tcs_create_macro">Crear macro</string>
+    <string name="tcs_create_macro_title">Crear macro</string>
+    <string name="tcs_macro_name">Nombre del macro</string>
+    <string name="tcs_macro_text">Texto de una línea</string>
+    <string name="tcs_macro_insert_description">Este macro inserta una línea en la terminal y no pulsa Intro.</string>
+    <string name="tcs_macro_secret_rejected">Este texto parece contener credenciales. No guardes contraseñas ni secretos en macros.</string>
 </resources>

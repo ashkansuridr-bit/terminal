@@ -479,4 +479,12 @@
     <string name="tcs_locked_suffix">locked</string>
     <string name="tcs_active_suffix">active</string>
     <string name="tcs_control_modifier">Control modifier</string>
+
+    <!-- User-defined, single-line macros -->
+    <string name="tcs_create_macro">Create macro</string>
+    <string name="tcs_create_macro_title">Create macro</string>
+    <string name="tcs_macro_name">Macro name</string>
+    <string name="tcs_macro_text">Single-line text</string>
+    <string name="tcs_macro_insert_description">This macro inserts one line into the terminal and does not press Enter.</string>
+    <string name="tcs_macro_secret_rejected">This text resembles embedded credentials. Do not store passwords or secrets in macros.</string>
 </resources>

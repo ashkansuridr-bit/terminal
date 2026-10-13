@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-13T10:31:11+00:00",
+  "capturedAt": "2026-10-13T10:39:02+00:00",
   "branch": "feature/terminal-control-studio-pro",
   "baselineCommit": "67021c1",
   "lastVerifiedCommit": "2976238",
@@ -92,7 +92,7 @@
         "AndroidToolbarPrefs.kt"
       ],
       "dependencies": [],
-      "status": "UNIT_VERIFIED",
+      "status": "IMPLEMENTED_NOT_TESTED",
       "requiredTests": [
         "JVM codec/repository tests",
         "Android process recreation"
@@ -118,7 +118,7 @@
         "ToolbarEditorScreen.kt"
       ],
       "dependencies": [],
-      "status": "UNIT_VERIFIED",
+      "status": "IMPLEMENTED_NOT_TESTED",
       "requiredTests": [
         "JVM editor tests",
         "Compose UI"
@@ -144,7 +144,7 @@
         "MacroEngine.kt"
       ],
       "dependencies": [],
-      "status": "UNIT_VERIFIED",
+      "status": "IMPLEMENTED_NOT_TESTED",
       "requiredTests": [
         "JVM gesture/macro tests",
         "device gesture/cancellation"
@@ -187,7 +187,7 @@
       "commitSha": "f2e7524",
       "lastReviewedAt": "2026-10-12T15:42:38+00:00",
       "remainingIssues": [
-        "TalkBack runtime check not run"
+        "Locale/TalkBack runtime checks pending; some built-in key and editor descriptions remain literal English."
       ]
     },
     {
@@ -247,13 +247,13 @@
         "MarketDebug JVM 1013/1013 PASS",
         "MarketDebug AndroidTest Kotlin compilation PASS"
       ],
-      "lastResult": "Local validators and JVM tests pass; PR CI rerun pending.",
+      "lastResult": "Local source and release gates PASS; run 38384380095 instrumentation matrix pending.",
       "lastFailure": "Previous PR CI failed on obsolete literal-string assertion; corrected. Artifact upload changed to warn when reports do not exist.",
       "fixAttempts": 1,
       "commitSha": "ead9c4f",
       "lastReviewedAt": "2026-10-12T21:20:55+00:00",
       "remainingIssues": [
-        "Android runtime/Compose/TalkBack instrumentation requires emulator/device; none available and disk capacity prevented system-image installation."
+        "Await runtime instrumentation results from PR run 38384380095."
       ]
     },
     {
@@ -292,41 +292,83 @@
         "Window snapshot lifecycle review: AccessibilityWindowInfo recycled in finally for terminal navigation, IME polling, and host-form IME detection",
         "MarketDebug AndroidTest Kotlin compilation PASS after window recycling; git diff --check PASS"
       ],
-      "lastResult": "API 26/36/37 debug/preview CI run 38383163665: verify PASS; six instrumentation jobs still running. Latest local test harness edit compiles.",
+      "lastResult": "Run 38384380095 for 2fe360f: verify PASS; API26/36/37 Debug+Preview jobs running. Current macro implementation has local app and AndroidTest compilation and JVM evidence; lint/gates checked.",
       "lastFailure": "Run 38320080882: API26/36 UI instrumentation failures, including terminal tab lookup, host/settings scrolling/semantics and host form/snippet assertions; API37 emulator boot timed out with adb offline. API36 Debug had 8 failures; Preview 7; API26 Debug 14.",
       "fixAttempts": 2,
-      "commitSha": "c9714b4 + pending window-resource follow-up",
-      "lastReviewedAt": "2026-10-13T10:31:11+00:00",
+      "commitSha": "2fe360f + local macro work",
+      "lastReviewedAt": "2026-10-13T10:39:02+00:00",
       "remainingIssues": [
-        "Await API 26/36/37 debug and preview instrumentation results from run 38383163665.",
-        "API37 CI emulator boot reliability remains uncertain; classify from job logs.",
-        "No local adb/emulator; production signing and GPlay Preview on latest source remain unverified."
+        "Await API26/36/37 instrumentation results from PR run 38384380095.",
+        "Latest custom-macro UI changes need fresh PR CI runtime verification.",
+        "No local adb/emulator; production signing remains unverified."
+      ]
+    },
+    {
+      "id": "TCS-11",
+      "title": "ساخت ماکرو تک‌خطی و رد الگوهای رایج اطلاعات ورود",
+      "phase": "VERIFY",
+      "changedFiles": [
+        "ToolbarEditorScreen.kt",
+        "MacroEngine.kt",
+        "MacroEngineTest.kt",
+        "strings.xml (fa/ar/en/es/fr/ru)"
+      ],
+      "dependencies": [
+        "TCS-01",
+        "TCS-04",
+        "TCS-06"
+      ],
+      "status": "IMPLEMENTED_NOT_TESTED",
+      "requiredTests": [
+        "MarketDebug app compile",
+        "MarketDebug AndroidTest compile",
+        "MarketDebug JVM tests",
+        "MarketDebug lint",
+        "API26/36/37 UI instrumentation"
+      ],
+      "executedTests": [
+        "MarketDebug app compile PASS",
+        "MarketDebug AndroidTest Kotlin compile PASS",
+        "MarketDebug JVM 1,014 tests PASS; 0 failures/errors/skips",
+        "MarketDebug lint PASS",
+        "loop2_gate.py PASS",
+        "market_release_gate.py PASS",
+        "git diff --check PASS"
+      ],
+      "lastResult": "Local source gates pass. UI creation and tap path await instrumentation runtime verification.",
+      "lastFailure": null,
+      "fixAttempts": 1,
+      "commitSha": "pending",
+      "lastReviewedAt": "2026-10-13T10:39:02+00:00",
+      "remainingIssues": [
+        "Credential detection is heuristic and cannot recognize arbitrary secrets; user-facing warning documents this limit.",
+        "Macro UI path requires API26/36/37 instrumentation verification."
       ]
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS (current worktree)",
+    "marketDebugCompile": "PASS (latest custom macro UI source)",
     "marketDebugUnitTests": {
-      "passed": 1013,
+      "passed": 1014,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
       "suites": 118,
-      "evidence": "current worktree :app:testMarketDebugUnitTest"
+      "evidence": "current worktree :app:testMarketDebugUnitTest after MacroEngine credential-pattern regression"
     },
     "marketDebugAssemble": "PASS",
     "diffCheck": "PASS (e2bd89c)",
-    "instrumentation": "PR run 38383163665: verify PASS; API26/36/37 debug+preview instrumentation jobs in progress. Earlier API26/36 runs failed; API37 boot failures previously observed.",
+    "instrumentation": "PR run 38384380095 for 2fe360f: verify PASS; six API26/36/37 Debug+Preview jobs in progress. Macro UI commit not yet pushed.",
     "apiDeviceMatrix": "BLOCKED: no emulator/device; disk capacity insufficient to install system image",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS (current worktree)",
+    "marketDebugAndroidTestCompile": "PASS (latest source)",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
       "warnings": 108,
       "hints": 2,
-      "evidence": "current worktree :app:lintMarketDebug"
+      "evidence": "current worktree :app:lintMarketDebug; loop2_gate.py and market_release_gate.py PASS"
     },
     "gplayDebugAssemble": "PASS",
     "marketPreviewAssemble": "INCOMPLETE on latest source: APK output exists and apksigner verifies it, but Gradle assemble stopped before task completion when disk space reached zero",
@@ -339,16 +381,16 @@
       "signature": "Android Debug certificate; apksigner verification PASS",
       "releaseStatus": "not production-signed"
     },
-    "api37": "Pending in run 38383163665; prior run 38320080882 blocked at emulator boot (adb offline)."
+    "api37": "Pending in run 38384380095; prior run 38320080882 had emulator boot failure."
   },
   "knownIssues": [
     "Build warns AGP 8.13.2 has not been validated by Google against compileSdk 37.0; build itself succeeds.",
     "All checked APKs use the Android Debug certificate; production signing remains unverified.",
     "Lint passed with 108 warnings and 2 hints (no errors); these warnings have not been triaged as part of this feature task.",
     "No emulator/device is currently attached (adb devices is empty); current UI/instrumentation changes have compile evidence only until fresh PR CI runs.",
-    "PR run 38320080882 completed with API26/36 instrumentation failures; latest follow-up has compile/unit evidence only until CI reruns."
+    "Macro secret detection catches common credential-shaped forms but cannot detect arbitrary secret values; the editor warns users not to store secrets."
   ],
-  "nextStep": "Inspect run 38383163665 instrumentation logs; then record outcomes and fix remaining source regressions. Current window-resource lifecycle follow-up is locally compiled and ready to push.",
+  "nextStep": "Commit and push the custom single-line macro path and secret-pattern guard; trigger latest-source CI, then inspect all API26/36/37 instrumentation reports and fix confirmed defects.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/feature/terminal-control-studio-pro",
   "pullRequest": "https://github.com/ashkansuridr-bit/terminal/pull/4"
 }

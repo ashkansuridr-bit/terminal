@@ -46,6 +46,19 @@ class MacroEngineTest {
         assertFalse(MacroEngine.validate(macro(MacroStep.Controls('1'))).isValid)
     }
 
+    @Test fun credentialShapedTextIsRejectedBeforeItCanBeDispatched() {
+        listOf(
+            "API_TOKEN=example-value",
+            "curl -H 'Authorization: Bearer example-value'",
+            "sshpass -p example-value ssh host",
+            "https://user:example-value@example.test/path",
+            "-----BEGIN OPENSSH PRIVATE KEY-----",
+        ).forEach { text ->
+            assertFalse(MacroEngine.validate(macro(MacroStep.Text(text))).isValid, text)
+        }
+        assertTrue(MacroEngine.validate(macro(MacroStep.Text("git status"))).isValid)
+    }
+
     @Test fun delayRangeAndTotalEnforced() {
         assertFalse(MacroEngine.validate(macro(MacroStep.Delay(MacroEngine.MAX_STEP_DELAY_MS + 1))).isValid)
         val steps = List(10) { MacroStep.Delay(MacroEngine.MAX_STEP_DELAY_MS) } // 50s > 30s

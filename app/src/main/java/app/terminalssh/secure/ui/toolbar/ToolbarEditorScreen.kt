@@ -44,6 +44,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.terminalssh.secure.R
 import app.terminalssh.secure.toolbar.KeyWidth
+import app.terminalssh.secure.toolbar.KeyStyle
+import app.terminalssh.secure.toolbar.MacroAction
+import app.terminalssh.secure.toolbar.MacroDef
+import app.terminalssh.secure.toolbar.MacroEngine
+import app.terminalssh.secure.toolbar.MacroStep
 import app.terminalssh.secure.toolbar.ToolKeySpec
 import app.terminalssh.secure.toolbar.ToolbarEditSession
 import app.terminalssh.secure.toolbar.ToolbarEditor
@@ -78,6 +83,8 @@ fun ToolbarEditorScreen(
     }
     var addKeyOpen by remember { mutableStateOf(false) }
     var renameOpen by remember { mutableStateOf(false) }
+    var createMacroOpen by remember { mutableStateOf(false) }
+    val pendingMacros = remember(profileId) { mutableListOf<MacroDef>() }
 
     fun normaliseSelection(profile: ToolbarProfile) {
         selectedKeyId = selectedKeyId
@@ -156,6 +163,8 @@ fun ToolbarEditorScreen(
                         // switching, so a user who moves a key then taps another profile does
                         // not lose the change silently.
                         if (session.isDirty) {
+                            pendingMacros.forEach(repository::saveMacro)
+                            pendingMacros.clear()
                             repository.saveProfile(session.current.copy(builtIn = false))
                         }
                         profileId = profile.id
@@ -255,6 +264,10 @@ fun ToolbarEditorScreen(
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 SmallButton(stringResource(R.string.tcs_add_key)) { addKeyOpen = true }
+                SmallButton(
+                    stringResource(R.string.tcs_create_macro),
+                    enabled = working.layout.keys.size < app.terminalssh.secure.toolbar.ToolbarLayout.MAX_KEYS,
+                ) { createMacroOpen = true }
                 SmallButton(stringResource(R.string.tcs_undo), enabled = session.canUndo) { undo() }
                 SmallButton(stringResource(R.string.tcs_redo), enabled = session.canRedo) { redo() }
             }
@@ -265,6 +278,8 @@ fun ToolbarEditorScreen(
                 }
                 SmallButton(stringResource(R.string.tcs_save), accent = true) {
                     val saved = working.copy(builtIn = false)
+                    pendingMacros.forEach(repository::saveMacro)
+                    pendingMacros.clear()
                     repository.saveProfile(saved)
                     repository.setActiveProfile(saved.id)
                     repository.setActiveTheme(saved.themeId)
@@ -301,6 +316,63 @@ fun ToolbarEditorScreen(
             },
         )
     }
+
+    if (createMacroOpen) {
+        val macroDescription = stringResource(R.string.tcs_macro_insert_description)
+        CreateMacroDialog(
+            onDismiss = { createMacroOpen = false },
+            onCreate = { name, text ->
+                val idBase = "macro.user." + name.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-').take(24).ifBlank { "custom" }
+                val usedIds = (repository.allMacros + pendingMacros).map { it.id }.toSet()
+                var id = idBase
+                var suffix = 2
+                while (id in usedIds) id = "$idBase-${suffix++}"
+                val macro = MacroDef(
+                    id = id,
+                    name = name.trim().take(40),
+                    description = macroDescription,
+                    steps = listOf(MacroStep.Text(text)),
+                )
+                pendingMacros += macro
+                edit { profile ->
+                    val key = ToolKeySpec(
+                        id = ToolbarEditor.uniqueId(profile.layout, "macro_${id.substringAfterLast('.')}") ,
+                        label = macro.name.take(ToolKeySpec.MAX_LABEL),
+                        action = MacroAction(macro.id),
+                        contentDescription = macro.name,
+                        width = KeyWidth.WIDE,
+                        style = KeyStyle.ACCENT,
+                    )
+                    ToolbarEditor.appendKey(profile.copy(macroIds = (profile.macroIds + macro.id).distinct()), key)
+                }
+                createMacroOpen = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun CreateMacroDialog(onDismiss: () -> Unit, onCreate: (String, String) -> Unit) {
+    var name by rememberSaveable { mutableStateOf("") }
+    var text by rememberSaveable { mutableStateOf("") }
+    val credentialLike = MacroEngine.containsCredentialLikeText(text)
+    val valid = name.isNotBlank() && text.isNotBlank() && text.length <= MacroEngine.MAX_TEXT_LENGTH && '\n' !in text && '\r' !in text && !credentialLike
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.tcs_create_macro_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.tcs_macro_insert_description), style = MaterialTheme.typography.bodySmall)
+                OutlinedTextField(value = name, onValueChange = { name = it.take(40) }, label = { Text(stringResource(R.string.tcs_macro_name)) }, singleLine = true)
+                OutlinedTextField(value = text, onValueChange = { text = it.take(MacroEngine.MAX_TEXT_LENGTH).filterNot { ch -> ch == '\n' || ch == '\r' } }, label = { Text(stringResource(R.string.tcs_macro_text)) }, singleLine = true)
+                if (credentialLike) {
+                    Text(stringResource(R.string.tcs_macro_secret_rejected), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onCreate(name.trim(), text) }, enabled = valid) { Text(stringResource(R.string.tcs_create_macro)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 @Composable
