@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T16:04:15+00:00",
+  "capturedAt": "2026-10-13T16:12:00+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "baa4596823325728f0f4762a126f2d852a29e3fc",
+  "lastVerifiedCommit": "c90198718dfe27bc1a412293f5536dd480db4fa0",
   "features": [
     {
       "id": "TCS-01",
@@ -284,15 +284,15 @@
     {
       "id": "TCS-10",
       "title": "ترمیم شکست‌های Instrumentation و semantics دسترس‌پذیری",
-      "phase": "VERIFY",
+      "phase": "VERIFY_CI",
       "changedFiles": [
-        "app/src/main/java/app/terminalssh/secure/ui/SettingRow.kt",
-        "app/src/androidTest/java/app/terminalssh/secure/ui/HostEditValidationTest.kt",
-        "app/src/androidTest/java/app/terminalssh/secure/ui/HostListPresentationTest.kt",
-        "app/src/androidTest/java/app/terminalssh/secure/ui/SettingsAccessibilityTest.kt",
-        "app/src/androidTest/java/app/terminalssh/secure/ui/SettingsToggleAccessibilityTest.kt",
-        "app/src/androidTest/java/app/terminalssh/secure/ui/SnippetAccessibilityTest.kt",
-        "app/src/androidTest/java/app/terminalssh/secure/ui/TerminalKeyboardTest.kt"
+        "SettingRow.kt",
+        "HostEditValidationTest.kt",
+        "HostListPresentationTest.kt",
+        "SettingsAccessibilityTest.kt",
+        "SettingsToggleAccessibilityTest.kt",
+        "SnippetAccessibilityTest.kt",
+        "TerminalKeyboardTest.kt"
       ],
       "dependencies": [],
       "status": "IMPLEMENTED_NOT_TESTED",
@@ -305,30 +305,18 @@
         "API 26/36 instrumentation debug + preview"
       ],
       "executedTests": [
-        "e2bd89c: MarketDebug app + AndroidTest compile PASS; JVM 1,013/1,013 PASS (118 suites); lint PASS; source/release gates PASS",
-        "02ef848: MarketDebug AndroidTest compile PASS; git diff --check PASS",
-        "2976238 CI run 38320080882: verify/build PASS; API36 Debug 8 failed, Preview 7 failed; API26 Debug 14 failed; API37 Debug/Preview boot BLOCKED (ADB offline)",
-        "Current worktree: MarketDebug app compile PASS; AndroidTest compile PASS; JVM 1,013/1,013 PASS; lint PASS (0 errors, 108 warnings, 2 hints); loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS",
-        "Follow-up test hardening: MarketDebug AndroidTest Kotlin compile PASS after dismissing IME before HostEdit validation and trying both horizontal toolbar scroll directions for Snippets",
-        "Reviewer-driven follow-up: MarketDebug app Kotlin compile PASS; AndroidTest Kotlin compile PASS; JVM 1,013/1,013 PASS; lint PASS (0 errors, 108 warnings, 2 hints); git diff --check PASS",
-        "Window snapshot lifecycle review: AccessibilityWindowInfo recycled in finally for terminal navigation, IME polling, and host-form IME detection",
-        "MarketDebug AndroidTest Kotlin compilation PASS after window recycling; git diff --check PASS",
-        "Run 38385900692 on eac2ed1: verify PASS; API36 debug and preview failed with seven UI interaction assertions each; API26 debug and preview failed; API37 debug/preview emulator boot failed.",
-        "API26 debug report: 8 TerminalKeyboardTest methods could not open the terminal tab, HostEdit immediate setText snapshot assertion failed, HostList recent heading bounds assertion failed, Settings palette selected-state and slider range node assertions failed, Snippet horizontal toolbar reachability failed.",
-        "Local follow-up: Terminal tab lookup no longer assumes window-relative screen Y; HostEdit input verification polls refreshed accessibility state; MarketDebug AndroidTest Kotlin compile PASS.",
-        "2026-10-13 local current worktree: MarketDebug app Kotlin compile PASS; AndroidTest Kotlin compile PASS; JVM 1,022 passed/0 failed/errors/skipped (118 suites); lint PASS (0 errors, 106 warnings, 2 hints); loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS. Current-source instrumentation has not run."
+        "MarketDebug app Kotlin compile PASS",
+        "MarketDebug AndroidTest Kotlin compile PASS",
+        "CI instrumentation for source c901987 pending"
       ],
-      "lastResult": "Triage of run 38403567011 identified selector, layout-density and asynchronous semantics test assumptions. Test selectors now use published accessibility labels; wide layout is sized in dp; assertions wait for fresh state and report diagnostics. Boolean settings row now exposes Role.Switch + toggle state with the row click as the sole accessibility action while retaining long-press reset. Runtime behavior pending a new CI run.",
-      "lastFailure": "Run 38426427972 is testing unchanged pre-fix app/test sources from 0bd7198; API26/36 UI assertions failed. The current local changes have not run on emulator.",
+      "lastResult": "Test harness selectors, viewport sizing, state polling and accessibility diagnostics updated from concrete API26/36 failures. Boolean row semantics change requires fresh device instrumentation evidence.",
+      "lastFailure": "Prior source instrumentation failures addressed locally; no runtime verdict yet for c901987.",
       "fixAttempts": 2,
-      "commitSha": "5bd2475",
-      "lastReviewedAt": "2026-10-13T16:04:15+00:00",
+      "commitSha": "c901987",
+      "lastReviewedAt": "2026-10-13T16:12:00+00:00",
       "remainingIssues": [
-        "New API26/36/37 Debug+Preview instrumentation run for the current fixes",
-        "Triage remaining HostList/Settings/paste failures from fresh reports",
-        "API37 healthy emulator evidence",
-        "Local device/TalkBack regression unavailable",
-        "Production signing unverified"
+        "API26/36/37 runtime matrix for current source",
+        "TalkBack/device accessibility verification"
       ]
     },
     {
@@ -376,34 +364,34 @@
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS on baa4596",
+    "marketDebugCompile": "PASS on c901987",
     "marketDebugUnitTests": {
       "passed": 1022,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
       "suites": 118,
-      "evidence": "Current source committed as baa4596: :app:testMarketDebugUnitTest"
+      "evidence": "Current source c901987: :app:testMarketDebugUnitTest"
     },
-    "marketDebugAssemble": "PASS on baa4596",
-    "diffCheck": "PASS before commit 93135b0",
-    "instrumentation": "Run 38426427972 tests commit 0bd7198 (same app/test sources as baa4596): API26 Debug/Preview and API36 Debug/Preview failed UI assertions; API37 jobs still in progress at last query. Local test-harness/semantics fixes are not yet in that run.",
-    "apiDeviceMatrix": "Current in-flight run 38426427972 covers API26/36/37 Debug+Preview; API26/36 old-source jobs failed; API37 pending. No local adb/device.",
+    "marketDebugAssemble": "PASS on c901987",
+    "diffCheck": "PASS before APK/metadata commit",
+    "instrumentation": "Fresh run 38428061570 on c901987: source/artifact gates passed; combined unit/lint/debug-build step in progress at 16:12 UTC; current-source UI instrumentation pending.",
+    "apiDeviceMatrix": "Run 38428061570 validates current source; no local ADB/device. Owner reports successful manual physical Android phone test.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS on baa4596",
+    "marketDebugAndroidTestCompile": "PASS on c901987",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
-      "warnings": 105,
+      "warnings": 106,
       "hints": 2,
-      "evidence": "Current source committed as baa4596: :app:lintMarketDebug"
+      "evidence": "Current source c901987: :app:lintMarketDebug"
     },
     "gplayDebugAssemble": "PASS",
     "marketPreviewAssemble": "PASS on earlier exact source; current TCS-04 source MarketDebug assembled; Preview current-source rebuild not repeated",
     "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
     "apkSignature": "Current MarketDebug APK verified with Android Debug certificate; production signing not verified",
-    "sourceGates": "PASS on baa4596: loop2_gate.py, market_release_gate.py, git diff --check",
+    "sourceGates": "PASS on c901987: loop2_gate.py, market_release_gate.py, git diff --check",
     "marketPreviewApk": {
       "path": "app/build/outputs/apk/market/preview/app-market-preview.apk",
       "sha256": "b5a1fa1985408c88dadd4efc3eaa9d274df131b7b2d05165ca4d05f427f89c64",
@@ -414,12 +402,12 @@
     "currentMarketDebugApk": {
       "path": "app/build/outputs/apk/market/debug/app-market-debug.apk",
       "sizeBytes": 43636502,
-      "sha256": "841b97d655f303d6f8319f3b3f2795966a57e99967c70e87f871808540500a5c",
+      "sha256": "5ea6f3d21ab6012d34731fd3abb5e7b833bf3b072eed589f4a22c3229cebeb2f",
       "signature": "Android Debug certificate; apksigner verification PASS",
-      "builtFrom": "Source committed as 28b679d plus final channel-health predicate committed as baa4596; assembled after final predicate",
+      "builtFrom": "c901987",
       "releaseStatus": "not production-signed",
       "rootCopy": "TerminalSSH-0.7.2-MarketDebug-TEST.apk",
-      "rootCopySHA256": "841b97d655f303d6f8319f3b3f2795966a57e99967c70e87f871808540500a5c"
+      "rootCopySHA256": "5ea6f3d21ab6012d34731fd3abb5e7b833bf3b072eed589f4a22c3229cebeb2f"
     }
   },
   "knownIssues": [
@@ -427,36 +415,36 @@
     "All checked APKs use Android Debug certificate; production signing remains unverified.",
     "Lint passed with 104 warnings and 2 hints (no errors); warnings not fully triaged.",
     "No local emulator/device attached; SAF UI, gesture runtime, process recreation and accessibility runtime need CI/device evidence.",
-    "CI run 38393877043 failed API26/API36 UI assertions on commit 22e8782; these are not established as fixed by later source yet.",
     "Macro secret detection catches common credential-shaped forms but cannot identify arbitrary secret values; editor warns users not to store secrets.",
-    "No adb executable/device attached in current workspace; TalkBack and UI runtime checks require CI/device evidence."
+    "Fresh CI run 38428061570 is in progress on c901987; instrumentation must not be counted verified until its runtime matrix completes.",
+    "Owner reports successful manual Android phone testing; no local ADB target is attached for independent reproduction."
   ],
-  "nextStep": "Run local compile/unit/lint/source gates for the current TCS-10 UI fixes; commit and push directly to main; inspect the fresh API26/36/37 instrumentation run and continue on demonstrated root causes.",
+  "nextStep": "Commit refreshed root MarketDebug test APK and evidence metadata; inspect CI 38428061570 and follow any current-source failures to root cause; continue remaining TCS features.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
-    "command": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug :app:assembleMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m",
-    "result": "BUILD SUCCESSFUL; source/release gates and diff check PASS",
+    "command": "./gradlew :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:testMarketDebugUnitTest :app:lintMarketDebug :app:assembleMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m",
+    "result": "PASS; loop2_gate.py, market_release_gate.py and git diff --check PASS",
     "unitTests": {
-      "passed": 1021,
+      "passed": 1022,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
       "suites": 118
     },
-    "androidTest": "Kotlin compilation passed including host-specific profile assignment/clear scenario; no attached local emulator",
-    "lint": "passed; 0 errors, 104 warnings, 2 hints; AGP compileSdk 37 support warning remains",
+    "androidTest": "Kotlin compilation passed on c901987; runtime pending CI; no local ADB target",
+    "lint": "PASS; 0 errors, 106 warnings, 2 hints; compileSdk 37 support warning remains",
     "apk": "app/build/outputs/apk/market/debug/app-market-debug.apk",
-    "apkSha256": "66b444cc092643aa295bc4bdf5594b6efa7addac06d15b96e0b42a8f47c8a831",
+    "apkSha256": "5ea6f3d21ab6012d34731fd3abb5e7b833bf3b072eed589f4a22c3229cebeb2f",
     "apkCertificate": "apksigner verified Android Debug certificate; production signing not verified",
-    "sourceGates": "loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS; four new host-override strings present in fa/en/ar/es/fr/ru"
+    "sourceGates": "loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS"
   },
   "latestCi": {
-    "runId": "38426427972",
-    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38426427972",
-    "headSha": "0bd719865f4eee28c7ca225b0d2d9c90a59d5d93",
-    "verify": "PASS",
-    "instrumentation": "API26/36 Debug+Preview failed on pre-fix source; API37 in progress at last check",
+    "runId": "38428061570",
+    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38428061570",
+    "headSha": "c90198718dfe27bc1a412293f5536dd480db4fa0",
+    "verify": "source/artifact gates PASS; remaining build/test step was in progress at last check",
+    "instrumentation": "pending",
     "releaseCandidates": "pending/conditional"
   },
   "remainingFeatureCount": 11,

@@ -241,3 +241,14 @@
 - Boolean SettingRow now exposes one merged Role.Switch node with its real toggleable state; its existing row click changes the stored value and long-press reset remains wired. Child Switch is visual-only to avoid a competing disabled child node.
 - Local checks after changes: MarketDebug Kotlin compile PASS; AndroidTest Kotlin compile PASS; JVM 1,022 passed/0 failed/errors/skipped across 118 suites; MarketDebug lint PASS (0 errors, 106 warnings, 2 hints); `loop2_gate.py`, `market_release_gate.py`, and `git diff --check` PASS. No local `adb`/device; these changes still need fresh CI execution.
 - Next: review the exact diff, commit and fast-forward push this set to `main`, then inspect all API26/36/37 Debug/Preview reports on that commit. Do not mark TCS-10 complete from local compilation or unit tests.
+
+
+## Strict CI instrumentation follow-up (2026-10-13)
+
+- Active delivery branch: `main`; latest code commit: `c90198718dfe27bc1a412293f5536dd480db4fa0`. This direct-main flow follows the owner's repository instructions.
+- TCS-10 remains active. Total TCS features: 11; `VERIFIED_COMPLETE`: 0. UI/device gates are not complete merely because test code compiles.
+- CI's previous API26/API36 failures were classified from reports as several instrumentation selector/configuration defects and one possible production semantics issue. Fixes in `c901987` correct the snippet selector, compute emulator width in dp, wait for modifier state publication, improve host form/list/scroll diagnostics, and consolidate boolean switch semantics.
+- Local verification after `c901987`: MarketDebug app Kotlin compile PASS; AndroidTest Kotlin compile PASS; JVM 1,022/1,022 PASS (118 suites); MarketDebug lint PASS (0 errors, 106 warnings, 2 hints); `loop2_gate.py` PASS; `market_release_gate.py` PASS; `git diff --check` PASS.
+- Rebuilt root MarketDebug test APK from `c901987`: 43,636,502 bytes; SHA-256 `5ea6f3d21ab6012d34731fd3abb5e7b833bf3b072eed589f4a22c3229cebeb2f`; Android Debug certificate, `apksigner verify` PASS; not production-signed. Owner reports manual physical Android phone test PASS.
+- Fresh CI run `38428061570` is validating `c901987`; verify job source/artifact validator gates passed, combined unit/lint/debug-build step was in progress at checkpoint. Prior run `38426427972` tested pre-fix source and must not be used as verdict on `c901987`.
+- Next exact step: commit updated root APK and its metadata, then inspect `38428061570` and any resulting instrumentation run. Treat each instrumentation failure by its own report and source evidence; keep TCS-10 open until mandatory device/UI gates pass.
