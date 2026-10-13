@@ -50,7 +50,18 @@ class SettingsToggleAccessibilityTest {
                 assertTrue("toggle row was ${toggle.visibleBounds.height()}px tall", toggle.visibleBounds.height() >= 48 * density)
                 assertTrue("toggle row did not include its label and control", toggle.visibleBounds.width() >= 240 * density)
 
-                toggle.click()
+                val toggleNode = AppWindowAccessibility.waitFor(TIMEOUT_MS) {
+                    it.contentDescription?.toString() == label && it.isCheckable
+                } ?: throw AssertionError("The labeled setting must remain exposed as a switch")
+                try {
+                    assertTrue("The labeled switch must expose an accessibility click action", toggleNode.isClickable)
+                    assertTrue(
+                        "Accessibility service click action was rejected for the labeled switch",
+                        AppWindowAccessibility.click(toggleNode),
+                    )
+                } finally {
+                    toggleNode.recycle()
+                }
                 assertTrue(
                     "Toggle action did not persist false " +
                         "(value=${app.settings.confirmMultilinePaste}, " +
@@ -62,6 +73,24 @@ class SettingsToggleAccessibilityTest {
                 )
                 assertTrue("Persisted false value was not reflected by switch semantics", awaitUiState(TIMEOUT_MS) {
                     device.findObject(By.desc(label))?.isChecked == false
+                })
+
+                // Exercise the physical touch path independently from ACTION_CLICK.
+                // This guards against an accessibility action working while the row's
+                // actual tap target is clipped or its pointer handler is disconnected.
+                val falseToggle = device.findObject(By.desc(label))
+                val falseBounds = falseToggle.visibleBounds
+                assertTrue("The touch target must remain fully visible", falseBounds.height() >= 48 * density)
+                assertTrue("Physical tap on the switch row was rejected", device.click(falseBounds.centerX(), falseBounds.centerY()))
+                assertTrue("Physical tap did not persist true", awaitUiState(TIMEOUT_MS) {
+                    app.settings.confirmMultilinePaste && device.findObject(By.desc(label))?.isChecked == true
+                })
+
+                val trueBounds = device.findObject(By.desc(label)).visibleBounds
+                assertTrue("Second physical tap target must remain fully visible", trueBounds.height() >= 48 * density)
+                assertTrue("Second physical tap on the switch row was rejected", device.click(trueBounds.centerX(), trueBounds.centerY()))
+                assertTrue("Second physical tap did not persist false", awaitUiState(TIMEOUT_MS) {
+                    !app.settings.confirmMultilinePaste && device.findObject(By.desc(label))?.isChecked == false
                 })
 
                 val changedToggle = device.findObject(By.desc(label))

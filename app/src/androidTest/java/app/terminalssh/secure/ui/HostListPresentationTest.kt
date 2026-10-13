@@ -65,10 +65,9 @@ class HostListPresentationTest {
                 "Seeded host fixture was not durable: ${app.hosts.hosts().map { it.id to it.lastConnectedAt }}",
                 seeded.all { wanted -> app.hosts.hosts().any { it.id == wanted.id } },
             )
-            assertTrue(
-                "Recent fixture row was not rendered; seeded=${seeded.map { it.id to it.lastConnectedAt }}",
-                device.wait(Until.hasObject(By.text("Recent gamma")), TIMEOUT_MS),
-            )
+            // LazyColumn does not expose offscreen rows until a swipe composes them.
+            // Reach this seeded row through the same viewport-checked path as headings.
+            assertReachableText("Recent gamma")
             assertVisible(R.string.hosts_section_favorites)
             assertReachable(R.string.hosts_section_recent)
             assertReachable(R.string.hosts_section_all)
@@ -119,7 +118,10 @@ class HostListPresentationTest {
      * cannot tell them apart is measuring the screen height.
      */
     private fun assertReachable(stringRes: Int) {
-        val text = context.getString(stringRes)
+        assertReachableText(context.getString(stringRes))
+    }
+
+    private fun assertReachableText(text: String) {
         var swipeCount = 0
         var lastTargetBounds: Rect? = null
         var lastViewportBounds: Rect? = null

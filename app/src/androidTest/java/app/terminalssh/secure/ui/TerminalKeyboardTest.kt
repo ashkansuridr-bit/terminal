@@ -754,7 +754,13 @@ class TerminalKeyboardTest {
             assertTrue(modifierControl(altName).isChecked)
             assertTrue(modifierControl(shiftName).isChecked)
 
-            clickAppDesc(tabName)
+            val tabKey = waitForAppDesc(tabName)
+            assertTrue("Tab key must expose an accessibility click action", tabKey?.isClickable == true)
+            try {
+                assertTrue("Tab key accessibility action was rejected", tabKey!!.performAction(AccessibilityNodeInfo.ACTION_CLICK))
+            } finally {
+                tabKey?.recycle()
+            }
             // First check the input controller itself, then check what accessibility
             // exposes. That separates dispatch/latch bugs from stale platform snapshots.
             assertTrue(
@@ -818,7 +824,7 @@ class TerminalKeyboardTest {
         // Narrow, single-row phone layout: the toolbar must expose scroll semantics as
         // the layout's only vertically-small scrollable. Open the terminal first, then
         // (if needed) re-fit the very same window wide below.
-        ActivityScenario.launch(MainActivity::class.java).use {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             openTerminalTab(terminalTab, instrumentation.targetContext.getString(R.string.show_keyboard))
             assertTrue("Terminal toolbar must expose scroll semantics", waitForToolbarBand() != null)
 
@@ -845,7 +851,7 @@ class TerminalKeyboardTest {
                 findAppNode { it.contentDescription == endOfInput } == null ||
                 localizedSpecials.any { name -> findAppNode { it.contentDescription == name } == null }
             ) {
-                refitWideForKeyboardLayout { assertReadableSymbolicNames() }
+                refitWideForKeyboardLayout(scenario) { assertReadableSymbolicNames() }
             } else {
                 assertReadableSymbolicNames()
             }
@@ -916,10 +922,11 @@ class TerminalKeyboardTest {
      * the previous display geometry and IME preference before returning. The IME is
      * kept away so the toolbar does not collapse back to a single scrollable row.
      */
-    private fun refitWideForKeyboardLayout(verify: () -> Unit) {
+    private fun refitWideForKeyboardLayout(scenario: ActivityScenario<MainActivity>, verify: () -> Unit) {
         val sizeBefore = device.executeShellCommand("wm size")
         val imeBefore = readSecureSetting("show_ime_with_hard_keyboard")
         try {
+            dismissImeIfVisible()
             writeSecureSetting("show_ime_with_hard_keyboard", "0")
             // `wm size` takes physical pixels while StudioToolbar switches to two rows
             // at 600dp. A fixed 1180px width is still compact on dense API 26 emulators.
@@ -929,6 +936,15 @@ class TerminalKeyboardTest {
             device.executeShellCommand("wm size ${widthPx}x$heightPx")
             device.waitForIdle()
             SystemClock.sleep(3000)
+            val expectedWidthDp = (widthPx / density).toInt()
+            scenario.onActivity { activity ->
+                assertTrue(
+                    "Wide toolbar verification requires >=600dp, actual=${activity.resources.configuration.screenWidthDp}dp, " +
+                        "requested=${expectedWidthDp}dp",
+                    activity.resources.configuration.screenWidthDp >= 600,
+                )
+            }
+            assertTrue("IME must be hidden for the two-row toolbar layout", !isImeWindowVisible())
             verify()
         } finally {
             writeSecureSetting("show_ime_with_hard_keyboard", imeBefore)

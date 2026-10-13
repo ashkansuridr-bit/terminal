@@ -1,6 +1,7 @@
 package app.terminalssh.secure.ui
 
 import android.graphics.Rect
+import android.os.SystemClock
 import android.os.Bundle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -39,7 +40,14 @@ class SettingsAccessibilityTest {
                 val oled = instrumentation.targetContext.getString(R.string.settings_palette_oled)
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
-                device.findObject(By.text(settingsTab)).click()
+                val settingsNode = AppWindowAccessibility.waitFor(TIMEOUT_MS) {
+                    it.text?.toString() == settingsTab
+                } ?: throw AssertionError("Settings tab was not present in the application accessibility tree")
+                try {
+                    assertTrue("Settings tab accessibility action was rejected", AppWindowAccessibility.click(settingsNode))
+                } finally {
+                    settingsNode.recycle()
+                }
                 // The palettes row can sit below the fold on small emulator screens, and a
                 // row scrolled only just into view is clipped — which would make the size
                 // assertion below measure the screen edge instead of the row.
@@ -47,12 +55,7 @@ class SettingsAccessibilityTest {
                 // before scrolling its horizontal strip to OLED for the touch-target check.
                 assertTrue(
                     "Selected palette chip was not fully visible after scrolling: ${visibilityDiagnostics(persianNeon)}",
-                    device.scrollUntilFullyVisible(
-                        By.desc(persianNeon),
-                        maxAttempts = 20,
-                        fullBounds = { fullBoundsByDescription(persianNeon) },
-                        appPackage = instrumentation.targetContext.packageName,
-                    ),
+                    scrollSettingsTo(persianNeon),
                 )
                 val selectedPalette = device.findObject(By.desc(persianNeon))
                 assertTrue(
@@ -63,13 +66,7 @@ class SettingsAccessibilityTest {
                 )
                 assertTrue(
                     "OLED palette chip was not fully visible after horizontal scrolling: ${visibilityDiagnostics(oled)}",
-                    device.scrollUntilFullyVisible(
-                        By.desc(oled),
-                        maxAttempts = 20,
-                        horizontalDirection = LayoutDirection.Ltr,
-                        fullBounds = { fullBoundsByDescription(oled) },
-                        appPackage = instrumentation.targetContext.packageName,
-                    ),
+                    scrollSettingsTo(oled, horizontal = true),
                 )
                 val oledAction = device.findObject(By.desc(oled))
                 val minimumPx = (48 * instrumentation.targetContext.resources.displayMetrics.density).toInt()
@@ -100,15 +97,17 @@ class SettingsAccessibilityTest {
                 val fontSizeLabel = instrumentation.targetContext.getString(R.string.settings_fontsize)
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
-                device.findObject(By.text(settingsTab)).click()
+                val settingsNode = AppWindowAccessibility.waitFor(TIMEOUT_MS) {
+                    it.text?.toString() == settingsTab
+                } ?: throw AssertionError("Settings tab was not present in the application accessibility tree")
+                try {
+                    assertTrue("Settings tab accessibility action was rejected", AppWindowAccessibility.click(settingsNode))
+                } finally {
+                    settingsNode.recycle()
+                }
                 assertTrue(
                     "Font-size slider was not fully visible after scrolling: ${visibilityDiagnostics(fontSizeLabel)}",
-                    device.scrollUntilFullyVisible(
-                        By.desc(fontSizeLabel),
-                        maxAttempts = 20,
-                        fullBounds = { fullBoundsByDescription(fontSizeLabel) },
-                        appPackage = instrumentation.targetContext.packageName,
-                    ),
+                    scrollSettingsTo(fontSizeLabel),
                 )
 
                 val sliderNode = findAdjustableNodeByDescription(fontSizeLabel)
@@ -215,6 +214,57 @@ class SettingsAccessibilityTest {
         return "target=$description visible=$visible full=$full scrollables=[$scrollables] " +
             "display=${device.displayWidth}x${device.displayHeight}"
     }
+
+    /** Scrolls the actual app accessibility viewport and accepts only a fully visible control. */
+    private fun scrollSettingsTo(description: String, horizontal: Boolean = false): Boolean {
+        val density = instrumentation.targetContext.resources.displayMetrics.density
+        repeat(28) {
+            val target = AppWindowAccessibility.find {
+                it.contentDescription?.toString() == description
+            }
+            if (target != null) {
+                try {
+                    val completeBounds = AppWindowAccessibility.bounds(target)
+                    val visibleBounds = runCatching { device.findObject(By.desc(description))?.visibleBounds }.getOrNull()
+                    if (visibleBounds != null && visibleBounds.contains(completeBounds) &&
+                        completeBounds.width() >= (48 * density).toInt() && completeBounds.height() >= (48 * density).toInt()
+                    ) return true
+                } finally {
+                    target.recycle()
+                }
+            }
+
+            val candidates = device.findObjects(By.scrollable(true)).mapNotNull { node ->
+                runCatching { node.visibleBounds }.getOrNull()
+            }
+            val viewport = candidates.filter { bounds ->
+                if (horizontal) bounds.width() > bounds.height() && bounds.height() <= (160 * density).toInt()
+                else bounds.height() > bounds.width()
+            }.maxByOrNull { if (horizontal) it.width() else it.height() } ?: return false
+
+            // Compose's UiObject2.scroll can report success without moving nested lazy
+            // containers. A physical swipe inside the reported app viewport is the
+            // fallback exercised by a human accessibility service as well.
+            val (startX, startY, endX, endY) = if (horizontal) {
+                val inset = (24 * density).toInt().coerceAtMost(viewport.width() / 4)
+                if (LayoutDirection.Ltr == instrumentation.targetContext.resources.configuration.layoutDirection.toComposeLayoutDirection()) {
+                    intArrayOf(viewport.right - inset, viewport.centerY(), viewport.left + inset, viewport.centerY())
+                } else {
+                    intArrayOf(viewport.left + inset, viewport.centerY(), viewport.right - inset, viewport.centerY())
+                }
+            } else {
+                intArrayOf(viewport.centerX(), viewport.bottom - viewport.height() / 5,
+                    viewport.centerX(), viewport.top + viewport.height() / 5)
+            }
+            device.swipe(startX, startY, endX, endY, 16)
+            device.waitForIdle()
+            SystemClock.sleep(100)
+        }
+        return false
+    }
+
+    private fun Int.toComposeLayoutDirection(): LayoutDirection =
+        if (this == android.view.View.LAYOUT_DIRECTION_RTL) LayoutDirection.Rtl else LayoutDirection.Ltr
 
     private fun findBoundsByDescription(
         node: AccessibilityNodeInfo,

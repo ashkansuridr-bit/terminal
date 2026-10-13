@@ -115,14 +115,25 @@ class HostEditValidationTest {
     }
 
     private fun setFieldText(label: String, value: String) {
-        val selector = By.clazz("android.widget.EditText").desc(label)
-        val field = device.wait(Until.findObject(selector), TIMEOUT_MS)
-            ?: throw AssertionError(
-                "Editable field '$label' was not exposed as EditText; " +
-                    "editables=${device.findObjects(By.clazz("android.widget.EditText")).map { "${it.contentDescription}:${it.text}" }}",
-            )
-        field.click()
-        field.setText(value)
+        // Compose exposes the named OutlinedTextField wrapper separately from its
+        // EditText child on API 26+. Click the named wrapper, then set text on the
+        // actual focused editor rather than assuming its child repeats the label.
+        val field = AppWindowAccessibility.waitFor(TIMEOUT_MS) {
+            it.contentDescription?.toString() == label
+        } ?: throw AssertionError("Named field '$label' was not exposed in the app accessibility tree")
+        try {
+            assertTrue("Named field '$label' did not expose its click action", AppWindowAccessibility.click(field))
+        } finally {
+            field.recycle()
+        }
+        val editor = device.wait(
+            Until.findObject(By.clazz("android.widget.EditText").focused(true)),
+            TIMEOUT_MS,
+        ) ?: throw AssertionError(
+            "Named field '$label' did not focus an editable node; " +
+                "focusedEditables=${device.findObjects(By.clazz("android.widget.EditText").focused(true)).size}",
+        )
+        editor.setText(value)
         device.waitForIdle()
     }
 
