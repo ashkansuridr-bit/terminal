@@ -40,10 +40,12 @@ class TerminalKeyboardTest {
     private var previousPrimaryClip: ClipData? = null
     private var previousHardwareKeyboardSetting = "0"
     private var previousPasteConfirmation = true
+    private var previousToolbarProfile: String? = null
 
     @Before
     fun setUp() {
         app = instrumentation.targetContext.applicationContext as TerminalApp
+        previousToolbarProfile = app.toolbar.state.value.activeProfileId
         instrumentation.runOnMainSync { previousPrimaryClip = clipboardManager().primaryClip }
         app.sessions.closeAll()
         dismissImeIfVisible()
@@ -60,6 +62,7 @@ class TerminalKeyboardTest {
     fun tearDown() {
         device.setOrientationNatural()
         app.sessions.closeAll()
+        previousToolbarProfile?.let(app.toolbar::setActiveProfile)
         app.settings.confirmMultilinePaste = previousPasteConfirmation
         // ClipboardManager must be resolved on Main on API 26. Restore the prior
         // clip so test data does not overwrite a device user's clipboard. Android
@@ -797,6 +800,7 @@ class TerminalKeyboardTest {
 
     @Test
     fun symbolicToolbarKeysHaveReadableActionNames() {
+        app.toolbar.setActiveProfile("shell")
         app.sessions.add(idleSession(id = "toolbar-semantics", title = "Toolbar test"))
 
         val terminalTab = instrumentation.targetContext.getString(R.string.tab_terminal)
