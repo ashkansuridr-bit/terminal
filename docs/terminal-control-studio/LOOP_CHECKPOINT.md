@@ -205,6 +205,20 @@
 - NEW-007 confirmed by independent source review: `SshSession` auto-reconnects on the same object, so a delayed macro that only checked for `Closed` could submit later steps (including Enter) to a replacement shell.
 - Added a monotonic shell-channel epoch, invalidated on shell install/loss/disconnect. Macro actions capture the epoch, stop after connection change, and dispatch synchronously only while that exact connected shell remains current. Existing SSH host-key and authentication behavior is unchanged.
 - Added deterministic coroutine regression: simulate reconnect during macro delay, return state to connected under a new epoch, and assert the later Enter is not dispatched.
-- Commit `28b679d` pushed to `main`. Local source validation: JVM 1,022 passed / 0 failed / 0 errors / 0 skipped (118 suites); app compile PASS; AndroidTest Kotlin compile PASS; lint PASS (0 errors, 105 warnings, 2 hints); MarketDebug assemble and Debug signing verification PASS; loop/release gates and diff check PASS. APK SHA-256 `a354001d71c3b2dc586e662347172ab4b4cced17b8ebf918b8a63fed27176d0c`.
+- Commits `28b679d` and `baa4596` pushed to `main`; the latter also checks live shell health after a channel loss before allowing macro work. Local source validation: JVM 1,022 passed / 0 failed / 0 errors / 0 skipped (118 suites); app compile PASS; AndroidTest Kotlin compile PASS; lint PASS (0 errors, 105 warnings, 2 hints); MarketDebug assemble and Debug signing verification PASS; loop/release gates and diff check PASS. APK SHA-256 `a354001d71c3b2dc586e662347172ab4b4cced17b8ebf918b8a63fed27176d0c`.
 - CI run `38402910371` for `28b679d` is queued; `38401934345` for `93135b0` is also queued. Local adb/device is unavailable; instrumentation is not yet verified.
 - Next: monitor both runs, diagnose current API26/36/37 results, continue feature review. The 11/11 strict device/UI completion gates remain open.
+
+- Final local rerun after the shell-health predicate: MarketDebug 1,022 JVM tests PASS (0 failures/errors/skipped), app and AndroidTest compile PASS, lint 0 errors, MarketDebug assemble and Debug-signature verification PASS. Current APK hash is recorded in `APK_VERIFICATION.md`.
+
+## Repository-root README and APK delivery (2026-10-13)
+
+- User requested that the reviewed deliverables be placed directly in the repository root and pushed to the existing `main` page; no feature branch was created.
+- Rewrote the root `README.md` in Persian to remove stale/unsupported marketing and completion claims, explain current verified capabilities and limitations, provide build instructions, and clarify source/dependency licensing.
+- Copied the current-source `MarketDebug` APK to `TerminalSSH-0.7.2-MarketDebug-TEST.apk` at repository root. It is 43,636,502 bytes; SHA-256 `841b97d655f303d6f8319f3b3f2795966a57e99967c70e87f871808540500a5c`. Build Tools 37.0.0 `apksigner verify --verbose` passed with Android Debug certificate. This is test-only, not a production release.
+- Added `ANDROID_TEST_BUILD.md` and updated `APK_VERIFICATION.md` with provenance, checksum, signature and runtime limitations.
+- Latest relevant workflow run `38403567011` for `baa4596`: `verify` passed; instrumentation jobs API 26 Debug/Preview, API 36 Debug/Preview, and API 37 Debug/Preview failed. This confirms the CI is not green; device/UI acceptance remains open.
+- TCS progress remains `0/11 VERIFIED_COMPLETE`; next feature work is paused per user's latest instruction after this upload/report. Resume from this checkpoint after the user asks to return to the project.
+- Verification still required before commit: validate Markdown links, `git diff --check`, ensure JSON state is updated, stage/commit to `main`, push, then verify remote head and root files.
+
+- README was rewritten to document the actual code/test/release state and Apache-2.0/dependency-license split; root APK and `ANDROID_TEST_BUILD.md` were added. `LOOP_STATE.json` and the Persian final report now record run `38403567011` accurately (verify passed, six instrumentation jobs failed).

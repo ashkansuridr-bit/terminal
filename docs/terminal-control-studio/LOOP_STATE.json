@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T13:08:00+00:00",
+  "capturedAt": "2026-10-13T19:25:00+03:30",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "28b679d00d118ede7f52c813bb0473b2846a624b",
+  "lastVerifiedCommit": "baa4596823325728f0f4762a126f2d852a29e3fc",
   "features": [
     {
       "id": "TCS-01",
@@ -173,20 +173,17 @@
         "device gesture/cancellation"
       ],
       "executedTests": [
-        "MarketDebug JVM: 1,021 passed; 0 failed/errors/skipped (118 suites)",
-        "MarketDebug app Kotlin compile PASS",
-        "MarketDebug AndroidTest Kotlin compile PASS",
-        "MarketDebug lint PASS (0 errors, 104 warnings, 2 hints)",
-        "Six-locale gesture resource parity PASS",
-        "Reconnect-epoch macro regression: MarketDebug unit suite PASS; stale Enter is not dispatched after delayed reconnect."
+        "MarketDebug JVM 1,022/1,022 PASS; delayed reconnect epoch regression prevents subsequent Enter",
+        "MarketDebug app and AndroidTest Kotlin compile PASS; lint 0 errors, 105 warnings, 2 hints; APK assemble/signature PASS",
+        "Source and release gates PASS; CI runtime pending"
       ],
-      "lastResult": "Macro dispatch now captures the concrete SSH shell-channel epoch, refuses to run unless it is still connected on that epoch, and checks the epoch both during each dispatch and between delayed operations. Device UI path still pending.",
+      "lastResult": "Macro dispatch captures the live SSH channel epoch, invalidates it on install/loss/disconnect, checks shell liveness after delay, and gates every synchronous effect on the same connected epoch. Delayed reconnect regression passes.",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": "28b679d",
-      "lastReviewedAt": "2026-10-13T13:08:00+00:00",
+      "commitSha": "baa4596",
+      "lastReviewedAt": "2026-10-13T13:12:00+00:00",
       "remainingIssues": [
-        "Runtime UI and API26/36/37 instrumentation pending."
+        "API26/36/37 instrumentation and device gesture runtime pending."
       ]
     },
     {
@@ -380,34 +377,34 @@
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS on 28b679d",
+    "marketDebugCompile": "PASS on baa4596",
     "marketDebugUnitTests": {
       "passed": 1022,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
       "suites": 118,
-      "evidence": "Current source committed as 28b679d: :app:testMarketDebugUnitTest"
+      "evidence": "Current source committed as baa4596: :app:testMarketDebugUnitTest"
     },
-    "marketDebugAssemble": "PASS on 28b679d",
+    "marketDebugAssemble": "PASS on baa4596",
     "diffCheck": "PASS before commit 93135b0",
-    "instrumentation": "Current commit 28b679d CI run 38402910371 queued. Accessibility commit 93135b0 CI run 38401934345 also queued after older workflow backlog; local adb unavailable.",
-    "apiDeviceMatrix": "BLOCKED locally: adb missing. GitHub instrumentation run for 93135b0 queued; 28b679d run queued.",
+    "instrumentation": "Run 38403567011: verify PASS; API26/36/37 Debug and Preview instrumentation jobs FAILED. Runtime UI acceptance remains unresolved.",
+    "apiDeviceMatrix": "Latest run 38403567011 completed: all six API26/36/37 Debug/Preview instrumentation jobs failed. No local adb/device.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS on 28b679d",
+    "marketDebugAndroidTestCompile": "PASS on baa4596",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
       "warnings": 105,
       "hints": 2,
-      "evidence": "Current source committed as 28b679d: :app:lintMarketDebug"
+      "evidence": "Current source committed as baa4596: :app:lintMarketDebug"
     },
     "gplayDebugAssemble": "PASS",
     "marketPreviewAssemble": "PASS on earlier exact source; current TCS-04 source MarketDebug assembled; Preview current-source rebuild not repeated",
     "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
     "apkSignature": "Current MarketDebug APK verified with Android Debug certificate; production signing not verified",
-    "sourceGates": "PASS on 28b679d: loop2_gate.py, market_release_gate.py, git diff --check",
+    "sourceGates": "PASS on baa4596: loop2_gate.py, market_release_gate.py, git diff --check",
     "marketPreviewApk": {
       "path": "app/build/outputs/apk/market/preview/app-market-preview.apk",
       "sha256": "b5a1fa1985408c88dadd4efc3eaa9d274df131b7b2d05165ca4d05f427f89c64",
@@ -418,10 +415,12 @@
     "currentMarketDebugApk": {
       "path": "app/build/outputs/apk/market/debug/app-market-debug.apk",
       "sizeBytes": 43636502,
-      "sha256": "a354001d71c3b2dc586e662347172ab4b4cced17b8ebf918b8a63fed27176d0c",
+      "sha256": "841b97d655f303d6f8319f3b3f2795966a57e99967c70e87f871808540500a5c",
       "signature": "Android Debug certificate; apksigner verification PASS",
-      "builtFrom": "Source committed as 28b679d",
-      "releaseStatus": "not production-signed"
+      "builtFrom": "Source committed as 28b679d plus final channel-health predicate committed as baa4596; assembled after final predicate",
+      "releaseStatus": "not production-signed",
+      "rootCopy": "TerminalSSH-0.7.2-MarketDebug-TEST.apk",
+      "rootCopySHA256": "841b97d655f303d6f8319f3b3f2795966a57e99967c70e87f871808540500a5c"
     }
   },
   "knownIssues": [
@@ -433,7 +432,7 @@
     "Macro secret detection catches common credential-shaped forms but cannot identify arbitrary secret values; editor warns users not to store secrets.",
     "No adb executable/device attached in current workspace; TalkBack and UI runtime checks require CI/device evidence."
   ],
-  "nextStep": "Inspect queued CI run 38402910371 for macro reconnect fix, and run 38401934345 for accessibility regression. Resolve any remaining confirmed instrumentation failures; continue TCS feature gates.",
+  "nextStep": "Deliver README and test APK on main, verify remote upload, then pause feature work. Resume with triage of failed run 38403567011 instrumentation reports and continue TCS feature matrix only when user requests.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
@@ -454,10 +453,12 @@
     "sourceGates": "loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS; four new host-override strings present in fa/en/ar/es/fr/ru"
   },
   "latestCi": {
-    "commit": "28b679d00d118ede7f52c813bb0473b2846a624b",
-    "run": "38402910371",
-    "result": "queued",
-    "details": "Macro reconnect epoch guard and deterministic delayed macro regression. CI queue is backed up by older main runs; local full verification passed."
+    "runId": "38403567011",
+    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38403567011",
+    "headSha": "baa4596823325728f0f4762a126f2d852a29e3fc",
+    "verify": "PASS",
+    "instrumentation": "FAIL: API26/36/37, Debug/Preview six jobs",
+    "releaseCandidates": "SKIPPED"
   },
   "remainingFeatureCount": 11,
   "verifiedCompleteCount": 0,
