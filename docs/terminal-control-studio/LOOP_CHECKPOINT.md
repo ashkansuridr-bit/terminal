@@ -225,3 +225,10 @@
 
 - Delivery commit `7a76793765c0c4ca2d318e8e23a7e7892c5a4117` was pushed directly to `main`. GitHub API verification confirmed `README.md`, `ANDROID_TEST_BUILD.md`, and `TerminalSSH-0.7.2-MarketDebug-TEST.apk` exist at the repository root; remote APK size is 43,636,502 bytes. Root artifact URL: https://raw.githubusercontent.com/ashkansuridr-bit/terminal/main/TerminalSSH-0.7.2-MarketDebug-TEST.apk
 - Feature work is now paused as requested. On resumption, begin by triaging the six failed instrumentation jobs from run `38403567011`; no README/APK delivery work needs repeating.
+
+## Promo video upload requested by user (2026-10-13)
+
+- Renamed the existing Persian BGM promo to the requested root filename `terminal-promo-bgm-release.mp4` (Git will record this as a rename); the no-BGM video remains in the root.
+- Added a watch/download link and concise introduction in the root README. Disclosed that UI is source-faithful recreation with fabricated host/terminal data, not a live APK recording.
+- Updated `VIDEO_DELIVERY.md` with the root filename and SHA-256 `4a18c2f2c88d5d7ff4fa622278ee8102feb2433f682e923450a2500a597b3079`. The recorded Mixkit track identity is unverified; the README states that caveat and distinguishes media licensing from the Apache-2.0 source license.
+- `file` identifies the artifact as MP4; README/video report local links and `git diff --check` pass. Next: commit and push the rename, README introduction and delivery report directly to `main`, then verify the GitHub root entry.
