@@ -59,6 +59,23 @@ class MacroEngineTest {
         assertTrue(MacroEngine.validate(macro(MacroStep.Text("git status"))).isValid)
     }
 
+    @Test fun persistedOrImportedMacroTextCannotContainLineBreaksOrTerminalControls() {
+        listOf(
+            "first\nsecond",
+            "first\rsecond",
+            "first\u2028second",
+            "first\u2029second",
+            "text\u0000nul",
+            "text\ttab",
+            "text\u007fdel",
+            "text\u0085nel",
+            "text\u001b[2J",
+        )
+            .forEach { text ->
+                assertFalse(MacroEngine.validate(macro(MacroStep.Text(text))).isValid, "unsafe text was accepted")
+            }
+    }
+
     @Test fun delayRangeAndTotalEnforced() {
         assertFalse(MacroEngine.validate(macro(MacroStep.Delay(MacroEngine.MAX_STEP_DELAY_MS + 1))).isValid)
         val steps = List(10) { MacroStep.Delay(MacroEngine.MAX_STEP_DELAY_MS) } // 50s > 30s

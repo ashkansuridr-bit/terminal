@@ -442,4 +442,10 @@
     <string name="tcs_macro_text">Texte sur une ligne</string>
     <string name="tcs_macro_insert_description">Cette macro insère une ligne dans le terminal sans appuyer sur Entrée.</string>
     <string name="tcs_macro_secret_rejected">Ce texte ressemble à des identifiants intégrés. Ne stockez pas de mots de passe ni de secrets dans les macros.</string>
+
+    <!-- Confirm before discarding an edited toolbar -->
+    <string name="tcs_discard_title">Modifications non enregistrées</string>
+    <string name="tcs_discard_message">Les modifications de la barre ne sont pas enregistrées. Les supprimer ?</string>
+    <string name="tcs_discard_action">Supprimer</string>
+    <string name="tcs_keep_editing">Continuer la modification</string>
 </resources>

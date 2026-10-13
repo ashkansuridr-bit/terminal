@@ -489,4 +489,10 @@
     <string name="tcs_macro_text">متن یک‌خطی</string>
     <string name="tcs_macro_insert_description">این ماکرو فقط یک خط متن را در ترمینال وارد می‌کند و کلید Enter را نمی‌فرستد.</string>
     <string name="tcs_macro_secret_rejected">متن شبیه اطلاعات ورود است؛ گذرواژه یا راز را در ماکرو ذخیره نکنید.</string>
+
+    <!-- Confirm before discarding an edited toolbar -->
+    <string name="tcs_discard_title">تغییرات ذخیره‌نشده</string>
+    <string name="tcs_discard_message">تغییرات این نوار ذخیره نشده‌اند. می‌خواهید دور انداخته شوند؟</string>
+    <string name="tcs_discard_action">دور انداختن</string>
+    <string name="tcs_keep_editing">ادامهٔ ویرایش</string>
 </resources>

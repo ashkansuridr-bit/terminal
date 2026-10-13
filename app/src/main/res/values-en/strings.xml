@@ -489,4 +489,10 @@
     <string name="tcs_macro_text">Single-line text</string>
     <string name="tcs_macro_insert_description">This macro inserts one line into the terminal and does not press Enter.</string>
     <string name="tcs_macro_secret_rejected">This text resembles embedded credentials. Do not store passwords or secrets in macros.</string>
+
+    <!-- Confirm before discarding an edited toolbar -->
+    <string name="tcs_discard_title">Unsaved changes</string>
+    <string name="tcs_discard_message">Your toolbar changes have not been saved. Discard them?</string>
+    <string name="tcs_discard_action">Discard</string>
+    <string name="tcs_keep_editing">Keep editing</string>
 </resources>

@@ -394,7 +394,11 @@ class TerminalKeyboardTest {
                 }
                 if (!matchesLabel) return@findAppNode false
                 val nodeBounds = bounds(node)
-                nodeBounds.height() > 0 && nodeBounds.bottom > (device.displayHeight * 0.66f).toInt()
+                // NavigationBarItem bounds are exported differently across Android
+                // releases (API 26 can report window-relative coordinates). Match the
+                // unique localized tab label and require a real visible target instead
+                // of assuming its screen Y coordinate is below a fixed threshold.
+                nodeBounds.width() > 0 && nodeBounds.height() > 0
             }?.let { return it }
             SystemClock.sleep(200)
         }

@@ -62,6 +62,9 @@ object MacroEngine {
                     if (containsCredentialLikeText(step.text)) {
                         errors.add("step ${index + 1}: text resembles embedded credentials; do not store secrets in macros")
                     }
+                    if (step.text.any { it == '\n' || it == '\r' || it == '\u2028' || it == '\u2029' || it.isISOControl() }) {
+                        errors.add("step ${index + 1}: text must not contain line breaks or control characters")
+                    }
                 }
                 is MacroStep.Controls -> {
                     if (!isValidControl(step.letter)) {

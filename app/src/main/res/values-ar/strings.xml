@@ -492,4 +492,10 @@
     <string name="tcs_macro_text">نص من سطر واحد</string>
     <string name="tcs_macro_insert_description">يُدرج هذا الماكرو سطراً واحداً في الطرفية ولا يضغط على Enter.</string>
     <string name="tcs_macro_secret_rejected">يشبه هذا النص بيانات اعتماد مضمّنة. لا تحفظ كلمات المرور أو الأسرار في وحدات الماكرو.</string>
+
+    <!-- Confirm before discarding an edited toolbar -->
+    <string name="tcs_discard_title">تغييرات غير محفوظة</string>
+    <string name="tcs_discard_message">لم تُحفظ تغييرات شريط الأدوات. هل تريد تجاهلها؟</string>
+    <string name="tcs_discard_action">تجاهل</string>
+    <string name="tcs_keep_editing">متابعة التحرير</string>
 </resources>

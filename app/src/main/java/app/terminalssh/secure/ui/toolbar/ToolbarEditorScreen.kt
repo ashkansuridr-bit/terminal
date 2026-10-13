@@ -84,7 +84,12 @@ fun ToolbarEditorScreen(
     var addKeyOpen by remember { mutableStateOf(false) }
     var renameOpen by remember { mutableStateOf(false) }
     var createMacroOpen by remember { mutableStateOf(false) }
+    var discardConfirmOpen by remember { mutableStateOf(false) }
     val pendingMacros = remember(profileId) { mutableListOf<MacroDef>() }
+
+    fun requestDismiss() {
+        if (session.isDirty || pendingMacros.isNotEmpty()) discardConfirmOpen = true else onDismiss()
+    }
 
     fun normaliseSelection(profile: ToolbarProfile) {
         selectedKeyId = selectedKeyId
@@ -110,7 +115,7 @@ fun ToolbarEditorScreen(
         normaliseSelection(working)
     }
 
-    BackHandler(onBack = onDismiss)
+    BackHandler(onBack = ::requestDismiss)
 
     val selected = selectedKeyId?.let { working.layout.keyById(it) }
 
@@ -135,7 +140,7 @@ fun ToolbarEditorScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+                TextButton(onClick = ::requestDismiss) { Text(stringResource(R.string.close)) }
             }
 
             repository.recoveryNotice?.let { notice ->
@@ -346,6 +351,24 @@ fun ToolbarEditorScreen(
                     ToolbarEditor.appendKey(profile.copy(macroIds = (profile.macroIds + macro.id).distinct()), key)
                 }
                 createMacroOpen = false
+            },
+        )
+    }
+
+    if (discardConfirmOpen) {
+        AlertDialog(
+            onDismissRequest = { discardConfirmOpen = false },
+            title = { Text(stringResource(R.string.tcs_discard_title)) },
+            text = { Text(stringResource(R.string.tcs_discard_message)) },
+            confirmButton = {
+                TextButton(onClick = { discardConfirmOpen = false; onDismiss() }) {
+                    Text(stringResource(R.string.tcs_discard_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { discardConfirmOpen = false }) {
+                    Text(stringResource(R.string.tcs_keep_editing))
+                }
             },
         )
     }

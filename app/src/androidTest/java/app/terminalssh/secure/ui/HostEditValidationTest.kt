@@ -68,11 +68,17 @@ class HostEditValidationTest {
 
             // Each host field is named for accessibility (contentDescription = its label).
             device.findObject(By.desc(hostLabel)).setText(savedHost)
-            assertTrue("host fixture input was not applied", device.findObject(By.desc(hostLabel)).text == savedHost)
+            assertTrue("host fixture input was not applied", awaitUiState(TIMEOUT_MS) {
+                runCatching { device.findObject(By.desc(hostLabel))?.text == savedHost }.getOrDefault(false)
+            })
             device.findObject(By.desc(usernameLabel)).setText("tester")
-            assertTrue("username fixture input was not applied", device.findObject(By.desc(usernameLabel)).text == "tester")
+            assertTrue("username fixture input was not applied", awaitUiState(TIMEOUT_MS) {
+                runCatching { device.findObject(By.desc(usernameLabel))?.text == "tester" }.getOrDefault(false)
+            })
             device.findObject(By.desc(portLabel)).setText("0")
-            assertTrue("invalid port input was not applied", device.findObject(By.desc(portLabel)).text == "0")
+            assertTrue("invalid port input was not applied", awaitUiState(TIMEOUT_MS) {
+                runCatching { device.findObject(By.desc(portLabel))?.text == "0" }.getOrDefault(false)
+            })
             dismissImeIfVisible()
             clickWhenAvailable(By.text(save), "Save after invalid port")
             assertTrue(
