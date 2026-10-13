@@ -72,3 +72,9 @@
 - Current-source local verification: MarketDebug app Kotlin compile PASS; MarketDebug AndroidTest Kotlin compile PASS; JVM 1,013/1,013 PASS across 118 suites; lint PASS (0 errors, 108 warnings, 2 hints); `loop2_gate.py` PASS; `market_release_gate.py` PASS; `git diff --check` PASS. `adb` is not installed on this workspace, so no local device run is available.
 - Remaining runtime failures from `38320080882` still need rechecking against a fresh run. Host edit, snippet horizontal scrolling, and the other settings/host assertions remain unverified on the latest code. API 37 still requires a healthy CI emulator.
 - Next exact step: commit and push the current fixes, inspect the new PR run and artifacts, then continue on any remaining confirmed failures. Do not merge PR #4.
+
+## Host form and snippet test follow-up (2026-10-13)
+
+- A review of the same CI artifacts found two unaddressed test-harness risks: HostEdit could keep the pinned Save action behind the focused IME on API 26, and Snippet discovery assumed one horizontal scroll direction derived from the instrumentation locale. HostEdit now dismisses the IME before the empty-host validation action; Snippet discovery checks full visibility while trying both horizontal directions.
+- `:app:compileMarketDebugAndroidTestKotlin` PASS after these changes; `git diff --check` PASS. Runtime behavior still needs CI verification.
+- Run `38382218317` for `a7b2484` is currently running its verify job. These additional changes will be committed and pushed separately; inspect the resulting latest run rather than relying on the older commit's CI.

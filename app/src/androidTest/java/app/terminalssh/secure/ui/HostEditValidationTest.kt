@@ -58,6 +58,10 @@ class HostEditValidationTest {
             device.findObject(By.desc(newConnection)).click()
             assertTrue(device.wait(Until.hasObject(By.text(save)), TIMEOUT_MS))
 
+            // The host field receives focus when the sheet opens. On older Android
+            // releases its IME can cover the pinned Save action while keeping stale
+            // text in UiAutomator's accessibility snapshot.
+            dismissImeIfVisible()
             clickWhenAvailable(By.text(save), "Save after empty host")
             assertTrue(device.wait(Until.hasObject(By.text(requiredError)), TIMEOUT_MS))
             assertTrue(app.hosts.hosts().none { host -> host.host == savedHost })

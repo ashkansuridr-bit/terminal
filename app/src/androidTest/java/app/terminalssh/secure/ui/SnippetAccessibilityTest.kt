@@ -1,5 +1,6 @@
 package app.terminalssh.secure.ui
 
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -59,8 +60,20 @@ class SnippetAccessibilityTest {
             val direction = terminalLayoutDirection(
                 instrumentation.targetContext.resources.configuration.locales[0],
             )
-            device.scrollUntil(horizontalDirection = direction) { device.hasObject(By.text(snippets)) }
-            assertTrue(device.wait(Until.hasObject(By.text(snippets)), TIMEOUT_MS))
+            val snippetsKey = By.text(snippets)
+            val oppositeDirection = if (direction == LayoutDirection.Ltr) {
+                LayoutDirection.Rtl
+            } else {
+                LayoutDirection.Ltr
+            }
+            val snippetsReachable = listOf(direction, oppositeDirection).any { scrollDirection ->
+                device.scrollUntilFullyVisible(
+                    snippetsKey,
+                    maxAttempts = 16,
+                    horizontalDirection = scrollDirection,
+                )
+            }
+            assertTrue("Snippets toolbar key was not fully reachable by horizontal scrolling", snippetsReachable)
             device.findObject(By.text(snippets)).click()
 
             assertTrue(device.wait(Until.hasObject(By.desc(firstDelete)), TIMEOUT_MS))
