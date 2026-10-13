@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.coroutines.runBlocking
 
 class MacroEngineTest {
 
@@ -142,6 +143,33 @@ class MacroEngineTest {
         val ops = MacroEngine.expand(macro(MacroStep.Text("1"), MacroStep.Text("2"), MacroStep.Text("3")))
         MacroRunner(sink).runImmediate(ops) { count++ >= 1 }
         assertEquals(listOf("text:1"), sink.calls)
+    }
+
+    @Test fun delayedMacroStopsWhenConnectionReconnectsBeforeNextStep() = runBlocking {
+        val sink = RecordingSink()
+        val expectedEpoch = 7L
+        var currentEpoch = expectedEpoch
+        var connected = true
+        val ops = MacroEngine.expand(
+            macro(
+                MacroStep.Text("deploy"),
+                MacroStep.Delay(25),
+                MacroStep.Special(ToolbarSpecialKey.ENTER),
+            ),
+        )
+
+        val completed = MacroRunner(sink).execute(
+            ops,
+            cancelled = { !connected || currentEpoch != expectedEpoch },
+            sleep = {
+                connected = false
+                currentEpoch++ // the new shell is Connected again before the delay returns
+                connected = true
+            },
+        )
+
+        assertFalse(completed)
+        assertEquals(listOf("text:deploy"), sink.calls)
     }
 
     @Test fun shippedMacrosAllValidate() {

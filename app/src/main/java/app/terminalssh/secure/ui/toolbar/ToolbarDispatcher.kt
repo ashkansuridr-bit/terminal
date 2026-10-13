@@ -127,25 +127,37 @@ class ToolbarDispatcher(
     private fun runMacro(macroId: String) {
         val macro = repository.macroById(macroId) ?: return
         if (!MacroEngine.validate(macro).isValid) return
+        if (host.session.state.value !is SshSessionState.Connected) return
+        val channelEpoch = host.session.activeChannelEpoch
         val ops = MacroEngine.expand(macro)
+        fun dispatchOnCapturedChannel(action: () -> Unit) {
+            host.session.runIfConnectedAtEpoch(channelEpoch, action)
+        }
         val sink = object : MacroSink {
             override fun sendText(text: String) {
-                host.session.send(text)
+                dispatchOnCapturedChannel { host.session.send(text) }
             }
 
-            override fun sendSpecial(key: ToolbarSpecialKey) = dispatchSpecial(key)
+            override fun sendSpecial(key: ToolbarSpecialKey) = dispatchOnCapturedChannel {
+                dispatchSpecial(key)
+            }
 
             override fun sendControl(letter: Char) {
-                host.session.pressControl(letter)
+                dispatchOnCapturedChannel { host.session.pressControl(letter) }
             }
 
             override fun setModifier(modifier: ToolbarModifier, lock: Boolean) {
-                dispatchModifier(ModifierAction(modifier, lock))
+                dispatchOnCapturedChannel { dispatchModifier(ModifierAction(modifier, lock)) }
             }
         }
         scope.launch {
-            // The macro stops rather than racing a session that has gone away.
-            MacroRunner(sink).execute(ops, cancelled = { host.session.state.value is SshSessionState.Closed })
+            // Do not let delayed operations migrate onto a replacement shell after
+            // automatic reconnect. Epoch comparison catches even a fast reconnect
+            // whose transient state was not observed by this coroutine.
+            MacroRunner(sink).execute(ops, cancelled = {
+                host.session.state.value !is SshSessionState.Connected ||
+                    host.session.activeChannelEpoch != channelEpoch
+            })
         }
     }
 }

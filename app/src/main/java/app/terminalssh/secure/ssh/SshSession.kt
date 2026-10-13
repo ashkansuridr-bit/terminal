@@ -41,6 +41,8 @@ class SshSession(
     private val io = Executors.newSingleThreadExecutor { r -> Thread(r, "ssh-io-$id") }
     private val main = Handler(Looper.getMainLooper())
     private val generation = AtomicLong(0)
+    private val channelEpoch = AtomicLong(0)
+    private val channelLock = Any()
 
     private val _state = MutableStateFlow<SshSessionState>(SshSessionState.Idle)
     val state: StateFlow<SshSessionState> = _state.asStateFlow()
@@ -62,6 +64,20 @@ class SshSession(
     private val pendingInput = BoundedPendingInput(MAX_BUFFERED_INPUT_BYTES)
 
     val terminalInput = TerminalInputController()
+
+    /** Identifies the concrete SSH shell channel, including automatic reconnects. */
+    val activeChannelEpoch: Long get() = channelEpoch.get()
+
+    /** Runs a short synchronous dispatch only while the captured live channel is current. */
+    fun runIfConnectedAtEpoch(expectedEpoch: Long, action: () -> Unit): Boolean =
+        synchronized(channelLock) {
+            if (channelEpoch.get() != expectedEpoch || _state.value !is SshSessionState.Connected || shell?.alive != true) {
+                false
+            } else {
+                action()
+                true
+            }
+        }
 
     val emulator: TerminalEmulator = TerminalEmulatorFactory.create(
         initialRows = INITIAL_ROWS,
@@ -106,7 +122,10 @@ class SshSession(
                 opened.close()
                 return
             }
-            shell = opened
+            synchronized(channelLock) {
+                shell = opened
+                channelEpoch.incrementAndGet()
+            }
             // Everything typed while (re)connecting goes to the fresh channel now, in
             // FIFO order, before a new keystroke can overtake it on the same io thread.
             val buffered = pendingInput.takeAll()
@@ -251,7 +270,12 @@ class SshSession(
                     }
                 }
                 if (gen == generation.get()) {
-                    shell = null
+                    synchronized(channelLock) {
+                        if (shell === open) {
+                            shell = null
+                            channelEpoch.incrementAndGet()
+                        }
+                    }
                     val writeFailure = terminalWriteFailure
                     terminalWriteFailure = null
                     // The remote end sends an exit-status when the shell process itself
@@ -408,8 +432,12 @@ class SshSession(
         terminalInput.reset()
         generation.incrementAndGet()
         clearPendingHostKey()
-        val open = shell
-        shell = null
+        val open = synchronized(channelLock) {
+            val current = shell
+            shell = null
+            channelEpoch.incrementAndGet()
+            current
+        }
         clearPendingPassword()
         pendingInput.clear()
         _portForwards.value = _portForwards.value.map {
