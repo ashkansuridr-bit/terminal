@@ -106,6 +106,8 @@
     <string name="terminal_key_interrupt">Interrumpir, Control+C</string>
     <string name="terminal_key_eof">Fin de entrada, Control+D</string>
     <string name="terminal_key_clear">Limpiar pantalla, Control+L</string>
+    <string name="terminal_key_escape">Escape</string>
+    <string name="terminal_key_tab">Tabulador</string>
     <string name="terminal_key_up">Flecha arriba</string>
     <string name="terminal_key_down">Flecha abajo</string>
     <string name="terminal_key_left">Flecha izquierda</string>

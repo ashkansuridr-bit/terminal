@@ -106,6 +106,8 @@
     <string name="terminal_key_interrupt">Interruption, Control+C</string>
     <string name="terminal_key_eof">Fin de l\u2019entrée, Control+D</string>
     <string name="terminal_key_clear">Effacer l\u2019écran, Control+L</string>
+    <string name="terminal_key_escape">Échap</string>
+    <string name="terminal_key_tab">Tabulation</string>
     <string name="terminal_key_up">Flèche haut</string>
     <string name="terminal_key_down">Flèche bas</string>
     <string name="terminal_key_left">Flèche gauche</string>

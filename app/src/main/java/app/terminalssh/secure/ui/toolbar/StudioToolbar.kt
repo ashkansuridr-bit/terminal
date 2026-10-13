@@ -55,10 +55,12 @@ import app.terminalssh.secure.ssh.TerminalModifiers
 import app.terminalssh.secure.toolbar.KeyStyle
 import app.terminalssh.secure.toolbar.KeyWidth
 import app.terminalssh.secure.toolbar.ModifierAction
+import app.terminalssh.secure.toolbar.SpecialKeyAction
 import app.terminalssh.secure.toolbar.ToolKeySpec
 import app.terminalssh.secure.toolbar.ToolbarGesture
 import app.terminalssh.secure.toolbar.ToolbarMode
 import app.terminalssh.secure.toolbar.ToolbarProfile
+import app.terminalssh.secure.toolbar.ToolbarSpecialKey
 import app.terminalssh.secure.toolbar.ToolbarTheme
 import kotlinx.coroutines.delay
 
@@ -467,10 +469,17 @@ private fun ToolKeySpec.isLocked(locked: Set<TerminalModifier>): Boolean {
 private fun ToolKeySpec.announce(active: Boolean, locked: Boolean): String {
     // Keep shipped accessibility names useful in each app locale. User-edited descriptions
     // remain verbatim; only the built-in default names map to localized resources.
+    val defaultSpecial = if (contentDescription == null) (action as? SpecialKeyAction)?.key else null
     val base = when {
         id == "ctrl" && contentDescription == "Control" -> stringResource(R.string.tcs_control_modifier)
         id == "cc" && contentDescription == "Interrupt" -> stringResource(R.string.terminal_key_interrupt)
         id == "cd" && contentDescription == "End of file" -> stringResource(R.string.terminal_key_eof)
+        defaultSpecial == ToolbarSpecialKey.ESCAPE -> stringResource(R.string.terminal_key_escape)
+        defaultSpecial == ToolbarSpecialKey.TAB -> stringResource(R.string.terminal_key_tab)
+        defaultSpecial == ToolbarSpecialKey.UP -> stringResource(R.string.terminal_key_up)
+        defaultSpecial == ToolbarSpecialKey.DOWN -> stringResource(R.string.terminal_key_down)
+        defaultSpecial == ToolbarSpecialKey.LEFT -> stringResource(R.string.terminal_key_left)
+        defaultSpecial == ToolbarSpecialKey.RIGHT -> stringResource(R.string.terminal_key_right)
         else -> contentDescription ?: label
     }
     val suffix = when {

@@ -77,6 +77,8 @@
     <string name="terminal_key_interrupt">إيقاف، Control+C</string>
     <string name="terminal_key_eof">نهاية الإدخال، Control+D</string>
     <string name="terminal_key_clear">مسح الشاشة، Control+L</string>
+    <string name="terminal_key_escape">إسكايب</string>
+    <string name="terminal_key_tab">جدولة</string>
     <string name="terminal_key_up">سهم لأعلى</string>
     <string name="terminal_key_down">سهم لأسفل</string>
     <string name="terminal_key_left">سهم لليسار</string>

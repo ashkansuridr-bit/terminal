@@ -79,6 +79,8 @@
     <string name="terminal_key_interrupt">Interrupt, Control+C</string>
     <string name="terminal_key_eof">End of input, Control+D</string>
     <string name="terminal_key_clear">Clear screen, Control+L</string>
+    <string name="terminal_key_escape">Escape</string>
+    <string name="terminal_key_tab">Tab</string>
     <string name="terminal_key_up">Up arrow</string>
     <string name="terminal_key_down">Down arrow</string>
     <string name="terminal_key_left">Left arrow</string>

@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-13T10:39:19+00:00",
+  "capturedAt": "2026-10-13T10:44:38+00:00",
   "branch": "feature/terminal-control-studio-pro",
   "baselineCommit": "67021c1",
   "lastVerifiedCommit": "2976238",
@@ -164,14 +164,16 @@
     {
       "id": "TCS-07",
       "title": "دسترسی‌پذیری و زبان‌ها",
-      "phase": "IMPLEMENT",
+      "phase": "VERIFY",
       "changedFiles": [
         "StudioToolbar.kt",
+        "TerminalKeyboardTest.kt",
+        "strings.xml (fa/ar/en/es/fr/ru)",
         "values-en/strings.xml",
-        "values/strings.xml",
         "values-es/strings.xml",
         "values-fr/strings.xml",
-        "values-ru/strings.xml"
+        "values-ru/strings.xml",
+        "values/strings.xml"
       ],
       "dependencies": [],
       "status": "IMPLEMENTED_NOT_TESTED",
@@ -179,15 +181,17 @@
         "TalkBack/locale UI"
       ],
       "executedTests": [
-        "Resource parity check PASS in values, ar, en, es, fr, ru"
+        "Resource parity check PASS in values, ar, en, es, fr, ru",
+        "All six default special-key accessibility descriptions present in fa/ar/en/es/fr/ru resources; XML parity check PASS",
+        "MarketDebug app compile PASS; AndroidTest Kotlin compile PASS; JVM 1,014/1,014 PASS; lint PASS (0 errors, 104 warnings, 2 hints)"
       ],
-      "lastResult": "No execution evidence yet",
+      "lastResult": "Built-in Escape/Tab/arrows now expose locale-aware spoken names only when no user description overrides them; test asserts all six active-locale names.",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": "f2e7524",
-      "lastReviewedAt": "2026-10-12T15:42:38+00:00",
+      "commitSha": "pending",
+      "lastReviewedAt": "2026-10-13T10:44:38+00:00",
       "remainingIssues": [
-        "Locale/TalkBack runtime checks pending; some built-in key and editor descriptions remain literal English."
+        "API26/36/37 instrumentation is pending; other built-in descriptions (Alt/Shift and app actions) remain English literals."
       ]
     },
     {
@@ -292,13 +296,13 @@
         "Window snapshot lifecycle review: AccessibilityWindowInfo recycled in finally for terminal navigation, IME polling, and host-form IME detection",
         "MarketDebug AndroidTest Kotlin compilation PASS after window recycling; git diff --check PASS"
       ],
-      "lastResult": "Run 38384380095 for 2fe360f was superseded and cancelled when 086a5e4 was pushed; verify had passed and six device jobs were still in progress.",
+      "lastResult": "Run 38385300900 for c1e174c: verify in progress; localized special-key change is local and compiled, awaiting latest-source CI.",
       "lastFailure": "Run 38320080882: API26/36 UI instrumentation failures, including terminal tab lookup, host/settings scrolling/semantics and host form/snippet assertions; API37 emulator boot timed out with adb offline. API36 Debug had 8 failures; Preview 7; API26 Debug 14.",
       "fixAttempts": 2,
       "commitSha": "086a5e4",
-      "lastReviewedAt": "2026-10-13T10:39:19+00:00",
+      "lastReviewedAt": "2026-10-13T10:44:38+00:00",
       "remainingIssues": [
-        "Await current-source CI run 38385275105, including API26/36/37 Debug and Preview instrumentation.",
+        "Push localized key-name and instrumentation assertions, then use latest-source PR CI for API26/36/37 verification.",
         "No local adb/emulator; production signing remains unverified."
       ]
     },
@@ -346,7 +350,7 @@
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS (latest custom macro UI source)",
+    "marketDebugCompile": "PASS (latest localized special-key accessibility source)",
     "marketDebugUnitTests": {
       "passed": 1014,
       "failed": 0,
@@ -357,17 +361,17 @@
     },
     "marketDebugAssemble": "PASS",
     "diffCheck": "PASS (e2bd89c)",
-    "instrumentation": "PR run 38385275105 queued for 086a5e4; prior run 38384380095 was cancelled while six API26/36/37 device jobs were running. Its verify gate passed.",
+    "instrumentation": "Run 38385300900 for c1e174c verify in progress; current localized special-key changes are locally compiled but not yet pushed.",
     "apiDeviceMatrix": "BLOCKED: no emulator/device; disk capacity insufficient to install system image",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS (latest source)",
+    "marketDebugAndroidTestCompile": "PASS (latest TerminalKeyboardTest localized-name assertions)",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
-      "warnings": 108,
+      "warnings": 104,
       "hints": 2,
-      "evidence": "current worktree :app:lintMarketDebug; loop2_gate.py and market_release_gate.py PASS"
+      "evidence": "current worktree :app:lintMarketDebug"
     },
     "gplayDebugAssemble": "PASS",
     "marketPreviewAssemble": "INCOMPLETE on latest source: APK output exists and apksigner verifies it, but Gradle assemble stopped before task completion when disk space reached zero",
@@ -389,7 +393,7 @@
     "No emulator/device is currently attached (adb devices is empty); current UI/instrumentation changes have compile evidence only until fresh PR CI runs.",
     "Macro secret detection catches common credential-shaped forms but cannot detect arbitrary secret values; the editor warns users not to store secrets."
   ],
-  "nextStep": "Inspect run 38385275105; diagnose API26/36/37 runtime failures from reports; then fix remaining editor and accessibility gaps.",
+  "nextStep": "Commit/push TCS-07 localized built-in special-key names and runtime assertions; inspect the latest-source CI matrix and fix any confirmed failures.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/feature/terminal-control-studio-pro",
   "pullRequest": "https://github.com/ashkansuridr-bit/terminal/pull/4"
 }

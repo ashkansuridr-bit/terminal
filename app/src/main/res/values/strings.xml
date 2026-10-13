@@ -79,6 +79,8 @@
     <string name="terminal_key_interrupt">وقفه، Control+C</string>
     <string name="terminal_key_eof">پایان ورودی، Control+D</string>
     <string name="terminal_key_clear">پاک‌کردن صفحه، Control+L</string>
+    <string name="terminal_key_escape">فرار</string>
+    <string name="terminal_key_tab">جدولة</string>
     <string name="terminal_key_up">پیکان بالا</string>
     <string name="terminal_key_down">پیکان پایین</string>
     <string name="terminal_key_left">پیکان چپ</string>

@@ -708,6 +708,14 @@ class TerminalKeyboardTest {
         val terminalTab = instrumentation.targetContext.getString(R.string.tab_terminal)
         val interrupt = instrumentation.targetContext.getString(R.string.terminal_key_interrupt)
         val endOfInput = instrumentation.targetContext.getString(R.string.terminal_key_eof)
+        val localizedSpecials = listOf(
+            R.string.terminal_key_escape,
+            R.string.terminal_key_tab,
+            R.string.terminal_key_up,
+            R.string.terminal_key_down,
+            R.string.terminal_key_left,
+            R.string.terminal_key_right,
+        ).map { instrumentation.targetContext.getString(it) }
 
         // Narrow, single-row phone layout: the toolbar must expose scroll semantics as
         // the layout's only vertically-small scrollable. Open the terminal first, then
@@ -725,6 +733,12 @@ class TerminalKeyboardTest {
                     "End-of-input key must have a readable action name in the toolbar semantics tree",
                     findAppNode { it.contentDescription == endOfInput } != null,
                 )
+                localizedSpecials.forEach { name ->
+                    assertTrue(
+                        "Default special key must expose its localized name '$name'",
+                        findAppNode { it.contentDescription == name } != null,
+                    )
+                }
             }
 
             // The symbolic keys must be discoverable in the a11y tree carrying their
@@ -735,7 +749,8 @@ class TerminalKeyboardTest {
             // screenSize change in place, so re-fit the same window wide where the
             // toolbar's two-row layout composes every key, verify, then restore.
             if (findAppNode { it.contentDescription == interrupt } == null ||
-                findAppNode { it.contentDescription == endOfInput } == null
+                findAppNode { it.contentDescription == endOfInput } == null ||
+                localizedSpecials.any { name -> findAppNode { it.contentDescription == name } == null }
             ) {
                 refitWideForKeyboardLayout { assertReadableSymbolicNames() }
             } else {

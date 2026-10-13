@@ -103,3 +103,11 @@
 - PR run `38384380095` for `2fe360f`: verify PASS; API 26/36/37 Debug and Preview jobs in progress. The macro UI source has not yet been pushed, so it still needs a new CI run.
 - Audit also found end-user import/export UI and gesture editing are not wired; TCS-04/05/06 remain `IMPLEMENTED_NOT_TESTED`, and TCS-07 descriptions are only partly localized. No device/emulator is attached locally; production signing remains unverified.
 - Next exact step: run `git diff --check`, commit/push this macro feature and checkpoint, then inspect the new CI matrix and fix confirmed regressions. Keep PR #4 open and unmerged.
+
+## Localized built-in special-key semantics (2026-10-13)
+
+- TCS-07 follow-up maps only default `SpecialKeyAction` keys without a custom description: Escape, Tab, and four arrows now use localized accessibility resources. User-authored descriptions remain untouched.
+- `TerminalKeyboardTest.symbolicToolbarKeysHaveReadableActionNames` now asserts all six names from the active app locale; resource XML check found the six descriptions in fa/ar/en/es/fr/ru.
+- Local evidence: MarketDebug app compile PASS; MarketDebug AndroidTest Kotlin compile PASS; JVM 1,014 passed / 0 failed / 0 errors / 0 skipped across 118 suites; lint PASS (0 errors, 104 warnings, 2 hints); `git diff --check` PASS.
+- PR run `38385300900` for `c1e174c` is still in verify. The localization assertions are not in that run until the current change is pushed.
+- Next exact step: commit/push this TCS-07 follow-up and checkpoint, then inspect the latest-source API26/36/37 CI matrix. Other built-in descriptions (Alt/Shift and app actions) are still English and remain documented as incomplete.
