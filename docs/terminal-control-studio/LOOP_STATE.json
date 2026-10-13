@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T17:10:07+00:00",
+  "capturedAt": "2026-10-13T17:45:00+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "757ec5862eed4f1dd265417e43619706122c6e85",
+  "lastVerifiedCommit": "5048075b99f16ea6117a2a2c6205de8dd1c96dc2",
   "features": [
     {
       "id": "TCS-01",
@@ -207,16 +207,17 @@
         "Latest GitHub run 38401934345 source gates PASS; Verify unit/lint/build and API26/36/37 instrumentation remain in progress.",
         "CI run 38428298877, HEAD 1ef74e3: API26/36 Debug+Preview UI assertions failed; API37 emulator boot failed before test execution",
         "Owner-reported physical Android phone test PASS; no independent device log attached",
-        "Fresh triage: 38433137725 results recorded; current MarketDebug AndroidTest Kotlin harness compile PASS, runtime not run"
+        "Fresh triage: 38433137725 results recorded; current MarketDebug AndroidTest Kotlin harness compile PASS, runtime not run",
+        "CI run 38439434500 on 5048075: Verify PASS; API26 Debug 6/114 failed, API26 Preview 5/114 failed, API36 Debug 6/114 failed, API36 Preview 7/114 failed (24 failed executions); API37 Debug+Preview emulator boot timed out before tests"
       ],
-      "lastResult": "Current latest CI still has API26/36 UI assertion failures; API37 is blocked by emulator boot failure. Do not count runtime acceptance as verified.",
-      "lastFailure": "CI 38433137725: API26/36 Debug+Preview UI tests failed. Current local instrumentation fixes compile, but no runtime evidence yet; API37 jobs failed before tests because emulator boot timed out.",
-      "fixAttempts": 1,
+      "lastResult": "Current harness correction commit 5048075 passed Verify/build/unit/lint gates; runtime UI assertions still fail on API26/36. New focused follow-up is locally compiled but awaits a fresh CI run.",
+      "lastFailure": "Run 38439434500: 24 API26/36 UI test failures across four suites; API37 emulators timed out before test execution.",
+      "fixAttempts": 2,
       "commitSha": "93135b0",
-      "lastReviewedAt": "2026-10-13T17:10:07+00:00",
+      "lastReviewedAt": "2026-10-13T17:45:00+00:00",
       "remainingIssues": [
-        "Run fresh API26/36 Debug+Preview instrumentation after the current harness corrections",
-        "API37 runtime instrumentation (prior two emulator boot timeouts)",
+        "Run fresh API26/36 Debug+Preview instrumentation after the current uncommitted harness corrections",
+        "API37 runtime instrumentation; both 5048075 emulator jobs timed out before tests",
         "TalkBack/device accessibility verification"
       ]
     },
@@ -326,16 +327,17 @@
         "MarketDebug and MarketDebug AndroidTest APK assembly PASS",
         "apksigner verify PASS (Android Debug certificate only)",
         "loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS",
-        "Fresh triage: 38433137725 results recorded; current MarketDebug AndroidTest Kotlin harness compile PASS, runtime not run"
+        "Fresh triage: 38433137725 results recorded; current MarketDebug AndroidTest Kotlin harness compile PASS, runtime not run",
+        "CI run 38439434500 on 5048075: Verify PASS; API26 Debug 6/114 failed, API26 Preview 5/114 failed, API36 Debug 6/114 failed, API36 Preview 7/114 failed (24 failed executions); API37 Debug+Preview emulator boot timed out before tests"
       ],
-      "lastResult": "The switch accessibility defect observed in CI has an explicit click/state/reset semantics fix. Local compilation, full JVM rerun, lint, Preview R8 build, Debug and instrumentation APK builds, artifact signature verification, and source gates pass; current-source device matrix remains pending.",
-      "lastFailure": "CI 38433137725: API26/36 Debug+Preview UI tests failed. Current local instrumentation fixes compile, but no runtime evidence yet; API37 jobs failed before tests because emulator boot timed out.",
-      "fixAttempts": 3,
+      "lastResult": "Current harness correction commit 5048075 passed Verify/build/unit/lint gates; runtime UI assertions still fail on API26/36. New focused follow-up is locally compiled but awaits a fresh CI run.",
+      "lastFailure": "Run 38439434500: 24 API26/36 UI test failures across four suites; API37 emulators timed out before test execution.",
+      "fixAttempts": 4,
       "commitSha": "cf0ac9d",
-      "lastReviewedAt": "2026-10-13T17:10:07+00:00",
+      "lastReviewedAt": "2026-10-13T17:45:00+00:00",
       "remainingIssues": [
-        "Run fresh API26/36 Debug+Preview instrumentation after the current harness corrections",
-        "API37 runtime instrumentation (prior two emulator boot timeouts)",
+        "Run fresh API26/36 Debug+Preview instrumentation after the current uncommitted harness corrections",
+        "API37 runtime instrumentation; both 5048075 emulator jobs timed out before tests",
         "TalkBack/device accessibility verification"
       ]
     },
@@ -395,11 +397,11 @@
     },
     "marketDebugAssemble": "PASS on cf0ac9d: :app:assembleMarketDebug",
     "diffCheck": "PASS before cf0ac9d commit and APK metadata refresh",
-    "instrumentation": "CI run 38433137725 for 757ec5862eed4f1dd265417e43619706122c6e85 completed: Verify passed; API26 Debug 8/114 failed, API36 Debug 8/114 failed, API26 Preview 7/114 failed, API36 Preview 8/114 failed (31 failed executions total); API37 Debug+Preview timed out before emulator boot. Current instrumentation harness edits compile locally but have not run on an emulator.",
-    "apiDeviceMatrix": "Run 38433137725 executed API26/36 Debug+Preview, each 114 tests with 7–8 failures; API37 Debug+Preview did not boot. Local test36 AVD is blocked because the Android 36 system image lacks kernel-ranchu; no physical target attached. Owner reports a successful phone test, not independently captured here.",
+    "instrumentation": "CI run 38439434500 for 5048075b99f16ea6117a2a2c6205de8dd1c96dc2 completed: Verify PASS; API26 Debug 6/114 failed, API26 Preview 5/114 failed, API36 Debug 6/114 failed, API36 Preview 7/114 failed (24 failed executions); API37 Debug+Preview timed out before emulator boot; release candidates skipped. A further harness-only follow-up compiles locally and has not run on device.",
+    "apiDeviceMatrix": "Run 38439434500 executed API26/36 Debug+Preview, 114 tests in each suite; 24 test executions failed. API37 Debug+Preview did not boot. Local ADB is unavailable; local test36 AVD lacks kernel-ranchu. Owner reports a successful phone test, not independently captured here.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS on current uncommitted instrumentation harness edits (Gradle compileMarketDebugAndroidTestKotlin, no configuration cache)",
+    "marketDebugAndroidTestCompile": "PASS on current uncommitted instrumentation follow-up: :app:compileMarketDebugAndroidTestKotlin; runtime not locally available",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
@@ -411,7 +413,7 @@
     "marketPreviewAssemble": "PASS on cf0ac9d: :app:assembleMarketPreview (R8/minified; debug certificate)",
     "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
     "apkSignature": "Current MarketDebug APK verified with Android Debug certificate; production signing not verified",
-    "sourceGates": "PASS on cf0ac9d: loop2_gate.py, market_release_gate.py, git diff --check",
+    "sourceGates": "PASS locally after current instrumentation follow-up: loop2_gate.py, market_release_gate.py, git diff --check",
     "marketPreviewApk": {
       "path": "app/build/outputs/apk/market/preview/app-market-preview.apk",
       "sha256": "ef40d93344bb653e5b9472e706c5a1f06d63ef5b574cb0904c27da22b11379c4",
@@ -441,30 +443,31 @@
     "Run 38428298877 on 1ef74e3 completed with API26/36 UI assertion failures and API37 emulator boot failure; local correction batch remains uncommitted pending lint/Preview build and fresh CI.",
     "Fresh CI run for cf0ac9d is pending; preceding run 38428298877 had API26/36 UI failures and API37 emulator boot failure.",
     "Run 38433137725: Verify passed; API26/36 Debug+Preview instrumentation failed 31 test executions total; API37 Debug+Preview timed out before emulator boot; release-candidates skipped.",
-    "Local emulator test36 is configured but not runnable: /root/android-sdk/system-images/android-36/google_apis/x86_64 lacks kernel-ranchu; no physical device is attached to this workspace."
+    "Local emulator test36 is configured but not runnable: /root/android-sdk/system-images/android-36/google_apis/x86_64 lacks kernel-ranchu; no physical device is attached to this workspace.",
+    "Run 38439434500 on 5048075: Verify passed; API26/36 instrumentation still had 24 failures; API37 Debug+Preview timed out before tests; release-candidates skipped."
   ],
-  "nextStep": "Finish adversarial review, commit the instrumentation and report corrections directly on main as previously authorized, push, then inspect the fresh API26/36/37 workflow results. Keep TCS-07/TCS-10 open until runtime UI assertions pass; API37 remains blocked if emulator boot fails.",
+  "nextStep": "Finish review and compile of current uncommitted instrumentation follow-up, commit and push directly to main, then inspect the new API26/36/37 matrix. Keep TCS-07/TCS-10 open until required runtime UI assertions pass.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
-    "command": "./gradlew :app:compileMarketDebugAndroidTestKotlin --no-daemon --no-configuration-cache --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m",
-    "result": "PASS after current test-harness changes; git diff --check, loop2_gate.py and market_release_gate.py PASS",
-    "androidTest": "Kotlin compilation passed; no local runtime target. Attempted test36 AVD but Android 36 image has no kernel-ranchu.",
-    "applicationSource": "No application code changed in this uncommitted batch; prior cf0ac9d APK remains built from the same application source."
+    "command": "./gradlew :app:compileMarketDebugAndroidTestKotlin --no-daemon --no-configuration-cache --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m; python3 scripts/loop2_gate.py; python3 scripts/market_release_gate.py; git diff --check",
+    "result": "PASS after current local test-harness follow-up; compile, source gates, and diff check passed.",
+    "androidTest": "Kotlin compilation passed; runtime unavailable locally because adb/device is absent and configured API36 image lacks kernel-ranchu.",
+    "applicationSource": "No application product source changed in this follow-up; root test APK remains built from cf0ac9d."
   },
   "latestCi": {
-    "runId": "38433137725",
-    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38433137725",
-    "headSha": "757ec5862eed4f1dd265417e43619706122c6e85",
-    "verify": "PASS: source/artifact gates, unit tests, lint and Debug builds",
+    "runId": "38439434500",
+    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38439434500",
+    "headSha": "5048075b99f16ea6117a2a2c6205de8dd1c96dc2",
+    "verify": "PASS: source/artifact gates, JVM tests, lint and Debug builds",
     "instrumentation": {
-      "api26Debug": "FAIL: 8 failed of 114",
-      "api36Debug": "FAIL: 8 failed of 114",
-      "api26Preview": "FAIL: 7 failed of 114",
-      "api36Preview": "FAIL: 8 failed of 114",
+      "api26Debug": "FAIL: 6 failed of 114",
+      "api26Preview": "FAIL: 5 failed of 114",
+      "api36Debug": "FAIL: 6 failed of 114",
+      "api36Preview": "FAIL: 7 failed of 114",
       "api37Debug": "BLOCKED: emulator boot timeout before test execution",
       "api37Preview": "BLOCKED: emulator boot timeout before test execution",
-      "totalFailedExecutions": 31
+      "totalFailedExecutions": 24
     },
     "releaseCandidates": "SKIPPED because instrumentation matrix did not pass"
   },
@@ -528,5 +531,5 @@
       "status": "UNIT_VERIFIED"
     }
   ],
-  "deliveryCommit": "7a76793765c0c4ca2d318e8e23a7e7892c5a4117"
+  "deliveryCommit": "5048075b99f16ea6117a2a2c6205de8dd1c96dc2"
 }

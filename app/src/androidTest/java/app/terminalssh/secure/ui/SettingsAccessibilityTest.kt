@@ -41,6 +41,10 @@ class SettingsAccessibilityTest {
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
                 device.findObject(By.text(settingsTab)).click()
+                assertTrue(
+                    "Settings tab was tapped but its searchable settings screen did not appear",
+                    device.wait(Until.hasObject(By.desc(instrumentation.targetContext.getString(R.string.settings_search))), TIMEOUT_MS),
+                )
                 // The palettes row can sit below the fold on small emulator screens, and a
                 // row scrolled only just into view is clipped — which would make the size
                 // assertion below measure the screen edge instead of the row.
@@ -91,6 +95,10 @@ class SettingsAccessibilityTest {
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
                 device.findObject(By.text(settingsTab)).click()
+                assertTrue(
+                    "Settings tab was tapped but its searchable settings screen did not appear",
+                    device.wait(Until.hasObject(By.desc(instrumentation.targetContext.getString(R.string.settings_search))), TIMEOUT_MS),
+                )
                 assertTrue(
                     "Font-size slider was not fully visible after scrolling: ${visibilityDiagnostics(fontSizeLabel)}",
                     scrollSettingsTo(fontSizeLabel),

@@ -37,6 +37,10 @@ class SettingsToggleAccessibilityTest {
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
                 device.findObject(By.text(settingsTab)).click()
                 assertTrue(
+                    "Settings tab was tapped but its searchable settings screen did not appear",
+                    device.wait(Until.hasObject(By.desc(context.getString(R.string.settings_search))), TIMEOUT_MS),
+                )
+                assertTrue(
                     "Toggle row was not fully reachable by vertical scrolling",
                     device.scrollUntilFullyVisible(
                         By.desc(label),
@@ -86,20 +90,31 @@ class SettingsToggleAccessibilityTest {
                     "The switch row became clipped after the accessibility action",
                     device.scrollUntilFullyVisible(By.desc(label), maxAttempts = 20, appPackage = context.packageName),
                 )
-                val falseBounds = stableSnapshot(label).bounds
+                val falseSnapshot = stableSnapshot(label)
                 assertTrue(
-                    "The touch target must remain fully visible after re-scrolling; bounds=$falseBounds, " +
+                    "The touch target must remain fully visible after re-scrolling; " +
+                        "screenBounds=${falseSnapshot.bounds}, visibleBounds=${falseSnapshot.visibleBounds}, " +
                         "display=${device.displayWidth}x${device.displayHeight}, scrollables=${device.findObjects(By.scrollable(true)).map { it.visibleBounds }}",
-                    falseBounds.height() >= 48 * density,
+                    falseSnapshot.bounds.height() >= 48 * density && falseSnapshot.visibleBounds.contains(falseSnapshot.bounds),
                 )
-                assertTrue("Physical tap on the switch row was rejected", device.click(falseBounds.centerX(), falseBounds.centerY()))
+                assertTrue(
+                    "Physical tap on the switch row was rejected",
+                    device.click(falseSnapshot.bounds.centerX(), falseSnapshot.bounds.centerY()),
+                )
                 assertTrue("Physical tap did not persist true", awaitUiState(TIMEOUT_MS) {
                     app.settings.confirmMultilinePaste && stableSnapshotOrNull(label)?.checked == true
                 })
 
-                val trueBounds = stableSnapshot(label).bounds
-                assertTrue("Second physical tap target must remain fully visible", trueBounds.height() >= 48 * density)
-                assertTrue("Second physical tap on the switch row was rejected", device.click(trueBounds.centerX(), trueBounds.centerY()))
+                val trueSnapshot = stableSnapshot(label)
+                assertTrue(
+                    "Second physical tap target must remain fully visible; " +
+                        "screenBounds=${trueSnapshot.bounds}, visibleBounds=${trueSnapshot.visibleBounds}",
+                    trueSnapshot.bounds.height() >= 48 * density && trueSnapshot.visibleBounds.contains(trueSnapshot.bounds),
+                )
+                assertTrue(
+                    "Second physical tap on the switch row was rejected",
+                    device.click(trueSnapshot.bounds.centerX(), trueSnapshot.bounds.centerY()),
+                )
                 assertTrue("Second physical tap did not persist false", awaitUiState(TIMEOUT_MS) {
                     !app.settings.confirmMultilinePaste && stableSnapshotOrNull(label)?.checked == false
                 })
@@ -131,6 +146,7 @@ class SettingsToggleAccessibilityTest {
 
     private data class SwitchSnapshot(
         val bounds: Rect,
+        val visibleBounds: Rect,
         val checked: Boolean,
         val clickable: Boolean,
         val longClickable: Boolean,
@@ -146,7 +162,22 @@ class SettingsToggleAccessibilityTest {
             val node = runCatching { device.wait(Until.findObject(By.desc(label)), 1_000) }.getOrNull()
             if (node != null) {
                 try {
-                    return SwitchSnapshot(node.visibleBounds, node.isChecked, node.isClickable, node.isLongClickable)
+                    val appNode = AppWindowAccessibility.find {
+                        it.contentDescription?.toString() == label && it.isCheckable
+                    }
+                    if (appNode != null) {
+                        try {
+                            return SwitchSnapshot(
+                                AppWindowAccessibility.bounds(appNode),
+                                node.visibleBounds,
+                                node.isChecked,
+                                node.isClickable,
+                                node.isLongClickable,
+                            )
+                        } finally {
+                            appNode.recycle()
+                        }
+                    }
                 } catch (_: StaleObjectException) {
                     // Reacquire the node after Compose replaces the semantics tree.
                 }

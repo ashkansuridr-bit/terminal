@@ -1,8 +1,8 @@
 # گزارش پیاده‌سازی Terminal Control Studio Pro
 
-## وضعیت فعلی
+## وضعیت فعلی — آخرین به‌روزرسانی 2026-10-13
 
-پیاده‌سازی Terminal Control Studio و اصلاحات پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit پوش‌شده روی `main`، `baa4596` است. NEW-005 مسیر تنظیم پروفایل میزبان، NEW-006 نام‌های دسترس‌پذیری محلی و semantics یکپارچهٔ Modifier، و NEW-007 لغو امن ماکرو هنگام عوض‌شدن کانال SSH را اضافه می‌کنند. Verify محلی موفق است؛ آزمون دستگاه هنوز تأیید نشده است. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون Gateهای UI/دستگاه هنوز برای هیچ Feature کامل نشده‌اند.
+تغییرات Terminal Control Studio مستقیماً روی `main` ثبت می‌شوند، مطابق دستور صریح مالک مخزن. آخرین commit پوش‌شده و آزمایش‌شده با CI برابر `5048075` است؛ Verify، unit tests، lint و Debug builds موفق‌اند، اما اجرای Instrumentation شمارهٔ [38439434500](https://github.com/ashkansuridr-bit/terminal/actions/runs/38439434500) چهار ماتریس API26/36 را با ۲۴ اجرای ناموفق تمام کرد. دو ماتریس API37 پیش از شروع تست به علت timeout بوت Emulator متوقف شدند. یک اصلاح بعدی فقط در test harness روی workspace کامپایل شده و هنوز commit/CI نشده است. شمار Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است؛ وضعیت انتشار همچنان NOT VERIFIED.
 
 ## تغییرات و علت‌ها
 
@@ -18,7 +18,11 @@
 
 ## راستی‌آزمایی
 
-روی Commit `baa4596`، `:app:testMarketDebugUnitTest`، app/AndroidTest compile، lint، و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۲۲ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند؛ lint صفر خطا، ۱۰۵ هشدار و ۲ hint داشت. APK فعلی MarketDebug است، SHA-256 آن `841b97d655f303d6f8319f3b3f2795966a57e99967c70e87f871808540500a5c` است و `apksigner` گواهی Android Debug را تأیید کرد؛ امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه محلی اجرا نشده است. بررسی semantics دسترس‌پذیری مشخص کرد نام/وضعیت/اکشن کلیک باید روی همان گره قابل‌کلیک باشد؛ تست اکنون همین شرط را می‌سنجد اما نتیجه runtime وابسته به اجرای CI جدید است. CI run `38403567011` برای Commit `baa4596` در صف است. اجرای `38401934345` برای `93135b0` نیز به‌علت صف Workflow هنوز منتظر شروع است؛ در نتیجه تست instrumentation این دو تغییر هنوز اجرا نشده. در runهای قبلی Verify موفق شد؛ بعضی instrumentationها پیش از آن با شکست assertion UI یا timeout بوت API37 تمام شدند و بعضی runهای جدیدتر در صف مانده‌اند. اجرای قبلی `38396679291` در API26/36 assertionهای UI داشت و API37 پیش از شروع تست Timeout بوت Emulator داد. NEW-005، NEW-006 و NEW-007 هنوز روی Emulator نتیجهٔ نهایی ندارند؛ نتیجهٔ اجراهای تازه باید از runهای `38401934345` و `38403567011` خوانده شود.
+روی کد برنامهٔ `cf0ac9d`، JVM tests برابر ۱٬۰۲۲/۱٬۰۲۲ در ۱۱۸ suite، lint با صفر خطا (۱۰۶ هشدار، ۲ hint)، MarketDebug/Preview build، AndroidTest compile و `apksigner verify` برای APK Debug موفق شدند. فایل APK ریشه از کد برنامهٔ `cf0ac9d` ساخته شده و با گواهی Android Debug امضا شده؛ SHA-256: `36a954e19c2a9ae5831e2dd22c1ea196a0d72483cff9e0e6fd447fae924e98ae`. امضای Production تأیید نشده است.
+
+Run `38439434500` روی commit تستی `5048075`، Verify را با موفقیت گذراند. ماتریس‌ها: API26 Debug 6/114 شکست، API26 Preview 5/114، API36 Debug 6/114، API36 Preview 7/114؛ جمعاً ۲۴ تست ناموفق. API37 Debug/Preview به timeout بوت Emulator رسیدند و تستی اجرا نکردند. نتیجهٔ کامل و Root Causeهای قابل اثبات در `LOOP_CHECKPOINT.md` ثبت شده‌اند. اصلاح harness پس از این اجرا محلی کامپایل شده اما هنوز runtime validation ندارد. هیچ Crash واقعی در این دور بازتولید نشده است؛ نبود Crash تأیید نشده.
+
+`loop2_gate.py`, `market_release_gate.py` و `git diff --check` در نسخهٔ محلی فعلی موفق‌اند. محیط محلی `adb` ندارد و AVD API36 به علت نبود `kernel-ranchu` اجرا نمی‌شود؛ در نتیجه UI، TalkBack و device matrix را نمی‌توان محلی تأیید کرد.
 
 ## علت‌های تأییدشده و موارد نامشخص
 
@@ -38,10 +42,9 @@
 
 ## خروجی‌ها و وضعیت انتشار
 
-- شاخهٔ کاری فعلی `main` است؛ آخرین Commit کد `28b679d` مستقیم پوش شده است و مستندات checkpoint فعلی آمادهٔ Commit هستند.
-- آخرین Commit کد پوش‌شده: `baa4596` (`fix: stop macros when the shell channel dies`).
+- شاخهٔ فعلی `main` است؛ آخرین commit پوش‌شده در زمان این checkpoint `5048075` است. Harness و به‌روزرسانی مستندات فعلی هنوز محلی‌اند و پس از بازبینی push می‌شوند.
 - تغییرات مطابق درخواست کاربر مستقیماً به `main` پوش شده‌اند؛ لینک شاخه: https://github.com/ashkansuridr-bit/terminal/tree/main . PR جدیدی ایجاد نشده است.
-- اجرای CI قدیمی‌تر با شکست instrumentation: https://github.com/ashkansuridr-bit/terminal/actions/runs/38393877043
+- آخرین CI کامل: https://github.com/ashkansuridr-bit/terminal/actions/runs/38439434500 (Verify موفق، ۲۴ شکست UI در API26/36، API37 boot timeout).
 - اجرای CI برای `82b2861` (نتیجه باید دوباره بررسی شود): https://github.com/ashkansuridr-bit/terminal/actions/runs/38395092348
 - APK تولیدی/امضاشده: تأیید نشده؛ خروجی Debug با گواهی Debug، نسخهٔ Production محسوب نمی‌شود.
 - کلیپ معرفی فارسی: `TerminalSSH-Promo-fa.mp4` و `TerminalSSH-Promo-fa-no-bgm.mp4` در ریشه؛ جزئیات hash و محدودیت شناسایی موسیقی در `docs/terminal-control-studio/VIDEO_DELIVERY.md` و بازبینی مستقل در `VIDEO_REVIEW.md`.
@@ -51,4 +54,4 @@
 
 README ریشه با حذف ادعاهای تأییدنشده و درج وضعیت واقعی ساخت، تست، محدودیت‌های ابزارگذاری، روش ساخت و مجوزهای متن‌باز بازنویسی شد. APK نسخهٔ `0.7.2 MarketDebug` با نام `TerminalSSH-0.7.2-MarketDebug-TEST.apk` در ریشه قرار گرفت؛ فایل با کلید Debug امضا شده و فقط برای آزمایش است. SHA-256: `841b97d655f303d6f8319f3b3f2795966a57e99967c70e87f871808540500a5c`؛ جزئیات در `ANDROID_TEST_BUILD.md` و `APK_VERIFICATION.md` است.
 
-CI تازهٔ مربوط به سورس APK، run `38403567011`، گیت Verify را گذراند ولی هر شش job ابزارگذاری API26/36/37 در دو حالت Debug و Preview شکست خوردند. پس رفتار UI و آماده‌بودن انتشار تأیید نشده‌اند. وضعیت TCS همچنان صفر Feature کامل‌شده از ۱۱ است.
+اجرای CI مربوط به سورس APK در run `38403567011` اکنون قدیمی است و با آخرین نتیجهٔ کامل run `38439434500` جایگزین شده: Verify موفق، ۲۴ شکست Instrumentation در API26/36، و timeout بوت Emulator برای هر دو job API37. پس رفتار UI و آماده‌بودن انتشار تأیید نشده‌اند. وضعیت TCS همچنان صفر Feature کامل‌شده از ۱۱ است.

@@ -684,7 +684,6 @@ class TerminalKeyboardTest {
     @Test
     fun carriageReturnMultilinePasteRequiresConfirmation() {
         app.sessions.add(idleSession(id = "cr-paste-confirmation", title = "CR paste test"))
-        setClipboardWithoutNearbyShareOverlay("test", "first\rsecond")
 
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             val terminalTab = instrumentation.targetContext.getString(R.string.tab_terminal)
@@ -695,6 +694,13 @@ class TerminalKeyboardTest {
             // actually showing its toolbar.
             val showKeyboard = instrumentation.targetContext.getString(R.string.show_keyboard)
             openTerminalTab(terminalTab, showKeyboard)
+            // Populate the clipboard only after navigation has settled. On API 36 the
+            // pre-launch clipboard notification can replace the app's accessibility
+            // window before the tab tap; this keeps that system UI out of navigation.
+            setClipboardWithoutNearbyShareOverlay("test", "first\rsecond")
+            val terminalAfterClipboard = waitForAppDesc(showKeyboard)
+            assertTrue("Terminal accessibility tree did not return after clipboard setup", terminalAfterClipboard != null)
+            terminalAfterClipboard?.recycle()
             scenario.onActivity { activity ->
                 ViewModelProvider(activity)[AppViewModel::class.java]
                     .pasteRequested.value = true
@@ -743,16 +749,20 @@ class TerminalKeyboardTest {
             assertFalse(shift.isChecked)
 
             ctrl.click()
-            assertTrue(modifierControl(controlName).isChecked)
+            assertTrue("Ctrl state was not published after its accessibility click", awaitUiState(UI_TIMEOUT_MS) {
+                modifierControl(controlName).isChecked
+            })
 
             alt.click()
-            assertTrue(modifierControl(controlName).isChecked)
-            assertTrue(modifierControl(altName).isChecked)
+            assertTrue("Ctrl state changed while activating Alt", awaitUiState(UI_TIMEOUT_MS) {
+                modifierControl(controlName).isChecked && modifierControl(altName).isChecked
+            })
 
             shift.click()
-            assertTrue(modifierControl(controlName).isChecked)
-            assertTrue(modifierControl(altName).isChecked)
-            assertTrue(modifierControl(shiftName).isChecked)
+            assertTrue("Modifier states were not all published after activating Shift", awaitUiState(UI_TIMEOUT_MS) {
+                modifierControl(controlName).isChecked && modifierControl(altName).isChecked &&
+                    modifierControl(shiftName).isChecked
+            })
 
             val tabKey = waitForAppDesc(tabName)
             assertTrue("Tab key must expose an accessibility click action", tabKey?.isClickable == true)

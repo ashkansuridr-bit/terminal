@@ -1,6 +1,6 @@
 # Test matrix
 
-Evidence captured for this worktree on 2026-10-13; latest local checks ran on commits `e2bd89c` / `02ef848`.
+Evidence captured for this worktree on 2026-10-13; latest app-source checks are from `cf0ac9d`, instrumentation compile from local follow-up after `5048075`.
 
 | Gate | Result | Evidence / limitation |
 |---|---|---|
@@ -12,7 +12,7 @@ Evidence captured for this worktree on 2026-10-13; latest local checks ran on co
 | Android test Kotlin compile | PASS | `:app:compileMarketDebugAndroidTestKotlin` passed after the current accessibility and test-harness fixes. |
 | MarketDebug lint | PASS | Latest app-source validation: 0 errors, 106 warnings, 2 hints. |
 | `git diff --check` | PASS | Clean after removing trailing blank line. |
-| Instrumentation / Compose UI | FAIL; new harness follow-up pending | Run 38433137725 on `757ec58`: API 26/36 Debug+Preview ran 114 tests each with 7–8 failures per job (31 failed executions total); API 37 Debug+Preview timed out before boot. |
-| API 26 / 31 / 34 / 36 / 37 device matrix | PARTIAL | CI exercised API 26/36/37. API 26/36 ran and exposed UI assertions; API37 did not reach test execution because both emulator variants timed out at boot. API31/34 are not in this workflow. Local `test36` AVD is not runnable because the installed image lacks `kernel-ranchu`; no physical target is attached here. |
+| Instrumentation / Compose UI | FAIL; new harness follow-up pending | Run 38439434500 on `5048075`: API26 Debug 6/114 failed, API26 Preview 5/114, API36 Debug 6/114, API36 Preview 7/114 (24 failed executions); API37 Debug+Preview timed out before boot. The latest harness-only changes compile locally but await new runtime CI. |
+| API 26 / 31 / 34 / 36 / 37 device matrix | PARTIAL | Run 38439434500 exercised API 26/36/37. API26/36 ran and exposed UI assertion failures; API37 did not reach test execution because both emulator variants timed out at boot. API31/34 are not in this workflow. Local `test36` AVD is not runnable because the installed image lacks `kernel-ranchu`; no physical target is attached here. |
 | SSH/SFTP integration | NOT RUN | No isolated SSH server was provisioned for this toolbar-only feature. |
 | Production signing | NOT VERIFIED | MarketDebug is debug-signed; production signing was not attempted. |

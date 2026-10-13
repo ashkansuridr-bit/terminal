@@ -12,6 +12,7 @@ import app.terminalssh.secure.R
 import app.terminalssh.secure.TerminalApp
 import java.util.Locale
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -120,8 +121,19 @@ class HostEditValidationTest {
         // Android 8's tree, but its visible bounds still contain the real touch target.
         val field = device.wait(Until.findObject(By.desc(label)), TIMEOUT_MS)
             ?: throw AssertionError("Named field '$label' was not exposed in the app accessibility tree")
-        val bounds = field.visibleBounds
-        assertTrue("Named field '$label' must have a visible touch target: $bounds", bounds.width() > 0 && bounds.height() > 0)
+        val visibleBounds = field.visibleBounds
+        val appField = AppWindowAccessibility.waitFor(TIMEOUT_MS) {
+            it.contentDescription?.toString() == label
+        } ?: throw AssertionError("Named field '$label' disappeared from the app accessibility tree")
+        val bounds = try {
+            AppWindowAccessibility.bounds(appField)
+        } finally {
+            appField.recycle()
+        }
+        assertTrue(
+            "Named field '$label' must have a visible touch target: full=$bounds visible=$visibleBounds",
+            bounds.width() > 0 && bounds.height() > 0 && visibleBounds.contains(bounds),
+        )
         assertTrue("Touching named field '$label' was rejected", device.click(bounds.centerX(), bounds.centerY()))
         val editor = device.wait(
             Until.findObject(By.clazz("android.widget.EditText").focused(true)),
@@ -132,6 +144,7 @@ class HostEditValidationTest {
         )
         editor.setText(value)
         device.waitForIdle()
+        assertEquals("Field '$label' did not retain the text sent to its focused editor", value, editor.text)
     }
 
     private fun visibleAppText(): String {

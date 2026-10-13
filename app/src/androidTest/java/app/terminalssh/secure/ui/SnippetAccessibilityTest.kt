@@ -5,6 +5,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import app.terminalssh.secure.R
@@ -115,18 +116,29 @@ class SnippetAccessibilityTest {
                     if (visible != null && visible.width() >= minTargetPx && visible.height() >= minTargetPx) return true
                 }
                 val band = device.findObjects(By.scrollable(true))
-                    .mapNotNull { runCatching { it.visibleBounds }.getOrNull() }
+                    .mapNotNull { node -> runCatching { node to node.visibleBounds }.getOrNull() }
                     // The viewport's height is a scroll-container dimension, not an
                     // accessibility touch target. API 26 can report a 48px row at
                     // density 1; comparing it to 48dp incorrectly rejects it on denser
                     // devices and exits before sending any swipe.
-                    .filter { it.height() in (24 * density).toInt()..(160 * density).toInt() && it.width() > minTargetPx }
-                    .maxByOrNull { it.width() } ?: return false
-                val y = band.centerY()
+                    .filter { (_, bounds) ->
+                        bounds.height() in (24 * density).toInt()..(160 * density).toInt() && bounds.width() > minTargetPx
+                    }
+                    .maxByOrNull { it.second.width() } ?: return false
+                val scrollDirection = if (direction == LayoutDirection.Ltr) Direction.LEFT else Direction.RIGHT
+                runCatching { band.first.scroll(scrollDirection, 0.75f) }
+                device.waitForIdle()
+                val afterAccessibilityScroll = runCatching { device.findObject(target)?.visibleBounds }.getOrNull()
+                if (afterAccessibilityScroll != null && afterAccessibilityScroll.width() >= minTargetPx &&
+                    afterAccessibilityScroll.height() >= minTargetPx
+                ) return true
+
+                val viewport = band.second
+                val y = viewport.centerY()
                 val (from, to) = if (direction == LayoutDirection.Ltr) {
-                    (band.right - (band.width() / 10)) to (band.left + (band.width() / 10))
+                    (viewport.right - (viewport.width() / 10)) to (viewport.left + (viewport.width() / 10))
                 } else {
-                    (band.left + (band.width() / 10)) to (band.right - (band.width() / 10))
+                    (viewport.left + (viewport.width() / 10)) to (viewport.right - (viewport.width() / 10))
                 }
                 if (from == to) return false
                 device.swipe(from, y, to, y, 18)
