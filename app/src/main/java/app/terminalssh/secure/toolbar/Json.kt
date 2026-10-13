@@ -39,10 +39,12 @@ fun JsonValue.encode(): String {
 
 /** Reads JSON text. Returns null when the whole document is not valid JSON. */
 object Json {
+    const val MAX_NESTING_DEPTH = 64
+
     fun parse(text: String): JsonValue? {
         val reader = Reader(text)
         return try {
-            val value = reader.readValue()
+            val value = reader.readValue(0)
             reader.skipWhitespace()
             if (reader.remaining()) null else value
         } catch (_: JsonException) {
@@ -74,12 +76,13 @@ object Json {
             while (index < text.length && text[index].isWhitespace()) index++
         }
 
-        fun readValue(): JsonValue {
+        fun readValue(depth: Int): JsonValue {
             skipWhitespace()
             if (index >= text.length) throw JsonException()
+            if (depth > MAX_NESTING_DEPTH) throw JsonException()
             return when (val c = text[index]) {
-                '{' -> readObject()
-                '[' -> readArray()
+                '{' -> readObject(depth)
+                '[' -> readArray(depth)
                 '"' -> JsonValue.Str(readString())
                 't', 'f' -> readBoolean()
                 'n' -> readNull()
@@ -87,7 +90,7 @@ object Json {
             }
         }
 
-        private fun readObject(): JsonValue.Obj {
+        private fun readObject(depth: Int): JsonValue.Obj {
             index++ // {
             val map = LinkedHashMap<String, JsonValue>()
             skipWhitespace()
@@ -99,7 +102,7 @@ object Json {
                 skipWhitespace()
                 if (peek() != ':') throw JsonException()
                 index++
-                map[key] = readValue()
+                map[key] = readValue(depth + 1)
                 skipWhitespace()
                 when (peek()) {
                     ',' -> index++
@@ -109,13 +112,13 @@ object Json {
             }
         }
 
-        private fun readArray(): JsonValue.Arr {
+        private fun readArray(depth: Int): JsonValue.Arr {
             index++ // [
             val items = ArrayList<JsonValue>()
             skipWhitespace()
             if (peek() == ']') { index++; return JsonValue.Arr(items) }
             while (true) {
-                items.add(readValue())
+                items.add(readValue(depth + 1))
                 skipWhitespace()
                 when (peek()) {
                     ',' -> index++

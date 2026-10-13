@@ -511,4 +511,18 @@
     <string name="tcs_clear_gesture">مسح الإيماءة</string>
     <string name="tcs_no_compatible_gesture_action">لا يوجد إجراء آخر متوافق لهذه الإيماءة في هذا التخطيط.</string>
     <string name="tcs_long_press_repeat_conflict">عطّل تكرار الضغط المطوّل للمفتاح قبل ربط إيماءة الضغط المطوّل.</string>
+
+    <!-- Terminal Control Studio configuration transfer -->
+    <string name="tcs_export">تصدير</string>
+    <string name="tcs_import">استيراد</string>
+    <string name="tcs_export_success">تم تصدير الإعدادات.</string>
+    <string name="tcs_export_warning">يتضمن الملف المُصدّر نصوص وحدات الماكرو؛ راجعه قبل مشاركته.</string>
+    <string name="tcs_import_unsaved_block">احفظ التعديلات الحالية ووحدات الماكرو غير المحفوظة أو تجاهلها قبل الاستيراد.</string>
+    <string name="tcs_transfer_failed">تعذرت قراءة الإعدادات أو حفظها؛ لم تتغير الإعدادات الحالية.</string>
+    <string name="tcs_transfer_busy">جارٍ قراءة الإعدادات أو حفظها…</string>
+    <string name="tcs_import_preview_title">معاينة الإعدادات</string>
+    <string name="tcs_import_preview_summary">الملفات: %1$d · السمات: %2$d · وحدات الماكرو: %3$d · الملف النشط: %4$s · تحذيرات التحقق: %5$d</string>
+    <string name="tcs_import_replace_warning">سيستبدل هذا جميع الملفات والسمات ووحدات الماكرو وربط المضيفات المخصصة، ولن يدمجها.</string>
+    <string name="tcs_import_warnings_present">يحتوي الملف على تحذيرات تحقق. راجع الإعدادات بعد تطبيقها.</string>
+    <string name="tcs_import_replace">استبدال الإعدادات</string>
 </resources>

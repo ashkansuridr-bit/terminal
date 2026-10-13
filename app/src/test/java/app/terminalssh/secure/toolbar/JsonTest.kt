@@ -60,6 +60,13 @@ class JsonTest {
         assertNull(Json.parse("nul"))
     }
 
+    @Test fun rejectsExcessiveContainerNestingWithoutRecursingUnboundedly() {
+        val acceptedDepth = "[".repeat(Json.MAX_NESTING_DEPTH) + "0" + "]".repeat(Json.MAX_NESTING_DEPTH)
+        val excessiveDepth = "[".repeat(Json.MAX_NESTING_DEPTH + 1) + "0" + "]".repeat(Json.MAX_NESTING_DEPTH + 1)
+        assertTrue(Json.parse(acceptedDepth) is JsonValue.Arr)
+        assertNull(Json.parse(excessiveDepth))
+    }
+
     @Test fun emptyContainersRoundTrip() {
         assertEquals("{}", Json.obj().encode())
         assertEquals("[]", Json.arr(emptyList()).encode())

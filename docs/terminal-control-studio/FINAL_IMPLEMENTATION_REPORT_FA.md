@@ -2,7 +2,7 @@
 
 ## وضعیت فعلی
 
-پیاده‌سازی Terminal Control Studio و چند اصلاح پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit پوش‌شده در این checkpoint `22e8782` است؛ پیاده‌سازی محلی و تست‌شدهٔ ویرایش ژست‌ها هنوز نیازمند Commit و اجرای CI تازه است. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون معیار تکمیل هر Feature اجرای Gateهای UI/دستگاه را نیز می‌خواهد.
+پیاده‌سازی Terminal Control Studio و اصلاحات پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit پوش‌شده هنگام ثبت این checkpoint `82b2861` است؛ تغییرات TCS-04 درخت کاری فعلی تست شده‌اند اما هنوز Commit نشده‌اند. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون Gateهای UI/دستگاه هنوز برای هیچ Feature کامل نشده‌اند.
 
 ## تغییرات و علت‌ها
 
@@ -11,15 +11,17 @@
 - تکرار نگه‌داشتن Backspace/Delete بعد از تکرار، یک کلیک اضافه در رهاسازی می‌فرستاد؛ کلیک رهاسازی پس از شروع تکرار حذف شد.
 - Snippet از اکشن‌ها پشتیبانی می‌شد اما میانبر مستقیمی در پروفایل پیش‌فرض نداشت؛ کلید Snip اضافه و برای آن تست رگرسیون نوشته شد.
 - ویرایشگر ژست‌ها فقط اتصال‌های موجود را نشان می‌داد؛ اکنون هر شش حرکت را با گزینه‌های سازگارِ موجود در پروفایل تنظیم یا پاک می‌کند و تغییرها در مسیر Undo/Redo/Save باقی می‌مانند. ژست‌های مبهم، Enter مستقیم، متن چندخطی و ماکروهای دارای Enter از انتخاب‌گر کنار گذاشته شده‌اند.
+- واردکردن/خارج‌کردن تنظیمات از SAF به رابط ویرایشگر متصل شد. Import با سقف ۱ MiB، UTF-8 سخت‌گیرانه، خواندن غیرمسدودکننده، پیش‌نمایش parsed candidate و تأیید صریح جایگزینی کل تنظیمات انجام می‌شود. لغو انتخاب فایل تغییری اعمال نمی‌کند و پس از Import موفق ویرایشگر بسته می‌شود تا draft کهنه دادهٔ واردشده را بازنویسی نکند.
+- حین همین اتصال دو نقص مستقل پیدا و اصلاح شد: مخزن تنظیمات پیش از موفقیت ذخیره‌سازی state را منتشر می‌کرد؛ اکنون اول persist می‌کند و سپس state را منتشر می‌کند (NEW-001). Parser JSON نیز عمق تو‌در‌تویی را محدود نمی‌کرد؛ اکنون بیش از ۶۴ سطح را رد می‌کند تا ورودی بدساخت به StackOverflow منجر نشود (NEW-002).
 - CI به‌خاطر وابستگی به وجود متن `R.string.snippets_short` در فایل مشخص شکست می‌خورد؛ Gate حالا اتصال preset، dispatcher و Sheet را بررسی می‌کند. آپلود گزارش‌ها در صورت نبود گزارش هشدار می‌دهد تا شکست ثانویه علت اصلی را نپوشاند.
 
 ## راستی‌آزمایی
 
-در دور جاری، `:app:testMarketDebugUnitTest`, `:app:compileMarketDebugKotlin`, `:app:compileMarketDebugAndroidTestKotlin`, `:app:lintMarketDebug` و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۱۸ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند. Lint بدون خطا بود (۱۰۴ هشدار و ۲ hint)؛ هشدار سازگاری AGP 8.13.2 با compileSdk 37 و چند deprecation در تست باقی است. APK خروجی Debug است، SHA-256 آن `0d6597fa38c4b0a837e06d5eb288d3b890b384a4755015f565d0d94944e15253` است و با `apksigner` گواهی Android Debug تأیید شد؛ بنابراین امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه اجرا نشده است. CI commit `22e8782` مرحلهٔ Verify را گذرانده و ماتریس instrumentation هنوز در حال اجراست؛ این batch ژست پس از push باید CI جداگانه بگیرد.
+در دور جاری، `:app:testMarketDebugUnitTest`, `:app:compileMarketDebugKotlin`, `:app:compileMarketDebugAndroidTestKotlin`, `:app:lintMarketDebug` و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۲۱ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند. Lint بدون خطا بود (۱۰۴ هشدار و ۲ hint). APK خروجی Debug است، SHA-256 آن `2f75277bf2ba97e264566c47175bacbec78306a69067b0bb9b7a0e9339484bd4` است و با `apksigner` گواهی Android Debug تأیید شد؛ بنابراین امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه اجرا نشده است. CI run `38393877043` روی commit `22e8782` Verify را گذراند، ولی instrumentation روی API26 و API36 در Debug و Preview با assertionهای UI شکست خورد. run `38395092348` برای `82b2861` هنگام checkpoint در حال اجرا بود. تغییرات فعلی TCS-04 هنوز باید Commit شوند تا CI همان سورس را اجرا کند.
 
 ## علت‌های تأییدشده و موارد نامشخص
 
-شکست CI تأیید شد: Gate منسوخ Snippet قبل از تست/build متوقف می‌شد. دسترسی‌نداشتن مستقیم Snippet در پروفایل پیش‌فرض نیز نقص واقعی بود و اصلاح شد. در این مرحله هیچ Crash واقعی اپلیکیشن بازتولید نشده؛ تست دستگاه در دسترس نیست و بنابراین نبود Crash تأیید نمی‌شود.
+شکست CI قبلی Gate منسوخ Snippet بود؛ اتصال مستقیم Snippet به پروفایل پیش‌فرض و Gate مربوطه اصلاح شده‌اند. شکست‌های تازهٔ API26/API36 assertionهای واقعی تست رابط کاربری‌اند و هنوز به‌عنوان رفع‌شده علامت نخورده‌اند. در این مرحله هیچ Crash واقعی اپلیکیشن بازتولید نشده؛ نبود Crash نیز تأیید نمی‌شود.
 
 ## دستگاه و انتشار
 
@@ -35,10 +37,11 @@
 
 ## خروجی‌ها و وضعیت انتشار
 
-- شاخهٔ کاری فعلی: `main` (تغییرات جدید محلی تا پایان Gateها commit نشده‌اند).
-- آخرین Commit پوش‌شده در ابتدای این دور: `2521508`.
+- شاخهٔ کاری فعلی: `main` (TCS-04 و گزارش‌های همگام‌شده هنوز در درخت کاری‌اند).
+- آخرین Commit پوش‌شده: `82b2861`.
 - PR مرتبط: https://github.com/ashkansuridr-bit/terminal/pull/4 (به‌دلیل پوش مستقیم، وضعیت وب آن را جداگانه بررسی کنید؛ PR معیار وضعیت شاخه نیست).
-- اجرای CI: https://github.com/ashkansuridr-bit/terminal/actions/runs/38389187528
+- اجرای CI قدیمی‌تر با شکست instrumentation: https://github.com/ashkansuridr-bit/terminal/actions/runs/38393877043
+- اجرای CI برای `82b2861` (نتیجه باید دوباره بررسی شود): https://github.com/ashkansuridr-bit/terminal/actions/runs/38395092348
 - APK تولیدی/امضاشده: تأیید نشده؛ خروجی Debug با گواهی Debug، نسخهٔ Production محسوب نمی‌شود.
 - کلیپ معرفی فارسی: `TerminalSSH-Promo-fa.mp4` و `TerminalSSH-Promo-fa-no-bgm.mp4` در ریشه؛ جزئیات hash و محدودیت شناسایی موسیقی در `docs/terminal-control-studio/VIDEO_DELIVERY.md` و بازبینی مستقل در `VIDEO_REVIEW.md`.
 - Checkpoint: `docs/terminal-control-studio/LOOP_CHECKPOINT.md`

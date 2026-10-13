@@ -2,6 +2,7 @@ package app.terminalssh.secure.toolbar
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -129,6 +130,41 @@ class ToolbarRepositoryTest {
             repository.profileById("git")!!.layout.keyById("diff")!!.label,
             other.profileById("git")!!.layout.keyById("diff")!!.label,
         )
+    }
+
+    @Test fun failedImportPersistenceDoesNotPublishImportedState() {
+        val backing = InMemoryToolbarPrefs()
+        var failWrites = false
+        val prefs = object : ToolbarPrefs {
+            override fun get(key: String): String? = backing.get(key)
+            override fun put(key: String, value: String) {
+                if (failWrites) error("simulated storage failure")
+                backing.put(key, value)
+            }
+        }
+        val repository = ToolbarRepository(prefs)
+        repository.saveProfile(ToolbarProfiles.shell.copy(name = "Existing"))
+        val originalState = repository.state.value
+        val originalJson = backing.get(ToolbarRepository.KEY_CONFIG)
+        val incoming = ToolbarConfigState(
+            customProfiles = listOf(ToolbarProfiles.power.copy(id = "incoming", builtIn = false)),
+        )
+        failWrites = true
+
+        assertFailsWith<IllegalStateException> { repository.applyImport(ToolbarCodec.encode(incoming)) }
+        assertEquals(originalState, repository.state.value)
+        assertEquals(originalJson, backing.get(ToolbarRepository.KEY_CONFIG))
+    }
+
+    @Test fun importRejectsOversizeDocumentsAndCredentialLikeMacros() {
+        val (repository, _) = repo()
+        assertNull(repository.prepareImport(" ".repeat(ToolbarRepository.MAX_IMPORT_BYTES + 1)))
+        val state = ToolbarConfigState(
+            customMacros = listOf(
+                MacroDef("unsafe", "Unsafe", steps = listOf(MacroStep.Text("password=guess-me"))),
+            ),
+        )
+        assertNull(repository.prepareImport(ToolbarCodec.encode(state)))
     }
 
     @Test fun importPreviewSummarisesAndRejectsGarbage() {

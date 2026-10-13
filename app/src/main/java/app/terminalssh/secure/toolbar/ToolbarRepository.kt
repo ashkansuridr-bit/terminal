@@ -13,6 +13,12 @@ data class ToolbarImportPreview(
     val warnings: List<String>,
 )
 
+/** Parsed, immutable configuration the user can review before an import replaces the current one. */
+class ToolbarImportCandidate internal constructor(
+    internal val state: ToolbarConfigState,
+    val preview: ToolbarImportPreview,
+)
+
 /**
  * The single owner of toolbar configuration.
  *
@@ -170,45 +176,67 @@ class ToolbarRepository(
 
     fun export(): String = ToolbarCodec.encode(_state.value)
 
-    fun previewImport(text: String): ToolbarImportPreview? {
+    fun prepareImport(text: String): ToolbarImportCandidate? {
+        if (text.length > MAX_IMPORT_BYTES) return null
         val decoded = ToolbarCodec.decode(text)
         if (decoded !is ToolbarDecode.Ok) return null
         val state = decoded.state
-        return ToolbarImportPreview(
-            profiles = state.customProfiles.size,
-            themes = state.customThemes.size,
-            macros = state.customMacros.size,
-            activeProfile = state.activeProfileId,
-            warnings = ToolbarValidator.validate(state),
+        if (state.customProfiles.size > MAX_IMPORTED_PROFILES ||
+            state.customThemes.size > MAX_IMPORTED_THEMES ||
+            state.customMacros.size > MAX_IMPORTED_MACROS ||
+            state.hostOverrides.size > MAX_IMPORTED_HOST_OVERRIDES
+        ) return null
+        if (state.customProfiles.any { profile ->
+                profile.layout.rows.size > ToolbarLayout.MAX_ROWS ||
+                    profile.layout.keys.size > ToolbarLayout.MAX_KEYS ||
+                    profile.optionalKeys.size > ToolbarLayout.MAX_KEYS ||
+                    profile.macroIds.size > MAX_IMPORTED_MACROS
+            }
+        ) return null
+        if (state.customMacros.any { MacroEngine.validate(it) !is MacroValidation.Valid }) return null
+        return ToolbarImportCandidate(
+            state = state,
+            preview = ToolbarImportPreview(
+                profiles = state.customProfiles.size,
+                themes = state.customThemes.size,
+                macros = state.customMacros.size,
+                activeProfile = state.activeProfileId,
+                warnings = ToolbarValidator.validate(state),
+            ),
         )
     }
 
+    fun previewImport(text: String): ToolbarImportPreview? = prepareImport(text)?.preview
+
     /** Applies an imported document wholesale, then persists. Returns false if it was invalid. */
     fun applyImport(text: String): Boolean {
-        val decoded = ToolbarCodec.decode(text)
-        if (decoded !is ToolbarDecode.Ok) return false
-        _state.value = sanitize(decoded.state)
-        persist()
+        val candidate = prepareImport(text) ?: return false
+        return applyImport(candidate)
+    }
+
+    fun applyImport(candidate: ToolbarImportCandidate): Boolean {
+        commit(candidate.state)
         return true
     }
 
     /** Restores the shipped defaults and persists immediately. */
     fun resetToDefaults() {
-        _state.value = ToolbarConfigState.default()
+        commit(ToolbarConfigState.default())
         recoveryNotice = null
         recoverableRaw = null
-        persist()
     }
 
     // --- internals ---
 
     private fun update(transform: (ToolbarConfigState) -> ToolbarConfigState) {
-        _state.value = sanitize(transform(_state.value))
-        persist()
+        commit(transform(_state.value))
     }
 
-    private fun persist() {
-        prefs.put(KEY_CONFIG, ToolbarCodec.encode(_state.value))
+    /** Write the candidate before publishing it, so failed storage never leaves phantom state. */
+    private fun commit(candidate: ToolbarConfigState) {
+        val safe = sanitize(candidate)
+        prefs.put(KEY_CONFIG, ToolbarCodec.encode(safe))
+        _state.value = safe
     }
 
     private fun profileExists(
@@ -237,5 +265,10 @@ class ToolbarRepository(
 
     companion object {
         const val KEY_CONFIG = "tcs_config_v1"
+        const val MAX_IMPORT_BYTES = 1_048_576
+        const val MAX_IMPORTED_PROFILES = 128
+        const val MAX_IMPORTED_THEMES = 128
+        const val MAX_IMPORTED_MACROS = 128
+        const val MAX_IMPORTED_HOST_OVERRIDES = 1_024
     }
 }

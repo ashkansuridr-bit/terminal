@@ -1,6 +1,8 @@
 package app.terminalssh.secure.ui.toolbar
 
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.BackHandler
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,18 +32,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.terminalssh.secure.security.SecretIo
 import app.terminalssh.secure.R
 import app.terminalssh.secure.toolbar.KeyWidth
 import app.terminalssh.secure.toolbar.KeyStyle
@@ -56,6 +61,7 @@ import app.terminalssh.secure.toolbar.SnippetAction
 import app.terminalssh.secure.toolbar.TextAction
 import app.terminalssh.secure.toolbar.ToolbarEditSession
 import app.terminalssh.secure.toolbar.ToolbarEditor
+import app.terminalssh.secure.toolbar.ToolbarImportCandidate
 import app.terminalssh.secure.toolbar.ToolbarGesture
 import app.terminalssh.secure.toolbar.ToolbarGestures
 import app.terminalssh.secure.toolbar.ToolbarKeyPalette
@@ -63,6 +69,12 @@ import app.terminalssh.secure.toolbar.ToolbarProfiles
 import app.terminalssh.secure.toolbar.ToolbarProfile
 import app.terminalssh.secure.toolbar.ToolbarRepository
 import app.terminalssh.secure.ui.theme.Turquoise
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.nio.ByteBuffer
+import java.nio.charset.CodingErrorAction
 
 /**
  * The customization screen.
@@ -92,6 +104,73 @@ fun ToolbarEditorScreen(
     var gestureDialog by remember { mutableStateOf<ToolbarGesture?>(null) }
     var discardConfirmOpen by remember { mutableStateOf(false) }
     val pendingMacros = remember(profileId) { mutableListOf<MacroDef>() }
+    var importCandidate by remember { mutableStateOf<ToolbarImportCandidate?>(null) }
+    var transferBusy by remember { mutableStateOf(false) }
+    var transferMessage by remember { mutableStateOf<Int?>(null) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri ->
+        uri?.let { destination ->
+            transferBusy = true
+            transferMessage = null
+            scope.launch {
+                try {
+                    withContext(Dispatchers.IO) {
+                        val bytes = repository.export().toByteArray(Charsets.UTF_8)
+                        try {
+                            context.contentResolver.openOutputStream(destination)?.use { it.write(bytes) }
+                                ?: error("Cannot open configuration destination")
+                        } finally {
+                            bytes.fill(0)
+                        }
+                    }
+                    transferMessage = R.string.tcs_export_success
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    transferMessage = R.string.tcs_transfer_failed
+                } finally {
+                    transferBusy = false
+                }
+            }
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        uri?.let { source ->
+            transferBusy = true
+            transferMessage = null
+            scope.launch {
+                try {
+                    importCandidate = withContext(Dispatchers.IO) {
+                        val bytes = context.contentResolver.openInputStream(source)?.use {
+                            SecretIo.readBounded(it, ToolbarRepository.MAX_IMPORT_BYTES)
+                        } ?: error("Cannot read configuration source")
+                        try {
+                            val text = Charsets.UTF_8.newDecoder()
+                                .onMalformedInput(CodingErrorAction.REPORT)
+                                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                                .decode(ByteBuffer.wrap(bytes))
+                                .toString()
+                            repository.prepareImport(text) ?: error("Invalid toolbar configuration")
+                        } finally {
+                            bytes.fill(0)
+                        }
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    transferMessage = R.string.tcs_transfer_failed
+                } finally {
+                    transferBusy = false
+                }
+            }
+        }
+    }
 
     fun requestDismiss() {
         if (session.isDirty || pendingMacros.isNotEmpty()) discardConfirmOpen = true else onDismiss()
@@ -318,6 +397,35 @@ fun ToolbarEditorScreen(
                     onDismiss()
                 }
             }
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                SmallButton(stringResource(R.string.tcs_export), enabled = !transferBusy) {
+                    exportLauncher.launch("terminal-control-studio.json")
+                }
+                SmallButton(
+                    stringResource(R.string.tcs_import),
+                    enabled = !transferBusy && !session.isDirty && pendingMacros.isEmpty(),
+                ) {
+                    importLauncher.launch(arrayOf("application/json", "text/*"))
+                }
+            }
+            Text(
+                stringResource(R.string.tcs_export_warning),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (session.isDirty || pendingMacros.isNotEmpty()) Text(
+                stringResource(R.string.tcs_import_unsaved_block),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            transferMessage?.let { message ->
+                Text(
+                    stringResource(message),
+                    color = if (message == R.string.tcs_transfer_failed) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (transferBusy) Text(stringResource(R.string.tcs_transfer_busy))
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -432,6 +540,72 @@ fun ToolbarEditorScreen(
             dismissButton = {
                 TextButton(onClick = { discardConfirmOpen = false }) {
                     Text(stringResource(R.string.tcs_keep_editing))
+                }
+            },
+        )
+    }
+
+    importCandidate?.let { candidate ->
+        val preview = candidate.preview
+        AlertDialog(
+            onDismissRequest = { importCandidate = null },
+            title = { Text(stringResource(R.string.tcs_import_preview_title)) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        stringResource(
+                            R.string.tcs_import_preview_summary,
+                            preview.profiles,
+                            preview.themes,
+                            preview.macros,
+                            preview.activeProfile,
+                            preview.warnings.size,
+                        ),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(stringResource(R.string.tcs_import_replace_warning))
+                    if (preview.warnings.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(stringResource(R.string.tcs_import_warnings_present), color = MaterialTheme.colorScheme.error)
+                    }
+                    if (transferBusy) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(stringResource(R.string.tcs_transfer_busy))
+                    }
+                    if (transferMessage == R.string.tcs_transfer_failed) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(stringResource(R.string.tcs_transfer_failed), color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !transferBusy,
+                    onClick = {
+                        transferBusy = true
+                        scope.launch {
+                            try {
+                                val applied = withContext(Dispatchers.IO) { repository.applyImport(candidate) }
+                                if (applied) {
+                                    importCandidate = null
+                                    onDismiss()
+                                } else {
+                                    transferMessage = R.string.tcs_transfer_failed
+                                }
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (_: Exception) {
+                                transferMessage = R.string.tcs_transfer_failed
+                            } finally {
+                                transferBusy = false
+                            }
+                        }
+                    },
+                ) { Text(stringResource(R.string.tcs_import_replace)) }
+            },
+            dismissButton = {
+                TextButton(enabled = !transferBusy, onClick = { importCandidate = null }) {
+                    Text(stringResource(R.string.cancel))
                 }
             },
         )

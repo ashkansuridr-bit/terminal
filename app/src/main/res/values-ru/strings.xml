@@ -463,4 +463,18 @@
     <string name="tcs_clear_gesture">Очистить жест</string>
     <string name="tcs_no_compatible_gesture_action">В этой раскладке нет другого действия для этого жеста.</string>
     <string name="tcs_long_press_repeat_conflict">Отключите повтор при удержании этой клавиши, прежде чем назначать долгое нажатие.</string>
+
+    <!-- Terminal Control Studio configuration transfer -->
+    <string name="tcs_export">Экспорт</string>
+    <string name="tcs_import">Импорт</string>
+    <string name="tcs_export_success">Конфигурация экспортирована.</string>
+    <string name="tcs_export_warning">Экспорт содержит текст макросов; проверьте файл перед отправкой.</string>
+    <string name="tcs_import_unsaved_block">Сохраните или отмените текущие изменения и несохранённые макросы перед импортом.</string>
+    <string name="tcs_transfer_failed">Не удалось прочитать или сохранить конфигурацию. Текущая конфигурация не изменена.</string>
+    <string name="tcs_transfer_busy">Чтение или сохранение конфигурации…</string>
+    <string name="tcs_import_preview_title">Предпросмотр конфигурации</string>
+    <string name="tcs_import_preview_summary">Профили: %1$d · темы: %2$d · макросы: %3$d · активный профиль: %4$s · предупреждения: %5$d</string>
+    <string name="tcs_import_replace_warning">Будут заменены все пользовательские профили, темы, макросы и привязки хостов; объединения не будет.</string>
+    <string name="tcs_import_warnings_present">В файле есть предупреждения проверки. Проверьте импортированную конфигурацию после применения.</string>
+    <string name="tcs_import_replace">Заменить конфигурацию</string>
 </resources>

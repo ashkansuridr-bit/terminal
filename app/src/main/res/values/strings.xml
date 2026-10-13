@@ -508,4 +508,18 @@
     <string name="tcs_clear_gesture">پاک‌کردن حرکت</string>
     <string name="tcs_no_compatible_gesture_action">برای این حرکت، عملکرد سازگار دیگری در این چیدمان نیست.</string>
     <string name="tcs_long_press_repeat_conflict">برای تنظیم لمس طولانی، ابتدا تکرار نگه‌داشتن این کلید را خاموش کنید.</string>
+
+    <!-- Terminal Control Studio configuration transfer -->
+    <string name="tcs_export">برون‌بری</string>
+    <string name="tcs_import">درون‌ریزی</string>
+    <string name="tcs_export_success">پیکربندی برون‌بری شد.</string>
+    <string name="tcs_export_warning">فایل برون‌بری شامل متن ماکروهاست؛ پیش از هم‌رسانی آن را بررسی کنید.</string>
+    <string name="tcs_import_unsaved_block">پیش از درون‌ریزی، ویرایش‌های جاری و ماکروهای ذخیره‌نشده را ذخیره یا دور بیندازید.</string>
+    <string name="tcs_transfer_failed">خواندن یا ذخیرهٔ پیکربندی ناموفق بود؛ پیکربندی فعلی بدون تغییر ماند.</string>
+    <string name="tcs_transfer_busy">در حال خواندن یا ذخیرهٔ پیکربندی…</string>
+    <string name="tcs_import_preview_title">پیش‌نمایش پیکربندی</string>
+    <string name="tcs_import_preview_summary">پروفایل‌ها: %1$d · پوسته‌ها: %2$d · ماکروها: %3$d · پروفایل فعال: %4$s · هشدارهای اعتبارسنجی: %5$d</string>
+    <string name="tcs_import_replace_warning">این کار همهٔ پروفایل‌ها، پوسته‌ها، ماکروها و اتصال‌های میزبان سفارشی را جایگزین می‌کند و آن‌ها را ادغام نمی‌کند.</string>
+    <string name="tcs_import_warnings_present">فایل هشدارهای اعتبارسنجی دارد. پس از اعمال، پیکربندی واردشده را بررسی کنید.</string>
+    <string name="tcs_import_replace">جایگزینی پیکربندی</string>
 </resources>

@@ -508,4 +508,18 @@
     <string name="tcs_clear_gesture">Clear gesture</string>
     <string name="tcs_no_compatible_gesture_action">No other compatible action is available for this gesture in this layout.</string>
     <string name="tcs_long_press_repeat_conflict">Turn off this key’s repeat-while-held setting before binding a long press.</string>
+
+    <!-- Terminal Control Studio configuration transfer -->
+    <string name="tcs_export">Export</string>
+    <string name="tcs_import">Import</string>
+    <string name="tcs_export_success">Configuration exported.</string>
+    <string name="tcs_export_warning">Exports include macro text; review the file before sharing it.</string>
+    <string name="tcs_import_unsaved_block">Save or discard current edits and unsaved macros before importing another configuration.</string>
+    <string name="tcs_transfer_failed">Could not read or save the configuration. The current configuration is unchanged.</string>
+    <string name="tcs_transfer_busy">Reading or saving configuration…</string>
+    <string name="tcs_import_preview_title">Configuration preview</string>
+    <string name="tcs_import_preview_summary">Profiles: %1$d · themes: %2$d · macros: %3$d · active profile: %4$s · validation warnings: %5$d</string>
+    <string name="tcs_import_replace_warning">This replaces all custom profiles, themes, macros, and host overrides. It does not merge them.</string>
+    <string name="tcs_import_warnings_present">The file has validation warnings. Review the imported configuration after applying it.</string>
+    <string name="tcs_import_replace">Replace configuration</string>
 </resources>
