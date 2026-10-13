@@ -208,14 +208,14 @@ class ToolbarRepository(
 
     fun previewImport(text: String): ToolbarImportPreview? = prepareImport(text)?.preview
 
-    /** Applies an imported document wholesale, then persists. Returns false if it was invalid. */
+    /** Applies the reviewed document wholesale only after a durable write; false means invalid. */
     fun applyImport(text: String): Boolean {
         val candidate = prepareImport(text) ?: return false
         return applyImport(candidate)
     }
 
     fun applyImport(candidate: ToolbarImportCandidate): Boolean {
-        commit(candidate.state)
+        commit(candidate.state, durable = true)
         return true
     }
 
@@ -233,9 +233,12 @@ class ToolbarRepository(
     }
 
     /** Write the candidate before publishing it, so failed storage never leaves phantom state. */
-    private fun commit(candidate: ToolbarConfigState) {
+    private fun commit(candidate: ToolbarConfigState, durable: Boolean = false) {
         val safe = sanitize(candidate)
-        prefs.put(KEY_CONFIG, ToolbarCodec.encode(safe))
+        val encoded = ToolbarCodec.encode(safe)
+        if (durable) prefs.putDurably(KEY_CONFIG, encoded) else prefs.put(KEY_CONFIG, encoded)
+        recoveryNotice = null
+        recoverableRaw = null
         _state.value = safe
     }
 

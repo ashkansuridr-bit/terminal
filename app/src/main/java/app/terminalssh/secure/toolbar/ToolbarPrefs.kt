@@ -11,6 +11,9 @@ package app.terminalssh.secure.toolbar
 interface ToolbarPrefs {
     fun get(key: String): String?
     fun put(key: String, value: String)
+
+    /** Persist synchronously and throw if durable storage fails. Imports call this on IO. */
+    fun putDurably(key: String, value: String)
 }
 
 /** In-memory implementation, used by tests and as a safe fallback. */
@@ -20,4 +23,6 @@ class InMemoryToolbarPrefs(initial: Map<String, String> = emptyMap()) : ToolbarP
     override fun put(key: String, value: String) {
         map[key] = value
     }
+
+    override fun putDurably(key: String, value: String) = put(key, value)
 }

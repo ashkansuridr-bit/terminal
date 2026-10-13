@@ -2,7 +2,7 @@
 
 ## وضعیت فعلی
 
-پیاده‌سازی Terminal Control Studio و اصلاحات پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit کد پوش‌شده `584cc8b` است؛ همگام‌سازی تازهٔ وضعیت و گزارش‌ها هنوز محلی است. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون Gateهای UI/دستگاه هنوز برای هیچ Feature کامل نشده‌اند.
+پیاده‌سازی Terminal Control Studio و اصلاحات پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit پوش‌شده در لحظهٔ ثبت این گزارش `8008eba` است؛ اصلاح Import پایدار و Selectorهای تست در همین نوبت در حال ثبت روی `main` هستند. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون Gateهای UI/دستگاه هنوز برای هیچ Feature کامل نشده‌اند.
 
 ## تغییرات و علت‌ها
 
@@ -18,7 +18,7 @@
 
 ## راستی‌آزمایی
 
-در دور جاری، `:app:testMarketDebugUnitTest`، app/AndroidTest compile، lint، و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۲۱ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند؛ lint صفر خطا، ۱۰۴ هشدار و ۲ hint داشت. APK فعلی MarketDebug است، SHA-256 آن `443dc646f06bc1dd996004d19ffe4713fc977ebee39c2b92a14731da96253d22` است و `apksigner` گواهی Android Debug را تأیید کرد؛ امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه اجرا نشده است. CI run `38393877043` روی commit `22e8782` Verify را گذراند، ولی instrumentation روی API26 و API36 در Debug و Preview با assertionهای UI شکست خورد؛ API37 در همان run به‌دلیل بوت‌نشدن Emulator تستی اجرا نکرد. run جاری برای اصلاح دسترس‌پذیری `38396679291` هنوز در حال اجراست.
+در دور جاری، `:app:testMarketDebugUnitTest`، app/AndroidTest compile، lint، و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۲۱ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند؛ lint صفر خطا، ۱۰۴ هشدار و ۲ hint داشت. APK فعلی MarketDebug است، SHA-256 آن `b828532f4974f40bed461905578621f54fb69f3298c5c1cd50754ecdb7944631` است و `apksigner` گواهی Android Debug را تأیید کرد؛ امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه محلی اجرا نشده است. CI run `38396679291` کامل شد: Verify موفق؛ API26 و API36 در instrumentation شکست UI داشتند؛ API37 در Debug و Preview پیش از اجرای تست به Timeout بوت Emulator رسید. شکست‌های تستی تفکیک و برای رگرسیون‌های ورودی، اسکرول و semantics اصلاحاتی در worktree انجام شده‌اند؛ اجرای تازهٔ CI لازم است.
 
 ## علت‌های تأییدشده و موارد نامشخص
 

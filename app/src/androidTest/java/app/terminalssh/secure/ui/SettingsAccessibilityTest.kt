@@ -51,6 +51,7 @@ class SettingsAccessibilityTest {
                         By.desc(persianNeon),
                         maxAttempts = 20,
                         fullBounds = { fullBoundsByDescription(persianNeon) },
+                        appPackage = instrumentation.targetContext.packageName,
                     ),
                 )
                 assertTrue(device.findObject(By.desc(persianNeon)).isSelected)
@@ -61,6 +62,7 @@ class SettingsAccessibilityTest {
                         maxAttempts = 20,
                         horizontalDirection = LayoutDirection.Ltr,
                         fullBounds = { fullBoundsByDescription(oled) },
+                        appPackage = instrumentation.targetContext.packageName,
                     ),
                 )
                 val oledAction = device.findObject(By.desc(oled))
@@ -98,6 +100,7 @@ class SettingsAccessibilityTest {
                         By.desc(fontSizeLabel),
                         maxAttempts = 20,
                         fullBounds = { fullBoundsByDescription(fontSizeLabel) },
+                        appPackage = instrumentation.targetContext.packageName,
                     ),
                 )
 

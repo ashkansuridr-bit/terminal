@@ -33,8 +33,14 @@ class SettingsToggleAccessibilityTest {
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
                 device.findObject(By.text(settingsTab)).click()
-                device.scrollUntil { device.hasObject(By.desc(label)) }
-                assertTrue(device.wait(Until.hasObject(By.desc(label)), TIMEOUT_MS))
+                assertTrue(
+                    "Toggle row was not fully reachable by vertical scrolling",
+                    device.scrollUntilFullyVisible(
+                        By.desc(label),
+                        maxAttempts = 20,
+                        appPackage = context.packageName,
+                    ),
+                )
 
                 val toggle = device.findObject(By.desc(label))
                 val density = context.resources.displayMetrics.density
@@ -44,8 +50,11 @@ class SettingsToggleAccessibilityTest {
                 assertTrue("toggle row did not include its label and control", toggle.visibleBounds.width() >= 240 * density)
 
                 toggle.click()
-                assertTrue("Toggle state was not persisted and exposed", awaitUiState(TIMEOUT_MS) {
-                    device.findObject(By.desc(label))?.isChecked == false && !app.settings.confirmMultilinePaste
+                assertTrue("Toggle action did not persist false", awaitUiState(TIMEOUT_MS) {
+                    !app.settings.confirmMultilinePaste
+                })
+                assertTrue("Persisted false value was not reflected by switch semantics", awaitUiState(TIMEOUT_MS) {
+                    device.findObject(By.desc(label))?.isChecked == false
                 })
             }
         } finally {

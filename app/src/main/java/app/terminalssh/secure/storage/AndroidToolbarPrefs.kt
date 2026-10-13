@@ -25,6 +25,15 @@ class AndroidToolbarPrefs(context: Context) : ToolbarPrefs {
         prefs.edit().putString(key, value).apply()
     }
 
+    override fun putDurably(key: String, value: String) {
+        // Import is invoked from Dispatchers.IO. Unlike regular editing, it must not
+        // report success or publish the candidate until SharedPreferences confirms the
+        // backing file was written.
+        check(prefs.edit().putString(key, value).commit()) {
+            "Unable to persist toolbar configuration"
+        }
+    }
+
     private companion object {
         const val PREFS = "tcs_toolbar_v1"
     }

@@ -88,7 +88,10 @@ class TerminalKeyboardTest {
                 R.string.tab_files,
                 R.string.tab_keys,
                 R.string.tab_settings,
-            ).forEach { id -> assertAppDescVisible(context.getString(id)) }
+            ).forEach { id ->
+                val label = context.getString(id)
+                assertTrue("Localized navigation label '$label' must be visible", device.wait(Until.hasObject(By.text(label)), UI_TIMEOUT_MS))
+            }
         }
     }
 
@@ -733,17 +736,12 @@ class TerminalKeyboardTest {
         }
     }
 
-    /**
-     * Returns the 48dp control node of a modifier key. The toggleable modifier keeps
-     * state on the control and pushes the announced description onto a full-size
-     * descendant, so select the checkable box that carries a descendant with the
-     * key's name.
-     */
+    /** Returns the checkable semantics node that exposes a modifier's current state. */
     private fun modifierControl(name: String): UiObject2 =
         device.wait(
-            Until.findObject(By.checkable(true).descStartsWith(name)),
+            Until.findObject(By.checkable(true).desc(name)),
             UI_TIMEOUT_MS,
-        )
+        ) ?: throw AssertionError("Modifier '$name' must expose one checkable accessible control")
 
     @Test
     fun symbolicToolbarKeysHaveReadableActionNames() {

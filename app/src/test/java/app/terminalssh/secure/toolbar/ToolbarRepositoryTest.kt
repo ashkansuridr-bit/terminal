@@ -135,10 +135,16 @@ class ToolbarRepositoryTest {
     @Test fun failedImportPersistenceDoesNotPublishImportedState() {
         val backing = InMemoryToolbarPrefs()
         var failWrites = false
+        var durableWrites = 0
         val prefs = object : ToolbarPrefs {
             override fun get(key: String): String? = backing.get(key)
             override fun put(key: String, value: String) {
                 if (failWrites) error("simulated storage failure")
+                backing.put(key, value)
+            }
+            override fun putDurably(key: String, value: String) {
+                durableWrites++
+                if (failWrites) error("simulated durable storage failure")
                 backing.put(key, value)
             }
         }
@@ -154,6 +160,7 @@ class ToolbarRepositoryTest {
         assertFailsWith<IllegalStateException> { repository.applyImport(ToolbarCodec.encode(incoming)) }
         assertEquals(originalState, repository.state.value)
         assertEquals(originalJson, backing.get(ToolbarRepository.KEY_CONFIG))
+        assertEquals(1, durableWrites, "an import must use the durable preference write")
     }
 
     @Test fun importRejectsOversizeDocumentsAndCredentialLikeMacros() {
@@ -187,6 +194,8 @@ class ToolbarRepositoryTest {
         // A later change must persist cleanly over the broken document.
         repository.setActiveProfile("git")
         assertEquals("git", ToolbarRepository(prefs).state.value.activeProfileId)
+        assertNull(repository.recoveryNotice)
+        assertNull(repository.recoverableRaw)
     }
 
     @Test fun resetRestoresDefaultsAndPersists() {

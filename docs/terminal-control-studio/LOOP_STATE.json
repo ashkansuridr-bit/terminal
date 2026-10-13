@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T13:00:00+00:00",
+  "capturedAt": "2026-10-13T14:00:00+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "584cc8b7b311b9dd0ea94c2350dc4fd1770822be",
+  "lastVerifiedCommit": "8008ebac58957fd0ede8b47b9ed9278060875850 plus local changes listed in latestLocalVerification",
   "features": [
     {
       "id": "TCS-01",
@@ -101,18 +101,18 @@
         "Android process recreation"
       ],
       "executedTests": [
-        "MarketDebug JVM suite: 1,021 passed; 0 failed/errors/skipped (118 suites)",
+        "MarketDebug JVM suite: 1,021 passed; 0 failed/errors/skipped (118 suites) after durable write and recovery-notice regressions",
         "MarketDebug app Kotlin compile PASS",
         "MarketDebug AndroidTest Kotlin compile PASS",
         "MarketDebug lint PASS (0 errors, 104 warnings, 2 hints)",
         "MarketDebug APK assemble PASS; apksigner PASS with Android Debug certificate",
         "loop2_gate.py PASS; market_release_gate.py PASS; diff check PASS"
       ],
-      "lastResult": "Bounded SAF JSON import/export wired in ToolbarEditorScreen. Import parses once into an immutable preview candidate, requires explicit replace confirmation, rejects oversized/malformed UTF-8/invalid content, performs I/O on Dispatchers.IO, and closes editor after successful import. Repository persistence now succeeds before publishing state. Android SAF UI/process recreation still awaits instrumentation.",
+      "lastResult": "SAF UI performs import on IO; repository uses SharedPreferences.commit for confirmed imports and only publishes StateFlow after a successful durable write. Regular toolbar edits retain asynchronous apply behavior. Successful repository commits clear stale recovery notice/raw data. UI/process recreation remains runtime-unverified.",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": "uncommitted worktree based on 82b2861",
-      "lastReviewedAt": "2026-10-13T12:30:00+00:00",
+      "commitSha": "pending commit for durable write and instrumentation corrections",
+      "lastReviewedAt": "2026-10-13T14:00:00+00:00",
       "remainingIssues": [
         "Android SAF picker interaction, process recreation and cancellation paths require device/CI instrumentation."
       ]
@@ -380,34 +380,34 @@
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS after RootScreen tab semantics correction",
+    "marketDebugCompile": "PASS after durable import and recovery state fixes",
     "marketDebugUnitTests": {
       "passed": 1021,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
       "suites": 118,
-      "evidence": "Current local worktree: ./gradlew :app:testMarketDebugUnitTest"
+      "evidence": "Current worktree after durable import and recovery state fixes: :app:testMarketDebugUnitTest"
     },
-    "marketDebugAssemble": "PASS for 584cc8b source (no subsequent source edits)",
+    "marketDebugAssemble": "PASS after durable import and recovery state fixes",
     "diffCheck": "PASS on current worktree",
     "instrumentation": "Run 38393877043 for 22e8782 completed: API26/36 Debug+Preview UI assertions failed; API37 Debug+Preview emulator boot timed out before tests. Follow-up removed the confirmed duplicate navigation label semantics. CI runs 38395092348 (82b2861), 38396293920 (8b8794e), and 38396679291 (584cc8b) were in progress at checkpoint; current source runtime still unverified.",
     "apiDeviceMatrix": "BLOCKED: no emulator/device; disk capacity insufficient to install system image",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS after RootScreen tab semantics correction",
+    "marketDebugAndroidTestCompile": "PASS after durable import and recovery state fixes",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
       "warnings": 104,
       "hints": 2,
-      "evidence": "Current worktree :app:lintMarketDebug after navigation accessibility fix"
+      "evidence": "Current worktree :app:lintMarketDebug"
     },
     "gplayDebugAssemble": "PASS",
     "marketPreviewAssemble": "PASS on earlier exact source; current TCS-04 source MarketDebug assembled; Preview current-source rebuild not repeated",
     "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
     "apkSignature": "Current MarketDebug APK verified with Android Debug certificate; production signing not verified",
-    "sourceGates": "PASS on current source: loop2_gate.py and market_release_gate.py",
+    "sourceGates": "PASS on current worktree: loop2_gate.py and market_release_gate.py",
     "marketPreviewApk": {
       "path": "app/build/outputs/apk/market/preview/app-market-preview.apk",
       "sha256": "b5a1fa1985408c88dadd4efc3eaa9d274df131b7b2d05165ca4d05f427f89c64",
@@ -418,9 +418,9 @@
     "currentMarketDebugApk": {
       "path": "app/build/outputs/apk/market/debug/app-market-debug.apk",
       "sizeBytes": 43631054,
-      "sha256": "443dc646f06bc1dd996004d19ffe4713fc977ebee39c2b92a14731da96253d22",
+      "sha256": "ad51b3385f17112ffafb0402ca2f0d0447b4db87a0d1cc2938d6354006e75250",
       "signature": "Android Debug certificate; apksigner verification PASS",
-      "builtFrom": "584cc8b source; no subsequent source edits",
+      "builtFrom": "Current worktree based on 8008eba",
       "releaseStatus": "not production-signed"
     }
   },
@@ -432,32 +432,31 @@
     "CI run 38393877043 failed API26/API36 UI assertions on commit 22e8782; these are not established as fixed by later source yet.",
     "Macro secret detection catches common credential-shaped forms but cannot identify arbitrary secret values; editor warns users not to store secrets."
   ],
-  "nextStep": "Inspect active CI runs 38396679291, 38396293920, and 38395092348; fix confirmed API26/36 UI failures and separately record API37 emulator boot outcomes. Continue TCS implementation after runtime failures are addressed.",
+  "nextStep": "Commit and push durable import/recovery fixes and corrected instrumentation selectors to main; run fresh CI; inspect exact API26/36 failures and continue remaining TCS features.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
     "command": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug :app:assembleMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m",
-    "result": "BUILD SUCCESSFUL",
+    "result": "BUILD SUCCESSFUL; follow-up test-only edits compiled successfully",
     "unitTests": {
-      "passed": 1018,
+      "passed": 1021,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
       "suites": 118
     },
-    "androidTest": "Kotlin compilation passed; instrumentation not executed locally",
+    "androidTest": "Kotlin compilation passed; instrumentation not available locally (adb devices has no attached device)",
     "lint": "passed; 0 errors, 104 warnings, 2 hints; AGP compileSdk 37 support warning remains",
     "apk": "app/build/outputs/apk/market/debug/app-market-debug.apk",
-    "apkSha256": "0d6597fa38c4b0a837e06d5eb288d3b890b384a4755015f565d0d94944e15253",
-    "apkCertificate": "verified by /root/android-sdk/build-tools/37.0.0/apksigner; Android Debug certificate (production signature not verified)",
-    "diffCheck": "passed",
-    "assemble": "MarketDebug assemble passed for current worktree"
+    "apkSha256": "b828532f4974f40bed461905578621f54fb69f3298c5c1cd50754ecdb7944631",
+    "apkCertificate": "apksigner verified Android Debug certificate; production signing not verified",
+    "sourceGates": "loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS"
   },
   "latestCi": {
     "commit": "584cc8b7b311b9dd0ea94c2350dc4fd1770822be",
     "run": "38396679291",
-    "result": "in_progress",
-    "details": "Verify job was still in progress when recorded; no instrumentation result yet. TCS-04 commit 8b8794e run 38396293920 and gesture commit 82b2861 run 38395092348 are also still running."
+    "result": "completed: verify success; all API26/36 instrumentation jobs failed UI assertions; API37 debug and preview emulator boot timed out before tests",
+    "details": "API26/36 failures include stale Compose text-field snapshots, list/palette/slider and toolbar scroll reachability, switch state/target assertions, modifier semantics selector NPE, localized tab test expecting a removed duplicate contentDescription, and terminal keyboard/toolbar discovery. These results are app/test assertion failures, not classified wholesale as infrastructure. API37 had repeated adb sys.boot_completed failures and explicit emulator boot timeout, so no API37 tests ran. Current worktree test selector fixes compile but are not runtime-verified."
   },
   "remainingFeatureCount": 11,
   "verifiedCompleteCount": 0,
@@ -466,8 +465,8 @@
       "id": "NEW-001",
       "title": "Repository published unpersisted state after failed writes",
       "rootCause": "ToolbarRepository exposed candidate state before backing preferences write completed; callers could observe success-shaped UI after storage failure.",
-      "fix": "Persist sanitized candidate first, publish in-memory state only after successful write; reset recovery metadata only after commit.",
-      "tests": "ToolbarRepository regression tests in 1,021-test MarketDebug JVM suite PASS.",
+      "fix": "Repository persists candidate before publishing state. Confirmed SAF import uses Android SharedPreferences.commit() on Dispatchers.IO and fails visibly if the durable write reports failure; regular rapid toolbar edits retain apply().",
+      "tests": "Repository regression verifies import uses putDurably, failed durable write leaves published state unchanged; MarketDebug JVM suite 1,021/1,021 PASS.",
       "status": "IMPLEMENTED_NOT_TESTED (unit verified; Android storage/UI runtime pending)"
     },
     {
@@ -483,8 +482,16 @@
       "title": "Bottom navigation labels announced twice by accessibility services",
       "rootCause": "RootScreen copied each visible tab label into a parent contentDescription while NavigationBarItem already exposed the same label.",
       "fix": "Removed redundant parent contentDescription; visible NavigationBarItem label and selection semantics remain.",
-      "tests": "MarketDebug app Kotlin compile PASS; AndroidTest Kotlin compile PASS; lint PASS (0 errors). Runtime assertion is pending fresh API26/API36 CI.",
+      "tests": "MarketDebug compile, AndroidTest Kotlin compile, lint and APK assembly PASS; CI run 38396679291 Verify PASS, instrumentation in progress.",
       "status": "IMPLEMENTED_NOT_TESTED"
+    },
+    {
+      "id": "NEW-004",
+      "title": "Corrupt-config recovery notice remained after a successful repair save",
+      "rootCause": "ToolbarRepository retained the previous recoveryNotice and recoverableRaw values after later writes replaced the unreadable configuration.",
+      "fix": "Clear recovery metadata after each successful repository commit; failed writes preserve the recovery evidence.",
+      "tests": "Corrupt stored document regression now asserts successful save clears notice/raw; MarketDebug JVM suite 1,021/1,021 PASS.",
+      "status": "UNIT_VERIFIED"
     }
   ]
 }

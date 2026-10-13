@@ -71,6 +71,7 @@ class SnippetAccessibilityTest {
                     snippetsKey,
                     maxAttempts = 16,
                     horizontalDirection = scrollDirection,
+                    appPackage = instrumentation.targetContext.packageName,
                 )
             }
             assertTrue("Snippets toolbar key was not fully reachable by horizontal scrolling", snippetsReachable)

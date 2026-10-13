@@ -19,11 +19,12 @@ import androidx.test.uiautomator.UiObject2
 fun UiDevice.scrollUntil(
     maxAttempts: Int = 12,
     horizontalDirection: LayoutDirection? = null,
+    appPackage: String? = null,
     present: () -> Boolean,
 ) {
     repeat(maxAttempts) {
         if (present()) return
-        scrollOnce(horizontalDirection)
+        scrollOnce(horizontalDirection, appPackage)
     }
 }
 
@@ -41,18 +42,19 @@ fun UiDevice.scrollUntilFullyVisible(
     maxAttempts: Int = 12,
     horizontalDirection: LayoutDirection? = null,
     fullBounds: (() -> Rect?)? = null,
+    appPackage: String? = null,
 ): Boolean {
     repeat(maxAttempts) {
         val node = findObject(target)
         if (node != null && isFullyVisible(node, fullBounds)) return true
-        scrollOnce(horizontalDirection)
+        scrollOnce(horizontalDirection, appPackage)
     }
     val node = findObject(target)
     return node != null && isFullyVisible(node, fullBounds)
 }
 
-private fun UiDevice.scrollOnce(horizontalDirection: LayoutDirection?) {
-    val scrollable = pickScrollable(horizontalDirection != null)
+private fun UiDevice.scrollOnce(horizontalDirection: LayoutDirection?, appPackage: String?) {
+    val scrollable = pickScrollable(horizontalDirection != null, appPackage)
     val bounds = scrollable?.safeBounds()
     if (bounds != null && bounds.width() > 0 && bounds.height() > 0) {
         // UiObject2.scroll can report success without moving Compose scroll containers on
@@ -119,9 +121,11 @@ private fun UiDevice.isFullyVisible(node: UiObject2, fullBounds: (() -> Rect?)?)
  * therefore best-effort: a stale candidate is skipped rather than crashing the test with a
  * [androidx.test.uiautomator.StaleObjectException].
  */
-private fun UiDevice.pickScrollable(horizontal: Boolean): UiObject2? {
-    val scored = findObjects(By.scrollable(true)).mapNotNull { candidate ->
+private fun UiDevice.pickScrollable(horizontal: Boolean, appPackage: String?): UiObject2? {
+    val selector = if (appPackage == null) By.scrollable(true) else By.pkg(appPackage).scrollable(true)
+    val scored = findObjects(selector).mapNotNull { candidate ->
         val bounds = candidate.safeBounds() ?: return@mapNotNull null
+        if (horizontal && bounds.width() <= bounds.height()) return@mapNotNull null
         if (!horizontal && bounds.width() > bounds.height()) return@mapNotNull null
         candidate to bounds
     }
