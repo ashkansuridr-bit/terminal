@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T12:45:00+00:00",
+  "capturedAt": "2026-10-13T12:52:00+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "8b8794e62353bea7a7a97174b95d2f47a1690ba9 (additional uncommitted navigation accessibility fix)",
+  "lastVerifiedCommit": "584cc8b7b311b9dd0ea94c2350dc4fd1770822be",
   "features": [
     {
       "id": "TCS-01",
@@ -391,7 +391,7 @@
     },
     "marketDebugAssemble": "PASS on current worktree",
     "diffCheck": "PASS on current worktree",
-    "instrumentation": "Run 38393877043 for 22e8782 completed: API26/36 Debug+Preview UI assertions failed; API37 Debug+Preview emulator boot timed out before tests. Runs 38395092348 (82b2861) and 38396293920 (8b8794e) still running at checkpoint. RootScreen duplicate tab label semantics removed locally, fresh runtime evidence pending.",
+    "instrumentation": "Run 38393877043 for 22e8782 completed: API26/36 Debug+Preview UI assertions failed; API37 Debug+Preview emulator boot timed out before tests. Follow-up removed the confirmed duplicate navigation label semantics. CI runs 38395092348 (82b2861), 38396293920 (8b8794e), and 38396679291 (584cc8b) were in progress at checkpoint; current source runtime still unverified.",
     "apiDeviceMatrix": "BLOCKED: no emulator/device; disk capacity insufficient to install system image",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
@@ -430,7 +430,7 @@
     "CI run 38393877043 failed API26/API36 UI assertions on commit 22e8782; these are not established as fixed by later source yet.",
     "Macro secret detection catches common credential-shaped forms but cannot identify arbitrary secret values; editor warns users not to store secrets."
   ],
-  "nextStep": "Commit NEW-003 fix and checkpoint to main; inspect CI runs 38396293920 and 38395092348; follow any confirmed API26/API36 failures to root cause and continue remaining features.",
+  "nextStep": "Inspect active CI runs 38396679291, 38396293920, and 38395092348; fix confirmed API26/36 UI failures and separately record API37 emulator boot outcomes. Continue TCS implementation after runtime failures are addressed.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
@@ -452,10 +452,10 @@
     "assemble": "MarketDebug assemble passed for current worktree"
   },
   "latestCi": {
-    "commit": "8b8794e62353bea7a7a97174b95d2f47a1690ba9",
-    "run": "38396293920",
-    "result": "in_progress; verify successful",
-    "details": "API26/36/37 Debug and Preview instrumentation jobs are running. Previous run 38393877043 failed API26/36 UI assertions and API37 emulator boot; source triage found redundant tab label contentDescription and it has been removed in an uncommitted follow-up."
+    "commit": "584cc8b7b311b9dd0ea94c2350dc4fd1770822be",
+    "run": "38396679291",
+    "result": "in_progress",
+    "details": "Verify job was still in progress when recorded; no instrumentation result yet. TCS-04 commit 8b8794e run 38396293920 and gesture commit 82b2861 run 38395092348 are also still running."
   },
   "remainingFeatureCount": 11,
   "verifiedCompleteCount": 0,

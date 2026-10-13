@@ -2,7 +2,7 @@
 
 ## وضعیت فعلی
 
-پیاده‌سازی Terminal Control Studio و اصلاحات پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit پوش‌شده هنگام ثبت این checkpoint `8b8794e` است؛ اصلاح NEW-003 و همگام‌سازی وضعیت درخت کاری‌اند و هنوز Commit نشده‌اند. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون Gateهای UI/دستگاه هنوز برای هیچ Feature کامل نشده‌اند.
+پیاده‌سازی Terminal Control Studio و اصلاحات پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit کد پوش‌شده `584cc8b` است؛ همگام‌سازی تازهٔ وضعیت و گزارش‌ها هنوز محلی است. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون Gateهای UI/دستگاه هنوز برای هیچ Feature کامل نشده‌اند.
 
 ## تغییرات و علت‌ها
 
@@ -39,7 +39,7 @@
 ## خروجی‌ها و وضعیت انتشار
 
 - شاخهٔ کاری فعلی: `main` (اصلاح NEW-003 و گزارش‌های همگام‌شده هنوز در درخت کاری‌اند).
-- آخرین Commit پوش‌شده: `8b8794e`.
+- آخرین Commit کد پوش‌شده: `584cc8b`.
 - PR مرتبط: https://github.com/ashkansuridr-bit/terminal/pull/4 (به‌دلیل پوش مستقیم، وضعیت وب آن را جداگانه بررسی کنید؛ PR معیار وضعیت شاخه نیست).
 - اجرای CI قدیمی‌تر با شکست instrumentation: https://github.com/ashkansuridr-bit/terminal/actions/runs/38393877043
 - اجرای CI برای `82b2861` (نتیجه باید دوباره بررسی شود): https://github.com/ashkansuridr-bit/terminal/actions/runs/38395092348
