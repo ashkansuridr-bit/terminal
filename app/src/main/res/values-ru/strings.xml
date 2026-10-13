@@ -450,4 +450,17 @@
     <string name="tcs_discard_message">Изменения панели не сохранены. Отменить их?</string>
     <string name="tcs_discard_action">Отменить</string>
     <string name="tcs_keep_editing">Продолжить редактирование</string>
+
+    <!-- Terminal Control Studio gesture editor -->
+    <string name="tcs_gestures">Жесты клавиши</string>
+    <string name="tcs_gesture_double_tap">Двойное касание</string>
+    <string name="tcs_gesture_long_press">Долгое нажатие</string>
+    <string name="tcs_gesture_swipe_up">Смахнуть вверх</string>
+    <string name="tcs_gesture_swipe_down">Смахнуть вниз</string>
+    <string name="tcs_gesture_swipe_left">Смахнуть влево</string>
+    <string name="tcs_gesture_swipe_right">Смахнуть вправо</string>
+    <string name="tcs_no_gesture_action">Нет действия</string>
+    <string name="tcs_clear_gesture">Очистить жест</string>
+    <string name="tcs_no_compatible_gesture_action">В этой раскладке нет другого действия для этого жеста.</string>
+    <string name="tcs_long_press_repeat_conflict">Отключите повтор при удержании этой клавиши, прежде чем назначать долгое нажатие.</string>
 </resources>

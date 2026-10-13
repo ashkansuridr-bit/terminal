@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T12:00:00+00:00",
+  "capturedAt": "2026-10-13T12:04:30+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
+  "lastVerifiedCommit": "22e878228afbf0fa62b577db73c4e8de777c78bd",
   "features": [
     {
       "id": "TCS-01",
@@ -141,7 +141,19 @@
       "phase": "VERIFY",
       "changedFiles": [
         "ToolbarGestures.kt",
-        "MacroEngine.kt"
+        "MacroEngine.kt",
+        "app/src/main/java/app/terminalssh/secure/toolbar/ToolbarGestures.kt",
+        "app/src/main/java/app/terminalssh/secure/ui/toolbar/ToolbarEditorScreen.kt",
+        "app/src/test/java/app/terminalssh/secure/toolbar/ToolbarGesturesTest.kt",
+        "app/src/test/java/app/terminalssh/secure/toolbar/ToolbarEditorTest.kt",
+        "app/src/test/java/app/terminalssh/secure/toolbar/ToolbarCodecTest.kt",
+        "app/src/test/java/app/terminalssh/secure/toolbar/ToolbarRepositoryTest.kt",
+        "app/src/main/res/values/strings.xml",
+        "app/src/main/res/values-ar/strings.xml",
+        "app/src/main/res/values-en/strings.xml",
+        "app/src/main/res/values-es/strings.xml",
+        "app/src/main/res/values-fr/strings.xml",
+        "app/src/main/res/values-ru/strings.xml"
       ],
       "dependencies": [],
       "status": "IMPLEMENTED_NOT_TESTED",
@@ -150,15 +162,19 @@
         "device gesture/cancellation"
       ],
       "executedTests": [
-        "JVM tests PASS"
+        "MarketDebug JVM: 1,018 passed; 0 failed/errors/skipped (118 suites)",
+        "MarketDebug app Kotlin compile PASS",
+        "MarketDebug AndroidTest Kotlin compile PASS",
+        "MarketDebug lint PASS (0 errors, 104 warnings, 2 hints)",
+        "Six-locale gesture resource parity PASS"
       ],
-      "lastResult": "Verified as noted",
+      "lastResult": "Editor now binds/replaces/clears all six gestures through the existing edit session; undo/redo and Save apply to the persisted profile. Picker filters tap conflicts, repeat/long-press conflicts, Enter, multiline input, invalid snippet choices, and macros that submit Enter. Runtime UI dispatch remains device-unverified.",
       "lastFailure": null,
       "fixAttempts": 0,
       "commitSha": "f2e7524",
-      "lastReviewedAt": "2026-10-12T15:42:38+00:00",
+      "lastReviewedAt": "2026-10-13T12:03:11+00:00",
       "remainingIssues": [
-        "Device tests blocked"
+        "No local emulator/device to verify Compose gesture selection, dispatch, cancellation, or process recreation."
       ]
     },
     {
@@ -406,18 +422,19 @@
     "command": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug :app:assembleMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m",
     "result": "BUILD SUCCESSFUL",
     "unitTests": {
-      "passed": 1015,
+      "passed": 1018,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
       "suites": 118
     },
-    "androidTest": "Kotlin compilation passed; instrumentation not executed (no local device/emulator)",
-    "lint": "passed; AGP 8.13.2 reports compileSdk 37 support warning; test code has deprecated AccessibilityNodeInfo APIs",
+    "androidTest": "Kotlin compilation passed; instrumentation not executed locally",
+    "lint": "passed; 0 errors, 104 warnings, 2 hints; AGP compileSdk 37 support warning remains",
     "apk": "app/build/outputs/apk/market/debug/app-market-debug.apk",
-    "apkSha256": "d9b4030dc2c5f07bc40cb8b9f74c0a6864b29dc47f837bf9f3dfa97039249dbd",
+    "apkSha256": "0d6597fa38c4b0a837e06d5eb288d3b890b384a4755015f565d0d94944e15253",
     "apkCertificate": "verified by /root/android-sdk/build-tools/37.0.0/apksigner; Android Debug certificate (production signature not verified)",
-    "diffCheck": "passed"
+    "diffCheck": "passed",
+    "assemble": "MarketDebug assemble passed for current worktree"
   },
   "latestCi": {
     "commit": "25215085307c417ef607ea503b920e6e0f6c5ac5",

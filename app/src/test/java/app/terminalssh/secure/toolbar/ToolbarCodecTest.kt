@@ -80,10 +80,14 @@ class ToolbarCodecTest {
         val key = ToolKeySpec(
             id = "enter", label = "Enter", action = SpecialKeyAction(ToolbarSpecialKey.ENTER),
             gestures = mapOf(
+                ToolbarGesture.DOUBLE_TAP to ControlAction('D'),
                 ToolbarGesture.LONG_PRESS to ControlAction('C'),
                 ToolbarGesture.SWIPE_UP to ChangeFontSizeAction(1),
+                ToolbarGesture.SWIPE_DOWN to TextAction("x"),
+                ToolbarGesture.SWIPE_LEFT to ControlAction('K'),
+                ToolbarGesture.SWIPE_RIGHT to OpenSettingsAction,
             ),
-            repeatWhileHeld = true, pinned = true, width = KeyWidth.WIDE, style = KeyStyle.ACCENT,
+            pinned = true, width = KeyWidth.WIDE, style = KeyStyle.ACCENT,
         )
         val profile = ToolbarProfile(
             id = "p", name = "P", description = "d", iconToken = "i", themeId = ToolbarThemes.default.id,

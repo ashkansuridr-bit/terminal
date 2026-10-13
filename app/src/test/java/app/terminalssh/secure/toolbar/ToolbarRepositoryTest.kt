@@ -47,6 +47,17 @@ class ToolbarRepositoryTest {
         assertEquals("Esc!", ToolbarRepository(prefs).profileById("shell")!!.layout.keyById("escape")!!.label)
     }
 
+    @Test fun gestureBindingsPersistWhenProfileIsSavedAndReloaded() {
+        val (repository, prefs) = repo()
+        val gesture = ToolbarGesture.SWIPE_LEFT
+        val action = ControlAction('C')
+        val edited = ToolbarEditor.bindGesture(ToolbarProfiles.shell, "escape", gesture, action)
+        repository.saveProfile(edited)
+
+        val saved = ToolbarRepository(prefs).profileById("shell")!!.layout.keyById("escape")!!
+        assertEquals(action, saved.gestures[gesture])
+    }
+
     @Test fun deletingAnActiveCustomOnlyProfileFallsBackToDefault() {
         val (repository, _) = repo()
         val custom = ToolbarProfiles.shell.copy(id = "mine", name = "Mine", builtIn = false)

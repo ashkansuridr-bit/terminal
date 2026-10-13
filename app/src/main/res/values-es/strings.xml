@@ -448,4 +448,17 @@
     <string name="tcs_discard_message">Los cambios de la barra no se han guardado. ¿Quieres descartarlos?</string>
     <string name="tcs_discard_action">Descartar</string>
     <string name="tcs_keep_editing">Seguir editando</string>
+
+    <!-- Terminal Control Studio gesture editor -->
+    <string name="tcs_gestures">Gestos de la tecla</string>
+    <string name="tcs_gesture_double_tap">Doble toque</string>
+    <string name="tcs_gesture_long_press">Pulsación larga</string>
+    <string name="tcs_gesture_swipe_up">Deslizar hacia arriba</string>
+    <string name="tcs_gesture_swipe_down">Deslizar hacia abajo</string>
+    <string name="tcs_gesture_swipe_left">Deslizar a la izquierda</string>
+    <string name="tcs_gesture_swipe_right">Deslizar a la derecha</string>
+    <string name="tcs_no_gesture_action">Sin acción</string>
+    <string name="tcs_clear_gesture">Borrar gesto</string>
+    <string name="tcs_no_compatible_gesture_action">No hay otra acción compatible con este gesto en esta disposición.</string>
+    <string name="tcs_long_press_repeat_conflict">Desactiva la repetición al mantener pulsada esta tecla antes de asignar la pulsación larga.</string>
 </resources>

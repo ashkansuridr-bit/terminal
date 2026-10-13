@@ -495,4 +495,17 @@
     <string name="tcs_discard_message">Your toolbar changes have not been saved. Discard them?</string>
     <string name="tcs_discard_action">Discard</string>
     <string name="tcs_keep_editing">Keep editing</string>
+
+    <!-- Terminal Control Studio gesture editor -->
+    <string name="tcs_gestures">Key gestures</string>
+    <string name="tcs_gesture_double_tap">Double tap</string>
+    <string name="tcs_gesture_long_press">Long press</string>
+    <string name="tcs_gesture_swipe_up">Swipe up</string>
+    <string name="tcs_gesture_swipe_down">Swipe down</string>
+    <string name="tcs_gesture_swipe_left">Swipe left</string>
+    <string name="tcs_gesture_swipe_right">Swipe right</string>
+    <string name="tcs_no_gesture_action">No action</string>
+    <string name="tcs_clear_gesture">Clear gesture</string>
+    <string name="tcs_no_compatible_gesture_action">No other compatible action is available for this gesture in this layout.</string>
+    <string name="tcs_long_press_repeat_conflict">Turn off this key’s repeat-while-held setting before binding a long press.</string>
 </resources>

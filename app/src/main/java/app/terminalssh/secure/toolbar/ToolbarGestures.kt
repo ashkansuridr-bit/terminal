@@ -19,6 +19,13 @@ object ToolbarGestures {
     // There is no TAP entry in the map: the primary action *is* the tap action.
     fun resolve(key: ToolKeySpec, gesture: ToolbarGesture): ToolbarAction? = key.gestures[gesture]
 
+    /** True only when binding this secondary action cannot conflict with the key's tap/repeat behavior. */
+    fun canBind(key: ToolKeySpec, gesture: ToolbarGesture, action: ToolbarAction): Boolean {
+        if (!key.enabled || action == key.action) return false
+        if (gesture == ToolbarGesture.LONG_PRESS && key.repeatWhileHeld) return false
+        return conflicts(key.copy(gestures = key.gestures + (gesture to action))).isEmpty()
+    }
+
     /** The action performed by a plain tap or press without any secondary gesture. */
     fun tapAction(key: ToolKeySpec): ToolbarAction = key.action
 

@@ -49,10 +49,15 @@ import app.terminalssh.secure.toolbar.MacroAction
 import app.terminalssh.secure.toolbar.MacroDef
 import app.terminalssh.secure.toolbar.MacroEngine
 import app.terminalssh.secure.toolbar.MacroStep
+import app.terminalssh.secure.toolbar.SpecialKeyAction
 import app.terminalssh.secure.toolbar.ToolKeySpec
+import app.terminalssh.secure.toolbar.ToolbarAction
+import app.terminalssh.secure.toolbar.SnippetAction
+import app.terminalssh.secure.toolbar.TextAction
 import app.terminalssh.secure.toolbar.ToolbarEditSession
 import app.terminalssh.secure.toolbar.ToolbarEditor
 import app.terminalssh.secure.toolbar.ToolbarGesture
+import app.terminalssh.secure.toolbar.ToolbarGestures
 import app.terminalssh.secure.toolbar.ToolbarKeyPalette
 import app.terminalssh.secure.toolbar.ToolbarProfiles
 import app.terminalssh.secure.toolbar.ToolbarProfile
@@ -84,6 +89,7 @@ fun ToolbarEditorScreen(
     var addKeyOpen by remember { mutableStateOf(false) }
     var renameOpen by remember { mutableStateOf(false) }
     var createMacroOpen by remember { mutableStateOf(false) }
+    var gestureDialog by remember { mutableStateOf<ToolbarGesture?>(null) }
     var discardConfirmOpen by remember { mutableStateOf(false) }
     val pendingMacros = remember(profileId) { mutableListOf<MacroDef>() }
 
@@ -256,13 +262,34 @@ fun ToolbarEditorScreen(
                         edit { ToolbarEditor.removeKey(it, selected.id) }
                     }
                 }
-                if (selected.gestures.isNotEmpty()) {
-                    Text(
-                        selected.gestures.entries.joinToString(", ") { (g, a) -> "${g.name.lowercase()} → ${actionLabel(a)}" },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
+                SectionLabel(stringResource(R.string.tcs_gestures))
+                ToolbarGesture.entries.forEach { gesture ->
+                    val binding = selected.gestures[gesture]
+                    val actionName = binding?.let { action ->
+                        working.layout.keys.firstOrNull { it.action == action }?.label ?: actionLabel(action)
+                    } ?: stringResource(R.string.tcs_no_gesture_action)
+                    Column(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                        Text(
+                            gestureLabel(gesture),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(
+                                onClick = { gestureDialog = gesture },
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(actionName, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                            if (binding != null) {
+                                TextButton(onClick = {
+                                    edit { ToolbarEditor.clearGesture(it, selected.id, gesture) }
+                                }) {
+                                    Text(stringResource(R.string.tcs_clear_gesture), maxLines = 1)
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -322,6 +349,43 @@ fun ToolbarEditorScreen(
         )
     }
 
+    if (gestureDialog != null && selected != null) {
+        val gesture = gestureDialog!!
+        val choices = working.layout.keys
+            .asSequence()
+            .filter { it.id != selected.id && it.enabled }
+            .filterNot { it.action is SpecialKeyAction && it.action.key == app.terminalssh.secure.toolbar.ToolbarSpecialKey.ENTER }
+            .filterNot { it.action is SnippetAction }
+            .filterNot { (it.action as? TextAction)?.text?.let { text -> '\n' in text || '\r' in text } == true }
+            .filter { candidate ->
+                val action = candidate.action
+                if (action !is MacroAction) return@filter true
+                val macro = repository.macroById(action.macroId) ?: return@filter false
+                macro.steps.none { step ->
+                    step is MacroStep.Special && step.key == app.terminalssh.secure.toolbar.ToolbarSpecialKey.ENTER ||
+                        step is MacroStep.Text && ('\n' in step.text || '\r' in step.text)
+                }
+            }
+            .filter { candidate -> ToolbarGestures.canBind(selected, gesture, candidate.action) }
+            .distinctBy { it.action }
+            .toList()
+        GestureBindingDialog(
+            gesture = gesture,
+            choices = choices,
+            hasCurrentBinding = gesture in selected.gestures,
+            longPressBlockedByRepeat = gesture == ToolbarGesture.LONG_PRESS && selected.repeatWhileHeld,
+            onDismiss = { gestureDialog = null },
+            onBind = { action ->
+                edit { ToolbarEditor.bindGesture(it, selected.id, gesture, action) }
+                gestureDialog = null
+            },
+            onClear = {
+                edit { ToolbarEditor.clearGesture(it, selected.id, gesture) }
+                gestureDialog = null
+            },
+        )
+    }
+
     if (createMacroOpen) {
         val macroDescription = stringResource(R.string.tcs_macro_insert_description)
         CreateMacroDialog(
@@ -372,6 +436,64 @@ fun ToolbarEditorScreen(
             },
         )
     }
+}
+
+@Composable
+private fun gestureLabel(gesture: ToolbarGesture): String = when (gesture) {
+    ToolbarGesture.DOUBLE_TAP -> stringResource(R.string.tcs_gesture_double_tap)
+    ToolbarGesture.LONG_PRESS -> stringResource(R.string.tcs_gesture_long_press)
+    ToolbarGesture.SWIPE_UP -> stringResource(R.string.tcs_gesture_swipe_up)
+    ToolbarGesture.SWIPE_DOWN -> stringResource(R.string.tcs_gesture_swipe_down)
+    ToolbarGesture.SWIPE_LEFT -> stringResource(R.string.tcs_gesture_swipe_left)
+    ToolbarGesture.SWIPE_RIGHT -> stringResource(R.string.tcs_gesture_swipe_right)
+}
+
+@Composable
+private fun GestureBindingDialog(
+    gesture: ToolbarGesture,
+    choices: List<ToolKeySpec>,
+    hasCurrentBinding: Boolean,
+    longPressBlockedByRepeat: Boolean,
+    onDismiss: () -> Unit,
+    onBind: (ToolbarAction) -> Unit,
+    onClear: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(gestureLabel(gesture)) },
+        text = {
+            if (choices.isEmpty()) {
+                Text(
+                    stringResource(
+                        if (longPressBlockedByRepeat) R.string.tcs_long_press_repeat_conflict
+                        else R.string.tcs_no_compatible_gesture_action,
+                    ),
+                )
+            } else {
+                Column(
+                    Modifier.fillMaxWidth().height(280.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    choices.forEach { key ->
+                        TextButton(
+                            onClick = { onBind(key.action) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("${key.label} · ${actionLabel(key.action)}")
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (hasCurrentBinding) {
+                TextButton(onClick = onClear) { Text(stringResource(R.string.tcs_clear_gesture)) }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+        },
+    )
 }
 
 @Composable

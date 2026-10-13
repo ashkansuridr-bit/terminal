@@ -498,4 +498,17 @@
     <string name="tcs_discard_message">لم تُحفظ تغييرات شريط الأدوات. هل تريد تجاهلها؟</string>
     <string name="tcs_discard_action">تجاهل</string>
     <string name="tcs_keep_editing">متابعة التحرير</string>
+
+    <!-- Terminal Control Studio gesture editor -->
+    <string name="tcs_gestures">إيماءات هذا المفتاح</string>
+    <string name="tcs_gesture_double_tap">النقر مرتين</string>
+    <string name="tcs_gesture_long_press">الضغط المطوّل</string>
+    <string name="tcs_gesture_swipe_up">السحب للأعلى</string>
+    <string name="tcs_gesture_swipe_down">السحب للأسفل</string>
+    <string name="tcs_gesture_swipe_left">السحب لليسار</string>
+    <string name="tcs_gesture_swipe_right">السحب لليمين</string>
+    <string name="tcs_no_gesture_action">بلا إجراء</string>
+    <string name="tcs_clear_gesture">مسح الإيماءة</string>
+    <string name="tcs_no_compatible_gesture_action">لا يوجد إجراء آخر متوافق لهذه الإيماءة في هذا التخطيط.</string>
+    <string name="tcs_long_press_repeat_conflict">عطّل تكرار الضغط المطوّل للمفتاح قبل ربط إيماءة الضغط المطوّل.</string>
 </resources>

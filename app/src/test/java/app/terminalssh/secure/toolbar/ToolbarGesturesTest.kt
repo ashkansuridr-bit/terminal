@@ -41,6 +41,17 @@ class ToolbarGesturesTest {
         assertTrue(conflicts.any { it.contains("repeats the primary") })
     }
 
+    @Test fun pickerRejectsPrimaryActionAndLongPressOnRepeatingKey() {
+        val primary = SpecialKeyAction(ToolbarSpecialKey.ENTER)
+        val key = key(action = primary)
+        assertFalse(ToolbarGestures.canBind(key, ToolbarGesture.DOUBLE_TAP, primary))
+        assertTrue(ToolbarGestures.canBind(key, ToolbarGesture.DOUBLE_TAP, ControlAction('C')))
+
+        val repeating = key(action = SpecialKeyAction(ToolbarSpecialKey.LEFT), repeat = true)
+        assertFalse(ToolbarGestures.canBind(repeating, ToolbarGesture.LONG_PRESS, ControlAction('C')))
+        assertTrue(ToolbarGestures.canBind(repeating, ToolbarGesture.SWIPE_UP, ControlAction('C')))
+    }
+
     @Test fun repeatPlusLongPressIsFlagged() {
         val conflicts = ToolbarGestures.conflicts(
             key(

@@ -111,6 +111,27 @@ class ToolbarEditorTest {
         assertNull(cleared.layout.keyById("a")!!.gestures[ToolbarGesture.LONG_PRESS])
     }
 
+    @Test fun allGesturesBindClearAndParticipateInUndoRedo() {
+        val session = ToolbarEditSession(base)
+        val actions = ToolbarGesture.entries.associateWith { ControlAction('C') }
+        session.apply { profile ->
+            actions.keys.fold(profile) { current, gesture ->
+                ToolbarEditor.bindGesture(current, "a", gesture, actions.getValue(gesture))
+            }
+        }
+        assertEquals(actions, session.current.layout.keyById("a")!!.gestures)
+        session.undo()
+        assertTrue(session.current.layout.keyById("a")!!.gestures.isEmpty())
+        session.redo()
+        assertEquals(actions, session.current.layout.keyById("a")!!.gestures)
+        session.apply { profile ->
+            actions.keys.fold(profile) { current, gesture ->
+                ToolbarEditor.clearGesture(current, "a", gesture)
+            }
+        }
+        assertTrue(session.current.layout.keyById("a")!!.gestures.isEmpty())
+    }
+
     @Test fun resetRowAndResetRestoreFromFallback() {
         val edited = ToolbarEditor.renameKey(base, "a", "renamed")
         val fallback = profile(listOf(key("a"), key("b")), listOf(key("c")))

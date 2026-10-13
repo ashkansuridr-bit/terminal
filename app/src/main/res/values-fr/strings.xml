@@ -448,4 +448,17 @@
     <string name="tcs_discard_message">Les modifications de la barre ne sont pas enregistrées. Les supprimer ?</string>
     <string name="tcs_discard_action">Supprimer</string>
     <string name="tcs_keep_editing">Continuer la modification</string>
+
+    <!-- Terminal Control Studio gesture editor -->
+    <string name="tcs_gestures">Gestes de la touche</string>
+    <string name="tcs_gesture_double_tap">Double appui</string>
+    <string name="tcs_gesture_long_press">Appui prolongé</string>
+    <string name="tcs_gesture_swipe_up">Glisser vers le haut</string>
+    <string name="tcs_gesture_swipe_down">Glisser vers le bas</string>
+    <string name="tcs_gesture_swipe_left">Glisser vers la gauche</string>
+    <string name="tcs_gesture_swipe_right">Glisser vers la droite</string>
+    <string name="tcs_no_gesture_action">Aucune action</string>
+    <string name="tcs_clear_gesture">Effacer le geste</string>
+    <string name="tcs_no_compatible_gesture_action">Aucune autre action compatible avec ce geste dans cette disposition.</string>
+    <string name="tcs_long_press_repeat_conflict">Désactivez la répétition au maintien de cette touche avant d’attribuer un appui prolongé.</string>
 </resources>

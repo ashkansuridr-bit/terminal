@@ -495,4 +495,17 @@
     <string name="tcs_discard_message">تغییرات این نوار ذخیره نشده‌اند. می‌خواهید دور انداخته شوند؟</string>
     <string name="tcs_discard_action">دور انداختن</string>
     <string name="tcs_keep_editing">ادامهٔ ویرایش</string>
+
+    <!-- Terminal Control Studio gesture editor -->
+    <string name="tcs_gestures">حرکت‌های این کلید</string>
+    <string name="tcs_gesture_double_tap">دو بار لمس</string>
+    <string name="tcs_gesture_long_press">لمس طولانی</string>
+    <string name="tcs_gesture_swipe_up">کشیدن به بالا</string>
+    <string name="tcs_gesture_swipe_down">کشیدن به پایین</string>
+    <string name="tcs_gesture_swipe_left">کشیدن به چپ</string>
+    <string name="tcs_gesture_swipe_right">کشیدن به راست</string>
+    <string name="tcs_no_gesture_action">بدون عملکرد</string>
+    <string name="tcs_clear_gesture">پاک‌کردن حرکت</string>
+    <string name="tcs_no_compatible_gesture_action">برای این حرکت، عملکرد سازگار دیگری در این چیدمان نیست.</string>
+    <string name="tcs_long_press_repeat_conflict">برای تنظیم لمس طولانی، ابتدا تکرار نگه‌داشتن این کلید را خاموش کنید.</string>
 </resources>
