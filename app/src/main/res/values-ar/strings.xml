@@ -529,4 +529,7 @@
     <string name="tcs_host_profile_override">يستخدم هذا الاتصال ملف مفاتيح مخصصًا.</string>
     <string name="tcs_host_profile_apply">استخدام الملف المحدد لهذا الاتصال</string>
     <string name="tcs_host_profile_clear">استخدام الملف العام</string>
+    <string name="tcs_alt_modifier">مفتاح Alt</string>
+    <string name="tcs_shift_modifier">مفتاح Shift</string>
+    <string name="tcs_snippets_action">فتح الأوامر المحفوظة</string>
 </resources>

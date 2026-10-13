@@ -697,24 +697,29 @@ class TerminalKeyboardTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             val terminalTab = instrumentation.targetContext.getString(R.string.tab_terminal)
             val controlName = instrumentation.targetContext.getString(R.string.tcs_control_modifier)
+            val altName = instrumentation.targetContext.getString(R.string.tcs_alt_modifier)
+            val shiftName = instrumentation.targetContext.getString(R.string.tcs_shift_modifier)
+            val tabName = instrumentation.targetContext.getString(R.string.terminal_key_tab)
             openTerminalTab(terminalTab, controlName)
 
             // Essential terminal modifiers are deliberately first in the phone viewport.
             assertTrue("Ctrl must be visible without scrolling", findAppNode { it.contentDescription == controlName } != null)
-            assertTrue("Alt must be visible without scrolling", findAppNode { it.contentDescription == "Alt" } != null)
-            assertTrue("Shift must be visible without scrolling", findAppNode { it.contentDescription == "Shift" } != null)
+            assertTrue("Alt must be visible without scrolling", findAppNode { it.contentDescription == altName } != null)
+            assertTrue("Shift must be visible without scrolling", findAppNode { it.contentDescription == shiftName } != null)
 
-            // Compose splits a toggle key into three nodes: the stateful 48dp control,
-            // a full-size child carrying the announced description, and a bare child
-            // with the printed label. The checkable box is the control the user taps.
+            // The accessible name, toggle state, and click action should be exposed
+            // on the same checkable semantics node.
             val ctrl = modifierControl(controlName)
-            val alt = modifierControl("Alt")
-            val shift = modifierControl("Shift")
+            val alt = modifierControl(altName)
+            val shift = modifierControl(shiftName)
             assertTrue(ctrl.isCheckable)
+            assertTrue("Ctrl's named semantics node must own its click action", ctrl.isClickable)
             assertFalse(ctrl.isChecked)
             assertTrue(alt.isCheckable)
+            assertTrue("Alt's named semantics node must own its click action", alt.isClickable)
             assertFalse(alt.isChecked)
             assertTrue(shift.isCheckable)
+            assertTrue("Shift's named semantics node must own its click action", shift.isClickable)
             assertFalse(shift.isChecked)
 
             ctrl.click()
@@ -722,17 +727,17 @@ class TerminalKeyboardTest {
 
             alt.click()
             assertTrue(modifierControl(controlName).isChecked)
-            assertTrue(modifierControl("Alt").isChecked)
+            assertTrue(modifierControl(altName).isChecked)
 
             shift.click()
             assertTrue(modifierControl(controlName).isChecked)
-            assertTrue(modifierControl("Alt").isChecked)
-            assertTrue(modifierControl("Shift").isChecked)
+            assertTrue(modifierControl(altName).isChecked)
+            assertTrue(modifierControl(shiftName).isChecked)
 
-            clickAppDesc("Tab")
+            clickAppDesc(tabName)
             assertFalse(modifierControl(controlName).isChecked)
-            assertFalse(modifierControl("Alt").isChecked)
-            assertFalse(modifierControl("Shift").isChecked)
+            assertFalse(modifierControl(altName).isChecked)
+            assertFalse(modifierControl(shiftName).isChecked)
             assertTrue(focusedViewSummary(scenario), waitForFocusedTextEditor(scenario))
         }
     }
@@ -740,7 +745,7 @@ class TerminalKeyboardTest {
     /** Returns the checkable semantics node that exposes a modifier's current state. */
     private fun modifierControl(name: String): UiObject2 =
         device.wait(
-            Until.findObject(By.checkable(true).desc(name)),
+            Until.findObject(By.checkable(true).descStartsWith(name)),
             UI_TIMEOUT_MS,
         ) ?: throw AssertionError("Modifier '$name' must expose one checkable accessible control")
 

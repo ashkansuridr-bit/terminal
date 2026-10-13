@@ -526,4 +526,7 @@
     <string name="tcs_host_profile_override">This connection has a custom key profile.</string>
     <string name="tcs_host_profile_apply">Use selected profile for this connection</string>
     <string name="tcs_host_profile_clear">Use global profile</string>
+    <string name="tcs_alt_modifier">Alt modifier</string>
+    <string name="tcs_shift_modifier">Shift modifier</string>
+    <string name="tcs_snippets_action">Open command snippets</string>
 </resources>

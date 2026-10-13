@@ -479,4 +479,7 @@
     <string name="tcs_host_profile_override">Esta conexión tiene un perfil de teclas personalizado.</string>
     <string name="tcs_host_profile_apply">Usar el perfil seleccionado en esta conexión</string>
     <string name="tcs_host_profile_clear">Usar el perfil global</string>
+    <string name="tcs_alt_modifier">Modificador Alt</string>
+    <string name="tcs_shift_modifier">Modificador Mayús</string>
+    <string name="tcs_snippets_action">Abrir fragmentos de comandos</string>
 </resources>

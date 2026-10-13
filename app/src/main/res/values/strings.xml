@@ -526,4 +526,7 @@
     <string name="tcs_host_profile_override">برای این اتصال نمای کلید جداگانه تنظیم شده است.</string>
     <string name="tcs_host_profile_apply">نمای انتخاب‌شده را برای این اتصال به کار ببر</string>
     <string name="tcs_host_profile_clear">بازگشت به نمای پیش‌فرض</string>
+    <string name="tcs_alt_modifier">کلید Alt</string>
+    <string name="tcs_shift_modifier">کلید Shift</string>
+    <string name="tcs_snippets_action">بازکردن قطعه‌فرمان‌ها</string>
 </resources>

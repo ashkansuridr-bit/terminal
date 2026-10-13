@@ -41,8 +41,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.style.TextOverflow
@@ -307,6 +310,23 @@ private fun StudioKey(
                 },
             )
             .then(gestureModifier)
+            // Publish a single accessible control. combinedClickable remains the
+            // physical gesture handler; this node explicitly owns the accessibility
+            // click action so Android does not expose a second unnamed click target.
+            .clearAndSetSemantics {
+                contentDescription = description
+                role = if (checkable) Role.Checkbox else Role.Button
+                if (!enabled) disabled()
+                if (checkable) {
+                    toggleableState = if (active) ToggleableState.On else ToggleableState.Off
+                }
+                if (enabled) {
+                    onClick(label = description) {
+                        onPrimary()
+                        true
+                    }
+                }
+            }
             .combinedClickable(
                 enabled = enabled,
                 role = if (checkable) Role.Checkbox else Role.Button,
@@ -329,12 +349,6 @@ private fun StudioKey(
                     if (!repeatWhileHeld || !repeatedWhileHeld) fire()
                 },
             )
-            .semantics(mergeDescendants = checkable) {
-                contentDescription = description
-                if (checkable) {
-                    toggleableState = if (active) ToggleableState.On else ToggleableState.Off
-                }
-            }
             .padding(horizontal = 12.dp),
     ) {
         Text(
@@ -472,8 +486,11 @@ private fun ToolKeySpec.announce(active: Boolean, locked: Boolean): String {
     val defaultSpecial = if (contentDescription == null) (action as? SpecialKeyAction)?.key else null
     val base = when {
         id == "ctrl" && contentDescription == "Control" -> stringResource(R.string.tcs_control_modifier)
+        id == "alt" && contentDescription == "Alt" -> stringResource(R.string.tcs_alt_modifier)
+        id == "shift" && contentDescription == "Shift" -> stringResource(R.string.tcs_shift_modifier)
         id == "cc" && contentDescription == "Interrupt" -> stringResource(R.string.terminal_key_interrupt)
         id == "cd" && contentDescription == "End of file" -> stringResource(R.string.terminal_key_eof)
+        id == "snippets" && contentDescription == "Open command snippets" -> stringResource(R.string.tcs_snippets_action)
         defaultSpecial == ToolbarSpecialKey.ESCAPE -> stringResource(R.string.terminal_key_escape)
         defaultSpecial == ToolbarSpecialKey.TAB -> stringResource(R.string.terminal_key_tab)
         defaultSpecial == ToolbarSpecialKey.UP -> stringResource(R.string.terminal_key_up)

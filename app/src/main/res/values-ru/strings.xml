@@ -481,4 +481,7 @@
     <string name="tcs_host_profile_override">Для этого подключения задан отдельный профиль клавиш.</string>
     <string name="tcs_host_profile_apply">Использовать выбранный профиль для этого подключения</string>
     <string name="tcs_host_profile_clear">Использовать общий профиль</string>
+    <string name="tcs_alt_modifier">Модификатор Alt</string>
+    <string name="tcs_shift_modifier">Модификатор Shift</string>
+    <string name="tcs_snippets_action">Открыть сохранённые команды</string>
 </resources>

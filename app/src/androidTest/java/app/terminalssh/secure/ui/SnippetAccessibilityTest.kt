@@ -50,6 +50,7 @@ class SnippetAccessibilityTest {
         ActivityScenario.launch(MainActivity::class.java).use {
             val terminalTab = instrumentation.targetContext.getString(R.string.tab_terminal)
             val snippets = instrumentation.targetContext.getString(R.string.snippets_short)
+            val snippetsAction = instrumentation.targetContext.getString(R.string.tcs_snippets_action)
             val firstDelete = instrumentation.targetContext.getString(R.string.snippet_delete, first.name)
             val secondDelete = instrumentation.targetContext.getString(R.string.snippet_delete, second.name)
 
@@ -75,6 +76,10 @@ class SnippetAccessibilityTest {
                 )
             }
             assertTrue("Snippets toolbar key was not fully reachable by horizontal scrolling", snippetsReachable)
+            assertTrue(
+                "Snippets toolbar key must expose its localized action name",
+                device.wait(Until.hasObject(By.desc(snippetsAction)), TIMEOUT_MS),
+            )
             device.findObject(By.text(snippets)).click()
 
             assertTrue(device.wait(Until.hasObject(By.desc(firstDelete)), TIMEOUT_MS))
