@@ -330,3 +330,11 @@
 - Latest local verification PASS: 1,025 JVM tests across 119 suites (0 failures/errors/skips), MarketDebug app compile, AndroidTest Kotlin compile, and lint (0 errors, 106 warnings, 2 hints). `loop2_gate.py`, `market_release_gate.py`, `git diff --check`, and JSON parsing pass. No local device runtime is possible (`adb` absent; API36 image lacks `kernel-ranchu`).
 - TCS-05 theme/profile implementation is committed in `7727c4f`; do not infer runtime completion from its local compile. TCS-05, TCS-07 and TCS-10 remain incomplete; strict `VERIFIED_COMPLETE` remains 0/11.
 - Next exact step: commit and push the reviewed follow-up to `main` per owner instruction, inspect its fresh API26/36/37 CI reports, then fix remaining test/product failures from artifact evidence.
+
+
+## Checkpoint 2026-10-13 — pushed accessibility follow-up and refreshed APK
+
+- Commit `108d7d23b7bc71b6eb6810369d510e1bfe2b02ea` was pushed to `main`. It contains the local UI/accessibility and instrumentation corrections plus updated failure evidence. Remote CI run [38452594985](https://github.com/ashkansuridr-bit/terminal/actions/runs/38452594985) was in progress when this checkpoint was written; its result is not yet known.
+- Local gates for that source passed: 1,025 JVM tests, MarketDebug app and AndroidTest compilation, lint (0 errors), `loop2_gate.py`, `market_release_gate.py`, JSON parse and `git diff --check`.
+- Refreshed the root test APK from commit `108d7d2` using `:app:assembleMarketDebug`; size 43,704,018 bytes, SHA-256 `aff97cf78f6e31ab21406c5877ae666a2609f61af5eec212f93cce738c2b5a4b`, Android Debug certificate; Build Tools 37.0.0 `apksigner verify --verbose` passed. This is a test APK, not production-signed.
+- Exact next step: commit the refreshed APK and artifact documentation to `main`, inspect the resulting CI run and its complete API26/36/37 instrumentation reports, then continue from the failing assertions.

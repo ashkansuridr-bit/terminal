@@ -411,7 +411,7 @@
       "suites": 119,
       "evidence": "Local current workspace: :app:testMarketDebugUnitTest; 119 XML suites, 1,025 tests, 0 failures/errors/skips; includes ToolbarThemeEditorTest and profile duplication regression coverage."
     },
-    "marketDebugAssemble": "PASS on cf0ac9d: :app:assembleMarketDebug",
+    "marketDebugAssemble": "PASS: :app:assembleMarketDebug from commit 108d7d23b7bc71b6eb6810369d510e1bfe2b02ea.",
     "diffCheck": "PASS after current local edits",
     "instrumentation": "Latest completed CI run 38448985782 on 7727c4f: Verify PASS. API26 Debug/Preview each 4/114 failed; API36 Debug/Preview each 3/114 failed. HostEdit, HostList and SettingsToggle failed across API26/36; TerminalKeyboard modifier/Tab failed only API26; Snippet passed. API37 Debug/Preview were blocked before tests by adb device offline/emulator boot timeout. Current local changes compile and unit tests pass but have no runtime device evidence.",
     "apiDeviceMatrix": "Run 38448985782 exercised API26/36 and attempted API37. API26/36 ran 114 each with 4/3 failures per variant. API37 Debug/Preview failed before test execution due adb device offline and boot timeout. API31/34 are not in workflow. Local API36 AVD lacks kernel-ranchu; no device attached.",
@@ -428,7 +428,7 @@
     "gplayDebugAssemble": "PASS",
     "marketPreviewAssemble": "PASS on cf0ac9d: :app:assembleMarketPreview (R8/minified; debug certificate)",
     "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
-    "apkSignature": "Current MarketDebug APK verified with Android Debug certificate; production signing not verified",
+    "apkSignature": "PASS: root MarketDebug APK verified with Android Build Tools 37.0.0 apksigner; Android Debug certificate, not production-signed.",
     "sourceGates": "PASS on current local workspace: loop2_gate.py, market_release_gate.py, git diff --check, and LOOP_STATE JSON parse.",
     "marketPreviewApk": {
       "path": "app/build/outputs/apk/market/preview/app-market-preview.apk",
@@ -439,13 +439,13 @@
     "api37": "Pending in run 38384380095; prior run 38320080882 had emulator boot failure.",
     "currentMarketDebugApk": {
       "path": "TerminalSSH-0.7.2-MarketDebug-TEST.apk",
-      "sizeBytes": 41512168,
-      "sha256": "36a954e19c2a9ae5831e2dd22c1ea196a0d72483cff9e0e6fd447fae924e98ae",
+      "sizeBytes": 43704018,
+      "sha256": "aff97cf78f6e31ab21406c5877ae666a2609f61af5eec212f93cce738c2b5a4b",
       "signature": "Android Debug certificate; apksigner verify --verbose PASS",
-      "builtFrom": "cf0ac9d",
+      "builtFrom": "108d7d23b7bc71b6eb6810369d510e1bfe2b02ea",
       "releaseStatus": "not production-signed",
       "rootCopy": "TerminalSSH-0.7.2-MarketDebug-TEST.apk",
-      "rootCopySHA256": "36a954e19c2a9ae5831e2dd22c1ea196a0d72483cff9e0e6fd447fae924e98ae"
+      "rootCopySHA256": "aff97cf78f6e31ab21406c5877ae666a2609f61af5eec212f93cce738c2b5a4b"
     },
     "marketDebugAndroidTestAssemble": "PASS on cf0ac9d: :app:assembleMarketDebugAndroidTest",
     "latestLocalVerification": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m; python3 scripts/loop2_gate.py; python3 scripts/market_release_gate.py; git diff --check; parse JUnit XML and LOOP_STATE JSON",
@@ -474,7 +474,8 @@
     "command": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m; python3 scripts/loop2_gate.py; python3 scripts/market_release_gate.py; git diff --check; parse JUnit XML and LOOP_STATE JSON",
     "result": "PASS: 1,025 JVM tests across 119 suites, 0 failures/errors/skips; MarketDebug app and AndroidTest compilation; MarketDebug lint (0 errors, 106 warnings, 2 hints); loop2_gate.py; market_release_gate.py; git diff --check. Instrumentation runtime not run locally (no adb/device; API36 emulator image lacks kernel-ranchu).",
     "androidTest": "Kotlin compilation PASS; runtime unavailable locally because adb/device is absent and configured API36 image lacks kernel-ranchu.",
-    "applicationSource": "Local uncommitted follow-up changes host accessibility semantics, SettingsRow toggle semantics, locale-aware assertions and keyboard click synchronization; TCS-05 theme/profile UI is already committed at 7727c4f."
+    "applicationSource": "Local uncommitted follow-up changes host accessibility semantics, SettingsRow toggle semantics, locale-aware assertions and keyboard click synchronization; TCS-05 theme/profile UI is already committed at 7727c4f.",
+    "apk": "MarketDebug assembled and root APK refreshed from commit 108d7d23b7bc71b6eb6810369d510e1bfe2b02ea; apksigner v2 verification passed."
   },
   "latestCi": {
     "runId": "38448985782",
@@ -552,5 +553,5 @@
       "status": "UNIT_VERIFIED"
     }
   ],
-  "deliveryCommit": "7727c4fe60279af4e7ae8d50c5463ffc92bc5c48"
+  "deliveryCommit": "108d7d23b7bc71b6eb6810369d510e1bfe2b02ea"
 }
