@@ -1,11 +1,13 @@
 package app.terminalssh.secure.ui
 
+import android.graphics.Rect
 import android.os.Bundle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.Until
 import androidx.compose.ui.unit.LayoutDirection
 import android.view.accessibility.AccessibilityNodeInfo
@@ -45,12 +47,21 @@ class SettingsAccessibilityTest {
                 // before scrolling its horizontal strip to OLED for the touch-target check.
                 assertTrue(
                     "Selected palette chip was not fully visible after scrolling",
-                    device.scrollUntilFullyVisible(By.desc(persianNeon), maxAttempts = 20),
+                    device.scrollUntilFullyVisible(
+                        By.desc(persianNeon),
+                        maxAttempts = 20,
+                        fullBounds = { fullBoundsByDescription(persianNeon) },
+                    ),
                 )
                 assertTrue(device.findObject(By.desc(persianNeon)).isSelected)
                 assertTrue(
                     "OLED palette chip was not fully visible after horizontal scrolling",
-                    device.scrollUntilFullyVisible(By.desc(oled), maxAttempts = 20, horizontalDirection = LayoutDirection.Ltr),
+                    device.scrollUntilFullyVisible(
+                        By.desc(oled),
+                        maxAttempts = 20,
+                        horizontalDirection = LayoutDirection.Ltr,
+                        fullBounds = { fullBoundsByDescription(oled) },
+                    ),
                 )
                 val oledAction = device.findObject(By.desc(oled))
                 val minimumPx = (48 * instrumentation.targetContext.resources.displayMetrics.density).toInt()
@@ -83,17 +94,20 @@ class SettingsAccessibilityTest {
                 device.findObject(By.text(settingsTab)).click()
                 assertTrue(
                     "Font-size slider was not fully visible after scrolling",
-                    device.scrollUntilFullyVisible(By.desc(fontSizeLabel), maxAttempts = 20),
+                    device.scrollUntilFullyVisible(
+                        By.desc(fontSizeLabel),
+                        maxAttempts = 20,
+                        fullBounds = { fullBoundsByDescription(fontSizeLabel) },
+                    ),
                 )
 
                 val sliderNode = findAdjustableNodeByDescription(fontSizeLabel)
                 assertNotNull("font-size slider node carrying both its accessible name and adjustable range was missing", sliderNode)
-                assertEquals(17f, sliderNode?.rangeInfo?.current ?: Float.NaN, 0.01f)
-
-                val progressArguments = Bundle().apply {
-                    putFloat(AccessibilityNodeInfo.ACTION_ARGUMENT_PROGRESS_VALUE, 18f)
-                }
                 try {
+                    assertEquals(17f, sliderNode?.rangeInfo?.current ?: Float.NaN, 0.01f)
+                    val progressArguments = Bundle().apply {
+                        putFloat(AccessibilityNodeInfo.ACTION_ARGUMENT_PROGRESS_VALUE, 18f)
+                    }
                     assertTrue(
                         sliderNode!!.performAction(
                             AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_PROGRESS.id,
@@ -147,6 +161,38 @@ class SettingsAccessibilityTest {
                 root.recycle()
             }
             android.os.SystemClock.sleep(100)
+        }
+        return null
+    }
+
+    private fun fullBoundsByDescription(description: String): Rect? {
+        repeat(3) {
+            val root = instrumentation.uiAutomation.rootInActiveWindow ?: return null
+            try {
+                findBoundsByDescription(root, description)?.let { return it }
+            } catch (_: StaleObjectException) {
+                // Retry against the new Compose semantics tree.
+            } finally {
+                root.recycle()
+            }
+        }
+        return null
+    }
+
+    private fun findBoundsByDescription(
+        node: AccessibilityNodeInfo,
+        description: String,
+    ): Rect? {
+        if (node.contentDescription?.toString() == description) {
+            return Rect().also(node::getBoundsInScreen)
+        }
+        for (index in 0 until node.childCount) {
+            val child = node.getChild(index) ?: continue
+            try {
+                findBoundsByDescription(child, description)?.let { return it }
+            } finally {
+                child.recycle()
+            }
         }
         return null
     }

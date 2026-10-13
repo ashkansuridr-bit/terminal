@@ -30,25 +30,26 @@ fun UiDevice.scrollUntil(
 
 /**
  * Like [scrollUntil], but keeps scrolling until [target] is not merely present but fully
- * inside the display.
+ * inside the display. Supply [fullBounds] when viewport clipping must be distinguished
+ * from the screen-clipped bounds returned by UiAutomator.
  *
  * A row that has only just scrolled into view sits clipped at the viewport edge, and its
- * [UiObject2.visibleBounds] then reports the clipped (smaller) size. An assertion such as
- * "the palette row is at least 48dp tall" read against that value is really measuring the
- * screen edge, not the row. Requiring full visibility makes the assertion measure the row.
+ * [UiObject2.visibleBounds] then reports the clipped (smaller) size. With [fullBounds],
+ * require those visible bounds to contain the complete accessibility-node bounds.
  */
 fun UiDevice.scrollUntilFullyVisible(
     target: BySelector,
     maxAttempts: Int = 12,
     horizontalDirection: LayoutDirection? = null,
+    fullBounds: (() -> Rect?)? = null,
 ): Boolean {
     repeat(maxAttempts) {
         val node = findObject(target)
-        if (node != null && isFullyVisible(node)) return true
+        if (node != null && isFullyVisible(node, fullBounds)) return true
         scrollOnce(horizontalDirection)
     }
     val node = findObject(target)
-    return node != null && isFullyVisible(node)
+    return node != null && isFullyVisible(node, fullBounds)
 }
 
 private fun UiDevice.scrollOnce(horizontalDirection: LayoutDirection?) {
@@ -63,22 +64,36 @@ private fun UiDevice.scrollOnce(horizontalDirection: LayoutDirection?) {
         // terminal; a skipped step is retried on the next loop iteration.
         runCatching { scrollable.scroll(direction, 0.9f) }
     } else {
-        swipe(
-            displayWidth / 2,
-            (displayHeight * 0.7).toInt(),
-            displayWidth / 2,
-            (displayHeight * 0.3).toInt(),
-            12,
-        )
+        when (horizontalDirection) {
+            LayoutDirection.Ltr -> swipe(
+                (displayWidth * 0.82).toInt(), (displayHeight * 0.7).toInt(),
+                (displayWidth * 0.18).toInt(), (displayHeight * 0.7).toInt(), 12,
+            )
+            LayoutDirection.Rtl -> swipe(
+                (displayWidth * 0.18).toInt(), (displayHeight * 0.7).toInt(),
+                (displayWidth * 0.82).toInt(), (displayHeight * 0.7).toInt(), 12,
+            )
+            null -> swipe(
+                displayWidth / 2,
+                (displayHeight * 0.7).toInt(),
+                displayWidth / 2,
+                (displayHeight * 0.3).toInt(),
+                12,
+            )
+        }
     }
     waitForIdle()
 }
 
-private fun UiDevice.isFullyVisible(node: UiObject2): Boolean {
-    val bounds = node.safeBounds() ?: return false
-    return bounds.width() > 0 && bounds.height() > 0 &&
-        bounds.left >= 0 && bounds.top >= 0 &&
-        bounds.right <= displayWidth && bounds.bottom <= displayHeight
+private fun UiDevice.isFullyVisible(node: UiObject2, fullBounds: (() -> Rect?)?): Boolean {
+    val visible = node.safeBounds() ?: return false
+    if (visible.width() <= 0 || visible.height() <= 0) return false
+    if (fullBounds != null) {
+        val full = fullBounds() ?: return false
+        return visible.contains(full)
+    }
+    return visible.left >= 0 && visible.top >= 0 &&
+        visible.right <= displayWidth && visible.bottom <= displayHeight
 }
 
 /**

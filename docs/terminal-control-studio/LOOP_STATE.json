@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-13T10:08:50+00:00",
+  "capturedAt": "2026-10-13T10:20:29+00:00",
   "branch": "feature/terminal-control-studio-pro",
   "baselineCommit": "67021c1",
   "lastVerifiedCommit": "2976238",
@@ -288,13 +288,14 @@
         "02ef848: MarketDebug AndroidTest compile PASS; git diff --check PASS",
         "2976238 CI run 38320080882: verify/build PASS; API36 Debug 8 failed, Preview 7 failed; API26 Debug 14 failed; API37 Debug/Preview boot BLOCKED (ADB offline)",
         "Current worktree: MarketDebug app compile PASS; AndroidTest compile PASS; JVM 1,013/1,013 PASS; lint PASS (0 errors, 108 warnings, 2 hints); loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS",
-        "Follow-up test hardening: MarketDebug AndroidTest Kotlin compile PASS after dismissing IME before HostEdit validation and trying both horizontal toolbar scroll directions for Snippets"
+        "Follow-up test hardening: MarketDebug AndroidTest Kotlin compile PASS after dismissing IME before HostEdit validation and trying both horizontal toolbar scroll directions for Snippets",
+        "Reviewer-driven follow-up: MarketDebug app Kotlin compile PASS; AndroidTest Kotlin compile PASS; JVM 1,013/1,013 PASS; lint PASS (0 errors, 108 warnings, 2 hints); git diff --check PASS"
       ],
-      "lastResult": "Accessibility fixes and regression tests compile; runtime status awaits fresh CI.",
+      "lastResult": "Current-source app and AndroidTest compilation, JVM tests, and lint pass; runtime matrix pending.",
       "lastFailure": "Run 38320080882: API26/36 UI instrumentation failures, including terminal tab lookup, host/settings scrolling/semantics and host form/snippet assertions; API37 emulator boot timed out with adb offline. API36 Debug had 8 failures; Preview 7; API26 Debug 14.",
       "fixAttempts": 1,
-      "commitSha": "a7b2484 plus uncommitted host/snippet follow-up",
-      "lastReviewedAt": "2026-10-13T10:08:50+00:00",
+      "commitSha": "c706354 plus current reviewer-driven fixes",
+      "lastReviewedAt": "2026-10-13T10:20:29+00:00",
       "remainingIssues": [
         "Push current accessibility and test harness fixes, then rerun API26/36/37 debug/preview CI.",
         "Recheck host edit and snippet toolbar runtime failures against fresh logs; prior failures are not yet classified on current sources.",
@@ -304,7 +305,7 @@
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS (current worktree; compileMarketDebugKotlin)",
+    "marketDebugCompile": "PASS (current worktree)",
     "marketDebugUnitTests": {
       "passed": 1013,
       "failed": 0,
@@ -347,7 +348,7 @@
     "No emulator/device is currently attached (adb devices is empty); current UI/instrumentation changes have compile evidence only until fresh PR CI runs.",
     "PR run 38320080882 completed with API26/36 instrumentation failures; latest follow-up has compile/unit evidence only until CI reruns."
   ],
-  "nextStep": "Commit and push the HostEdit/Snippets harness follow-up while PR run 38382218317 verifies a7b2484; then inspect the latest run and artifacts.",
+  "nextStep": "Commit and push reviewer-driven fixes, cancel superseded CI for earlier source, and inspect the newest full API 26/36/37 instrumentation run.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/feature/terminal-control-studio-pro",
   "pullRequest": "https://github.com/ashkansuridr-bit/terminal/pull/4"
 }

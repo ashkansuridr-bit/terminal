@@ -178,7 +178,9 @@ class TerminalKeyboardTest {
 
                 fun sampleClearance(): ClearanceSnapshot {
                     val bar = waitForToolbarCtrlBounds(within = 1_500)
-                        ?: waitForAppDesc(keyboardAction)?.let(::bounds)
+                        ?: waitForAppDesc(keyboardAction)?.let { node ->
+                            try { bounds(node) } finally { node.recycle() }
+                        }
                     var ime = 0
                     var decorTop = 0
                     var decorH = 0
@@ -314,10 +316,15 @@ class TerminalKeyboardTest {
 
     /** Asserts a node carrying [desc] appears in the application windows in time. */
     private fun assertAppDescVisible(desc: String) {
-        if (waitForAppDesc(desc) == null) {
+        val node = waitForAppDesc(desc)
+        if (node == null) {
             android.util.Log.i("KEYTREE", "missing \"$desc\": ${appWindowTree()}")
         }
-        assertTrue("Node with description \"$desc\" must be reachable", waitForAppDesc(desc) != null)
+        try {
+            assertTrue("Node with description \"$desc\" must be reachable", node != null)
+        } finally {
+            node?.recycle()
+        }
     }
 
     /** Text/description inventory of every application window, for failure triage. */
@@ -327,7 +334,11 @@ class TerminalKeyboardTest {
             for (window in instrumentation.uiAutomation.windows) {
                 if (window.type != AccessibilityWindowInfo.TYPE_APPLICATION) continue
                 val root = window.root ?: continue
-                appendNode(root, sb)
+                try {
+                    appendNode(root, sb)
+                } finally {
+                    root.recycle()
+                }
             }
         } catch (t: Throwable) {
             sb.append("err=").append(t)
@@ -342,18 +353,26 @@ class TerminalKeyboardTest {
             sb.append('[').append(text.orEmpty()).append('|').append(desc.orEmpty()).append(']')
         }
         for (i in 0 until node.childCount) {
-            node.getChild(i)?.let { appendNode(it, sb) }
+            val child = node.getChild(i) ?: continue
+            try {
+                appendNode(child, sb)
+            } finally {
+                child.recycle()
+            }
         }
     }
 
-    /** Finds [text] (exposed as text or description) across the application windows. */
     /** Taps the labeled item in the bottom dock, allowing the session-count badge to join its text. */
     private fun clickAppText(text: String) {
         val node = waitForNavigationTab(text)
         assertTrue("Navigation item \"$text\" must be reachable", node != null)
-        val b = bounds(node!!)
-        assertTrue("Navigation item \"$text\" must be visible", b.width() > 0 && b.height() > 0)
-        device.click(b.centerX(), b.centerY())
+        try {
+            val b = bounds(node!!)
+            assertTrue("Navigation item \"$text\" must be visible", b.width() > 0 && b.height() > 0)
+            device.click(b.centerX(), b.centerY())
+        } finally {
+            node?.recycle()
+        }
     }
 
     private fun waitForNavigationTab(label: String, within: Long = UI_TIMEOUT_MS): AccessibilityNodeInfo? {
@@ -390,7 +409,10 @@ class TerminalKeyboardTest {
             runCatching { clickAppText(terminalTab) }
                 .onFailure { lastClickFailure = it.javaClass.simpleName }
             val marker = waitForAppDesc(terminalMarker, within = 8_000)
-            if (marker != null) return
+            if (marker != null) {
+                marker.recycle()
+                return
+            }
             // A system overlay (e.g. the GMS Remote Copy sheet) can cover the app and
             // swallow the tap; clear it and try again rather than waiting out the clock.
             if (++attempts % 2 == 0) dismissNearbyShareOverlay()
@@ -417,8 +439,12 @@ class TerminalKeyboardTest {
             findAppNode { node ->
                 node.text?.toString() == anchor || node.contentDescription?.toString()?.startsWith(anchor) == true
             }?.let { node ->
-                val bounds = bounds(node)
-                "$anchor:${node.className}@${bounds.flattenToString()}"
+                try {
+                    val bounds = bounds(node)
+                    "$anchor:${node.className}@${bounds.flattenToString()}"
+                } finally {
+                    node.recycle()
+                }
             }
         }
         return "applicationWindows=${instrumentation.uiAutomation.windows.count { it.type == AccessibilityWindowInfo.TYPE_APPLICATION }}; anchors=$found"
@@ -428,9 +454,13 @@ class TerminalKeyboardTest {
     private fun clickAppDesc(desc: String) {
         val node = waitForAppDesc(desc)
         assertTrue("Node with description \"$desc\" must be reachable", node != null)
-        val b = bounds(node!!)
-        assertTrue("Node with description \"$desc\" must be visible", b.width() > 0 && b.height() > 0)
-        device.click(b.centerX(), b.centerY())
+        try {
+            val b = bounds(node!!)
+            assertTrue("Node with description \"$desc\" must be visible", b.width() > 0 && b.height() > 0)
+            device.click(b.centerX(), b.centerY())
+        } finally {
+            node?.recycle()
+        }
     }
 
     private fun findAppNode(
@@ -446,7 +476,11 @@ class TerminalKeyboardTest {
                 for (window in instrumentation.uiAutomation.windows) {
                     if (window.type != AccessibilityWindowInfo.TYPE_APPLICATION) continue
                     val root = window.root ?: continue
-                    findDescendant(root, predicate)?.let { return it }
+                    try {
+                        findDescendant(root, predicate)?.let { return it }
+                    } finally {
+                        root.recycle()
+                    }
                 }
             } catch (t: Throwable) {
                 // A11y tree changed mid-walk; retry the snapshot.
@@ -460,11 +494,14 @@ class TerminalKeyboardTest {
         node: AccessibilityNodeInfo,
         predicate: (AccessibilityNodeInfo) -> Boolean,
     ): AccessibilityNodeInfo? {
-        if (predicate(node)) return node
+        if (predicate(node)) return AccessibilityNodeInfo.obtain(node)
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
-            val hit = findDescendant(child, predicate) ?: continue
-            return hit
+            try {
+                findDescendant(child, predicate)?.let { return it }
+            } finally {
+                child.recycle()
+            }
         }
         return null
     }

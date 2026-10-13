@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,6 +43,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -304,42 +305,34 @@ private fun StudioKey(
                 },
             )
             .then(gestureModifier)
-            .then(
-                if (checkable) {
-                    Modifier.toggleable(
-                        value = active,
-                        enabled = enabled,
-                        role = Role.Checkbox,
-                        interactionSource = interactions,
-                        indication = null,
-                        onValueChange = { fire() },
-                    )
+            .combinedClickable(
+                enabled = enabled,
+                role = if (checkable) Role.Checkbox else Role.Button,
+                onLongClick = if (ToolbarGesture.LONG_PRESS in gestures) {
+                    { if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove); onGesture(ToolbarGesture.LONG_PRESS) }
                 } else {
-                    Modifier.combinedClickable(
-                        enabled = enabled,
-                        role = Role.Button,
-                        onLongClick = if (ToolbarGesture.LONG_PRESS in gestures) {
-                            { if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove); onGesture(ToolbarGesture.LONG_PRESS) }
-                        } else {
-                            null
-                        },
-                        onDoubleClick = if (ToolbarGesture.DOUBLE_TAP in gestures) {
-                            { onGesture(ToolbarGesture.DOUBLE_TAP) }
-                        } else {
-                            null
-                        },
-                        interactionSource = interactions,
-                        indication = null,
-                        // combinedClickable still delivers the release click after a long hold.
-                        // Once repeat has emitted any keys, suppress that trailing click so a held
-                        // Backspace/Delete does not erase one extra character on release.
-                        onClick = {
-                            if (!repeatWhileHeld || !repeatedWhileHeld) fire()
-                        },
-                    )
+                    null
+                },
+                onDoubleClick = if (ToolbarGesture.DOUBLE_TAP in gestures) {
+                    { onGesture(ToolbarGesture.DOUBLE_TAP) }
+                } else {
+                    null
+                },
+                interactionSource = interactions,
+                indication = null,
+                // combinedClickable still delivers the release click after a long hold.
+                // Once repeat has emitted any keys, suppress that trailing click so a held
+                // Backspace/Delete does not erase one extra character on release.
+                onClick = {
+                    if (!repeatWhileHeld || !repeatedWhileHeld) fire()
                 },
             )
-            .semantics(mergeDescendants = checkable) { contentDescription = description }
+            .semantics(mergeDescendants = checkable) {
+                contentDescription = description
+                if (checkable) {
+                    toggleableState = if (active) ToggleableState.On else ToggleableState.Off
+                }
+            }
             .padding(horizontal = 12.dp),
     ) {
         Text(

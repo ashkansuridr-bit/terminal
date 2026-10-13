@@ -78,3 +78,12 @@
 - A review of the same CI artifacts found two unaddressed test-harness risks: HostEdit could keep the pinned Save action behind the focused IME on API 26, and Snippet discovery assumed one horizontal scroll direction derived from the instrumentation locale. HostEdit now dismisses the IME before the empty-host validation action; Snippet discovery checks full visibility while trying both horizontal directions.
 - `:app:compileMarketDebugAndroidTestKotlin` PASS after these changes; `git diff --check` PASS. Runtime behavior still needs CI verification.
 - Run `38382218317` for `a7b2484` is currently running its verify job. These additional changes will be committed and pushed separately; inspect the resulting latest run rather than relying on the older commit's CI.
+
+## Reviewer-driven hardening (2026-10-13)
+
+- Independent review caught that the modifier accessibility fix must preserve configured long-press and double-tap actions. Modifier keys now retain `combinedClickable` and publish the active value through `toggleableState` semantics.
+- Accessibility-tree traversals now clone matched nodes and recycle roots and children; assertions recycle returned slider nodes even on failure. This prevents retry loops from retaining native node handles.
+- `UiScroll.scrollUntilFullyVisible` can compare raw accessibility bounds with visible bounds, and uses a real horizontal viewport swipe when no horizontal scroll node is exported. Palette and slider tests use raw bounds for the visibility check.
+- Latest local app compile, AndroidTest compile, and JVM suite pass (1,013/1,013). Lint passes with 0 errors, 108 warnings, and 2 hints after the renderer semantics change. No emulator/device is available locally.
+- CI run `38382396450` tests `c706354` and remains in its verify job. It will be superseded by this review follow-up; inspect the newest full instrumentation matrix after pushing.
+- Next exact step: commit/push these review fixes, cancel obsolete CI for earlier commits, and inspect the newest full instrumentation matrix.
