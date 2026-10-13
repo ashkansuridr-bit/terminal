@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T11:12:38+00:00",
-  "branch": "main (push queued after direct fast-forward)",
-  "baselineCommit": "67021c1",
-  "lastVerifiedCommit": "5bd2475",
+  "capturedAt": "2026-10-13T12:00:00+00:00",
+  "branch": "main",
+  "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
+  "lastVerifiedCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
   "features": [
     {
       "id": "TCS-01",
@@ -401,5 +401,30 @@
   ],
   "nextStep": "Commit/push TCS-07 localized built-in special-key names and runtime assertions; inspect the latest-source CI matrix and fix any confirmed failures.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/feature/terminal-control-studio-pro",
-  "pullRequest": "https://github.com/ashkansuridr-bit/terminal/pull/4"
+  "pullRequest": "https://github.com/ashkansuridr-bit/terminal/pull/4",
+  "latestLocalVerification": {
+    "command": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug :app:assembleMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m",
+    "result": "BUILD SUCCESSFUL",
+    "unitTests": {
+      "passed": 1015,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 118
+    },
+    "androidTest": "Kotlin compilation passed; instrumentation not executed (no local device/emulator)",
+    "lint": "passed; AGP 8.13.2 reports compileSdk 37 support warning; test code has deprecated AccessibilityNodeInfo APIs",
+    "apk": "app/build/outputs/apk/market/debug/app-market-debug.apk",
+    "apkSha256": "d9b4030dc2c5f07bc40cb8b9f74c0a6864b29dc47f837bf9f3dfa97039249dbd",
+    "apkCertificate": "verified by /root/android-sdk/build-tools/37.0.0/apksigner; Android Debug certificate (production signature not verified)",
+    "diffCheck": "passed"
+  },
+  "latestCi": {
+    "commit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
+    "run": "38389187528",
+    "result": "failed",
+    "details": "API 26/36 instrumentation assertions failed; API 37 emulator boot failure. New navigation semantics and UI test fixes are not yet covered by a fresh run."
+  },
+  "remainingFeatureCount": 11,
+  "verifiedCompleteCount": 0
 }

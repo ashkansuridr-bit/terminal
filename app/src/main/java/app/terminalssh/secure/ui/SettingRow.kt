@@ -36,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -229,13 +230,13 @@ fun SettingRow(
                     // Material Slider exposes its range on a nested semantics node on some
                     // Compose versions. Put the same real range and progress action on the
                     // named node so accessibility services can adjust the named control.
-                    modifier = Modifier.semantics(mergeDescendants = true) {
+                    modifier = Modifier.clearAndSetSemantics {
                         contentDescription = title
                         progressBarRangeInfo = ProgressBarRangeInfo(draft, sliderRange, sliderSteps)
-                        setProgress { requested ->
-                            if (saving) {
-                                false
-                            } else {
+                        if (saving) {
+                            disabled()
+                        } else {
+                            setProgress { requested ->
                                 // Int settings may have a non-unit step; accessibility
                                 // adjustments must obey the same snapping rule as touch input.
                                 val next = spec.coerce(requested.roundToInt()).toFloat()
@@ -270,10 +271,18 @@ fun SettingRow(
                             },
                             modifier = Modifier
                                 .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-                                .semantics(mergeDescendants = true) {
+                                .clearAndSetSemantics {
                                     role = Role.RadioButton
                                     selected = option == value
                                     contentDescription = optionLabel(option)
+                                    if (saving) {
+                                        disabled()
+                                    } else {
+                                        onClick {
+                                            persist { store.set(spec, option) }
+                                            true
+                                        }
+                                    }
                                 },
                         )
                     }

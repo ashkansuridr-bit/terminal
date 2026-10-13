@@ -2,7 +2,7 @@
 
 ## وضعیت فعلی
 
-پیاده‌سازی اصلی Terminal Control Studio روی شاخهٔ مستقل انجام شده و PR شمارهٔ ۴ باز است. آخرین تغییر، دسترسی مستقیم به Snippetها را به پروفایل پیش‌فرض Shell برگرداند و Gate متنی قدیمی CI را با بررسی سیم‌کشی واقعی اکشن جایگزین کرد. تغییرات ادغام نشده‌اند.
+پیاده‌سازی Terminal Control Studio و چند اصلاح پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit ثبت‌شده در شروع این بازبینی `2521508` است؛ اصلاحات تازهٔ دسترس‌پذیری و تست‌های UI هنوز نیازمند اجرای Gateها و ثبت Commit هستند. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون معیار تکمیل هر Feature اجرای Gateهای UI/دستگاه را نیز می‌خواهد.
 
 ## تغییرات و علت‌ها
 
@@ -14,13 +14,7 @@
 
 ## راستی‌آزمایی
 
-- MarketDebug JVM: تعداد ۱٬۰۱۳ تست در ۱۱۸ Suite؛ صفر شکست، خطا یا تست ردشده.
-- کامپایل تست‌های Android: موفق؛ اجرای Instrumentation انجام نشده است.
-- `source_audit.py`، `market_release_gate.py` و `loop2_gate.py`: موفق.
-- تست‌های اعتبارسنجی Artifact: ۹ از ۹ موفق.
-- MarketDebug APK و lint: موفق؛ lint بدون خطا، با ۱۰۸ هشدار و ۲ hint.
-- APK با `apksigner` بررسی شد و گواهی Android Debug دارد؛ امضای Production تأیید نشده است.
-- اجرای CI مربوط به `ead9c4f` در زمان این گزارش هنوز در حال اجراست.
+در این دور، `:app:testMarketDebugUnitTest`, `:app:compileMarketDebugKotlin`, `:app:compileMarketDebugAndroidTestKotlin`, `:app:lintMarketDebug` و `:app:assembleMarketDebug` با هم اجرا شدند و Build موفق شد. Unit Testها ۱٬۰۱۵ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند. Lint خطای مسدودکننده نداشت؛ هشدار سازگاری AGP 8.13.2 با compileSdk 37 و چند هشدار deprecation در تست باقی است. APK خروجی Debug است، SHA-256 آن `d9b4030dc2c5f07bc40cb8b9f74c0a6864b29dc47f837bf9f3dfa97039249dbd` است و این محیط `apksigner` را در PATH نداشت؛ گواهی APK در این دور مستقلاً تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه اجرا نشده است. CI تازه برای تغییرات جاری هنوز باید پس از push بررسی شود.
 
 ## علت‌های تأییدشده و موارد نامشخص
 
@@ -32,12 +26,18 @@
 
 وضعیت انتشار: **NOT VERIFIED**. APK موجود Debug و غیر Production است.
 
-## خروجی‌ها
+## مجوزها و متن‌باز بودن
 
-- شاخه: `feature/terminal-control-studio-pro`
-- Commit پیاده‌سازی: `f2e7524`
-- آخرین Commit اصلاح Gate و Snippet: `ead9c4f`
-- PR: https://github.com/ashkansuridr-bit/terminal/pull/4
-- MarketDebug APK: `app/build/outputs/apk/market/debug/app-market-debug.apk`
-- SHA-256: `b19031080566d68ed25ffcc3ca14e5361b27d5b9497eaf68397691aa6bbe7f87`
+کد خود Terminal SSH تحت Apache License 2.0 است؛ متن کامل آن در `LICENSE` قرار دارد. این مجوز به‌تنهایی مجوز اجزای ثالث را جایگزین نمی‌کند. فهرست و ارجاع مجوزهای وابستگی‌های اصلی در `NOTICE.md` آمده است: JSch 2.28.6 (Revised BSD و اعلان‌های اجزای همراه)، termlib 0.2.1 (Apache 2.0)، libvterm (MIT)، Bouncy Castle Provider 1.85 (MIT) و AndroidX/Jetpack Compose (Apache 2.0). پیش از انتشار هر APK/AAB باید گراف دقیق وابستگی‌های resolve‌شده و متن‌های attribution همان Artifact دوباره بررسی شوند.
+
+کلیپ تبلیغاتی از بازسازی وفادار به سورس و داده‌های ساختگی استفاده می‌کند؛ تصاویر آن اسکرین‌شات زنده از APK نیستند. این موضوع و ارجاع مجوزها در `NOTICE.md` و فایل‌های تحویل ویدیو ثبت شده است.
+
+## خروجی‌ها و وضعیت انتشار
+
+- شاخهٔ کاری فعلی: `main` (تغییرات جدید محلی تا پایان Gateها commit نشده‌اند).
+- آخرین Commit پوش‌شده در ابتدای این دور: `2521508`.
+- PR مرتبط: https://github.com/ashkansuridr-bit/terminal/pull/4 (به‌دلیل پوش مستقیم، وضعیت وب آن را جداگانه بررسی کنید؛ PR معیار وضعیت شاخه نیست).
+- اجرای CI: https://github.com/ashkansuridr-bit/terminal/actions/runs/38389187528
+- APK تولیدی/امضاشده: تأیید نشده؛ خروجی Debug با گواهی Debug، نسخهٔ Production محسوب نمی‌شود.
+- کلیپ معرفی فارسی: `TerminalSSH-Promo-fa.mp4` و `TerminalSSH-Promo-fa-no-bgm.mp4` در ریشه؛ جزئیات hash و محدودیت شناسایی موسیقی در `docs/terminal-control-studio/VIDEO_DELIVERY.md` و بازبینی مستقل در `VIDEO_REVIEW.md`.
 - Checkpoint: `docs/terminal-control-studio/LOOP_CHECKPOINT.md`

@@ -45,6 +45,7 @@ class TerminalKeyboardTest {
         app = instrumentation.targetContext.applicationContext as TerminalApp
         instrumentation.runOnMainSync { previousPrimaryClip = clipboardManager().primaryClip }
         app.sessions.closeAll()
+        dismissImeIfVisible()
         // Keep the GMS "Remote Copy" overlay from stealing focus if GMS restarts mid-run.
         device.executeShellCommand("settings delete secure nearby_sharing_component")
         dismissNearbyShareOverlay()
@@ -75,6 +76,20 @@ class TerminalKeyboardTest {
             }
         }
         writeSecureSetting("show_ime_with_hard_keyboard", previousHardwareKeyboardSetting)
+    }
+
+    @Test
+    fun bottomNavigationTabsExposeLocalizedAccessibleNames() {
+        ActivityScenario.launch(MainActivity::class.java).use {
+            val context = instrumentation.targetContext
+            listOf(
+                R.string.tab_hosts,
+                R.string.tab_terminal,
+                R.string.tab_files,
+                R.string.tab_keys,
+                R.string.tab_settings,
+            ).forEach { id -> assertAppDescVisible(context.getString(id)) }
+        }
     }
 
     @Test
@@ -434,6 +449,31 @@ class TerminalKeyboardTest {
                 "lastClickFailure=$lastClickFailure; ${safeNavigationSnapshot()}",
             false,
         )
+    }
+
+    /** A previous instrumentation case can leave the system IME open after its Activity exits. */
+    private fun dismissImeIfVisible() {
+        device.waitForIdle()
+        if (isImeWindowVisible()) {
+            device.pressBack()
+            repeat(8) {
+                device.waitForIdle()
+                if (!isImeWindowVisible()) return
+                SystemClock.sleep(250)
+            }
+        }
+    }
+
+    private fun isImeWindowVisible(): Boolean {
+        var imeVisible = false
+        instrumentation.uiAutomation.windows.forEach { window ->
+            try {
+                if (window.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD) imeVisible = true
+            } finally {
+                window.recycle()
+            }
+        }
+        return imeVisible
     }
 
     /** Reports only fixed UI anchors and geometry; never dumps terminal or host content to CI. */

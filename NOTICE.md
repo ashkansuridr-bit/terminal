@@ -3,7 +3,7 @@
 This product includes software developed by third parties.
 
 ## mwiede/JSch — 2.28.6
-BSD-style licence (JSch original licence, Atsuhiko Yamanaka / JCraft).
+Revised BSD licence for JSch; upstream also identifies separate JZlib (Revised BSD) and jBCrypt (ISC) notices where those components are included.
 https://github.com/mwiede/jsch
 Provides the SSH-2 transport, authentication and channel layer.
 
@@ -13,11 +13,19 @@ https://github.com/connectbot
 Provides the terminal emulator and its Compose renderer.
 
 ## libvterm (bundled inside termlib as libjni_cb_term.so)
-MIT licence, Paul "LeoNerd" Evans.
+MIT licence. The termlib source identifies libvterm as its terminal parser dependency.
 Provides VT100/ANSI parsing.
+
+## Bouncy Castle Provider — 1.85
+MIT licence.
+https://github.com/bcgit/bc-java/blob/main/LICENSE.md
+Provides cryptographic algorithms used by SSH.
 
 ## AndroidX / Jetpack Compose
 Apache License 2.0, The Android Open Source Project.
 
-> Before publishing to any store, verify each licence text against the exact
-> artifact version you ship and include the full licence files in the release.
+> `app/build.gradle.kts` is the version source of truth. Before publishing an APK/AAB,
+> verify the resolved runtime dependency graph and include required copyright, licence,
+> and attribution notices from the exact artifacts you ship. AndroidX libraries use the
+> Apache License 2.0; their full attribution inventory may include additional
+> transitive components beyond the short list above.

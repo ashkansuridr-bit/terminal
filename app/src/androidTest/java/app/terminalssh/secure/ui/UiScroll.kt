@@ -4,7 +4,6 @@ import android.graphics.Rect
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.BySelector
-import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 
@@ -54,15 +53,30 @@ fun UiDevice.scrollUntilFullyVisible(
 
 private fun UiDevice.scrollOnce(horizontalDirection: LayoutDirection?) {
     val scrollable = pickScrollable(horizontalDirection != null)
-    if (scrollable != null) {
-        val direction = when (horizontalDirection) {
-            LayoutDirection.Rtl -> Direction.RIGHT
-            LayoutDirection.Ltr -> Direction.LEFT
-            null -> Direction.DOWN
+    val bounds = scrollable?.safeBounds()
+    if (bounds != null && bounds.width() > 0 && bounds.height() > 0) {
+        // UiObject2.scroll can report success without moving Compose scroll containers on
+        // API 26 and newer emulator images. A real swipe within the selected container
+        // follows the same path as a user's gesture and avoids accidentally scrolling a
+        // neighbouring row or the app's navigation bar.
+        if (horizontalDirection != null) {
+            val startX: Int
+            val endX: Int
+            if (horizontalDirection == LayoutDirection.Ltr) {
+                startX = bounds.left + (bounds.width() * 0.82f).toInt()
+                endX = bounds.left + (bounds.width() * 0.18f).toInt()
+            } else {
+                startX = bounds.left + (bounds.width() * 0.18f).toInt()
+                endX = bounds.left + (bounds.width() * 0.82f).toInt()
+            }
+            swipe(startX, bounds.centerY(), endX, bounds.centerY(), 12)
+        } else {
+            swipe(
+                bounds.centerX(), bounds.bottom - (bounds.height() * 0.15f).toInt(),
+                bounds.centerX(), bounds.top + (bounds.height() * 0.15f).toInt(),
+                12,
+            )
         }
-        // The handle can go stale between the pick and the gesture under a rendering
-        // terminal; a skipped step is retried on the next loop iteration.
-        runCatching { scrollable.scroll(direction, 0.9f) }
     } else {
         when (horizontalDirection) {
             LayoutDirection.Ltr -> swipe(

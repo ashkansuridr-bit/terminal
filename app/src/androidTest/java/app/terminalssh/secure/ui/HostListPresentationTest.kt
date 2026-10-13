@@ -128,10 +128,11 @@ class HostListPresentationTest {
                 )
             } else {
                 // Older Android Compose trees do not always export the LazyColumn as an
-                // accessibility scroll container. Swipe the app's content viewport instead.
+                // accessibility scroll container. Swipe the middle of the content viewport
+                // instead of starting over the bottom navigation bar.
                 device.swipe(
-                    device.displayWidth / 2, (device.displayHeight * 0.78f).toInt(),
-                    device.displayWidth / 2, (device.displayHeight * 0.34f).toInt(),
+                    device.displayWidth / 2, (device.displayHeight * 0.68f).toInt(),
+                    device.displayWidth / 2, (device.displayHeight * 0.30f).toInt(),
                     12,
                 )
             }
