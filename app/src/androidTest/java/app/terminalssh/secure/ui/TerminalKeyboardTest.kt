@@ -347,27 +347,31 @@ class TerminalKeyboardTest {
     }
 
     /** Finds [text] (exposed as text or description) across the application windows. */
-    private fun waitForAppText(text: String, within: Long = UI_TIMEOUT_MS): AccessibilityNodeInfo? {
-        val deadline = SystemClock.uptimeMillis() + within
-        while (SystemClock.uptimeMillis() < deadline) {
-            // Keep By.text's semantics: compare the CharSequence CONTENT, not identity.
-            // Compose exposes labels as SpannedString and String.equals(SpannedString)
-            // is false, so a raw == on n.text misses every Compose tab label.
-            findAppNode { n ->
-                (n.text?.toString() == text) || (n.contentDescription?.toString() == text)
-            }?.let { return it }
-            SystemClock.sleep(250)
-        }
-        return null
+    /** Taps the labeled item in the bottom dock, allowing the session-count badge to join its text. */
+    private fun clickAppText(text: String) {
+        val node = waitForNavigationTab(text)
+        assertTrue("Navigation item \"$text\" must be reachable", node != null)
+        val b = bounds(node!!)
+        assertTrue("Navigation item \"$text\" must be visible", b.width() > 0 && b.height() > 0)
+        device.click(b.centerX(), b.centerY())
     }
 
-    /** Taps the center of the first node exposing [text] in the application windows. */
-    private fun clickAppText(text: String) {
-        val node = waitForAppText(text)
-        assertTrue("Node with text \"$text\" must be reachable", node != null)
-        val b = bounds(node!!)
-        assertTrue("Node with text \"$text\" must be visible", b.width() > 0 && b.height() > 0)
-        device.click(b.centerX(), b.centerY())
+    private fun waitForNavigationTab(label: String, within: Long = UI_TIMEOUT_MS): AccessibilityNodeInfo? {
+        val deadline = SystemClock.uptimeMillis() + within
+        while (SystemClock.uptimeMillis() < deadline) {
+            findAppNode { node ->
+                val text = node.text?.toString()
+                val description = node.contentDescription?.toString()
+                val matchesLabel = listOfNotNull(text, description).any { value ->
+                    value == label || value.startsWith("$label,") || value.startsWith("$label ")
+                }
+                if (!matchesLabel) return@findAppNode false
+                val nodeBounds = bounds(node)
+                nodeBounds.height() > 0 && nodeBounds.bottom > (device.displayHeight * 0.66f).toInt()
+            }?.let { return it }
+            SystemClock.sleep(200)
+        }
+        return null
     }
 
     /**
@@ -381,8 +385,10 @@ class TerminalKeyboardTest {
     private fun openTerminalTab(terminalTab: String, terminalMarker: String) {
         val deadline = SystemClock.uptimeMillis() + UI_TIMEOUT_MS
         var attempts = 0
+        var lastClickFailure: String? = null
         while (SystemClock.uptimeMillis() < deadline) {
             runCatching { clickAppText(terminalTab) }
+                .onFailure { lastClickFailure = it.javaClass.simpleName }
             val marker = waitForAppDesc(terminalMarker, within = 8_000)
             if (marker != null) return
             // A system overlay (e.g. the GMS Remote Copy sheet) can cover the app and
@@ -390,7 +396,8 @@ class TerminalKeyboardTest {
             if (++attempts % 2 == 0) dismissNearbyShareOverlay()
         }
         assertTrue(
-            "Selecting the terminal tab must reveal \"$terminalMarker\"; ${safeNavigationSnapshot()}",
+            "Selecting the terminal tab must reveal \"$terminalMarker\"; " +
+                "lastClickFailure=$lastClickFailure; ${safeNavigationSnapshot()}",
             false,
         )
     }
@@ -626,7 +633,7 @@ class TerminalKeyboardTest {
      */
     private fun modifierControl(name: String): UiObject2 =
         device.wait(
-            Until.findObject(By.checkable(true).hasDescendant(By.descStartsWith(name))),
+            Until.findObject(By.checkable(true).descStartsWith(name)),
             UI_TIMEOUT_MS,
         )
 

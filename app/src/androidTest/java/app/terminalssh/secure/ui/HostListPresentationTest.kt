@@ -120,13 +120,21 @@ class HostListPresentationTest {
             val target = device.findObject(By.text(text))
             if (hasFullyVisibleBounds(target)) return
             val listBounds = hostListBounds()
-            assertTrue("Host list was not exposed as a vertical scroll container", listBounds != null)
-            val bounds = listBounds!!
-            device.swipe(
-                bounds.centerX(), bounds.bottom - (bounds.height() * 0.15f).toInt(),
-                bounds.centerX(), bounds.top + (bounds.height() * 0.15f).toInt(),
-                12,
-            )
+            if (listBounds != null) {
+                device.swipe(
+                    listBounds.centerX(), listBounds.bottom - (listBounds.height() * 0.15f).toInt(),
+                    listBounds.centerX(), listBounds.top + (listBounds.height() * 0.15f).toInt(),
+                    12,
+                )
+            } else {
+                // Older Android Compose trees do not always export the LazyColumn as an
+                // accessibility scroll container. Swipe the app's content viewport instead.
+                device.swipe(
+                    device.displayWidth / 2, (device.displayHeight * 0.78f).toInt(),
+                    device.displayWidth / 2, (device.displayHeight * 0.34f).toInt(),
+                    12,
+                )
+            }
             device.waitForIdle()
         }
         val target = device.findObject(By.text(text))
@@ -146,12 +154,17 @@ class HostListPresentationTest {
 
     private fun accessibilityBounds(text: String?): Rect? {
         if (text == null) return null
-        val root = instrumentation.uiAutomation.rootInActiveWindow ?: return null
-        return try {
-            findBounds(root, text)
-        } finally {
-            root.recycle()
+        repeat(3) {
+            val root = instrumentation.uiAutomation.rootInActiveWindow ?: return null
+            try {
+                findBounds(root, text)?.let { return it }
+            } catch (_: StaleObjectException) {
+                // Retry against a fresh tree if Compose replaced the list during traversal.
+            } finally {
+                root.recycle()
+            }
         }
+        return null
     }
 
     private fun findBounds(node: AccessibilityNodeInfo, text: String): Rect? {

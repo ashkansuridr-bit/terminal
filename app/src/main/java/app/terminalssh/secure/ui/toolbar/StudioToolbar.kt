@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -190,6 +191,7 @@ private fun KeyStrip(
                 locked = isLocked,
                 repeatWhileHeld = key.repeatWhileHeld,
                 gestures = key.gestures.keys,
+                checkable = key.action is ModifierAction,
                 hapticsEnabled = hapticsEnabled,
                 onPrimary = { onKeyAction(key, null) },
                 onGesture = { gesture -> onKeyAction(key, gesture) },
@@ -217,6 +219,7 @@ private fun StudioKey(
     locked: Boolean,
     repeatWhileHeld: Boolean,
     gestures: Set<ToolbarGesture>,
+    checkable: Boolean = false,
     hapticsEnabled: Boolean,
     onPrimary: () -> Unit,
     onGesture: (ToolbarGesture) -> Unit,
@@ -300,30 +303,43 @@ private fun StudioKey(
                     Modifier
                 },
             )
-            .semantics { contentDescription = description }
             .then(gestureModifier)
-            .combinedClickable(
-                enabled = enabled,
-                role = Role.Button,
-                onLongClick = if (ToolbarGesture.LONG_PRESS in gestures) {
-                    { if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove); onGesture(ToolbarGesture.LONG_PRESS) }
+            .then(
+                if (checkable) {
+                    Modifier.toggleable(
+                        value = active,
+                        enabled = enabled,
+                        role = Role.Checkbox,
+                        interactionSource = interactions,
+                        indication = null,
+                        onValueChange = { fire() },
+                    )
                 } else {
-                    null
-                },
-                onDoubleClick = if (ToolbarGesture.DOUBLE_TAP in gestures) {
-                    { onGesture(ToolbarGesture.DOUBLE_TAP) }
-                } else {
-                    null
-                },
-                interactionSource = interactions,
-                indication = null,
-                // combinedClickable still delivers the release click after a long hold.
-                // Once repeat has emitted any keys, suppress that trailing click so a held
-                // Backspace/Delete does not erase one extra character on release.
-                onClick = {
-                    if (!repeatWhileHeld || !repeatedWhileHeld) fire()
+                    Modifier.combinedClickable(
+                        enabled = enabled,
+                        role = Role.Button,
+                        onLongClick = if (ToolbarGesture.LONG_PRESS in gestures) {
+                            { if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove); onGesture(ToolbarGesture.LONG_PRESS) }
+                        } else {
+                            null
+                        },
+                        onDoubleClick = if (ToolbarGesture.DOUBLE_TAP in gestures) {
+                            { onGesture(ToolbarGesture.DOUBLE_TAP) }
+                        } else {
+                            null
+                        },
+                        interactionSource = interactions,
+                        indication = null,
+                        // combinedClickable still delivers the release click after a long hold.
+                        // Once repeat has emitted any keys, suppress that trailing click so a held
+                        // Backspace/Delete does not erase one extra character on release.
+                        onClick = {
+                            if (!repeatWhileHeld || !repeatedWhileHeld) fire()
+                        },
+                    )
                 },
             )
+            .semantics(mergeDescendants = checkable) { contentDescription = description }
             .padding(horizontal = 12.dp),
     ) {
         Text(

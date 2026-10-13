@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-12T22:54:04+00:00",
+  "capturedAt": "2026-10-13T10:08:50+00:00",
   "branch": "feature/terminal-control-studio-pro",
   "baselineCommit": "67021c1",
-  "lastVerifiedCommit": "02ef848",
+  "lastVerifiedCommit": "2976238",
   "features": [
     {
       "id": "TCS-01",
@@ -265,6 +265,7 @@
         "StudioToolbar.kt",
         "TerminalKeyboardTest.kt",
         "HostListPresentationTest.kt",
+        "SettingsAccessibilityTest.kt",
         "HostEditValidationTest.kt",
         "UiScroll.kt",
         "app/proguard-rules-androidtest.pro",
@@ -281,64 +282,69 @@
         "API 26/36 instrumentation debug + preview"
       ],
       "executedTests": [
-        "e2bd89c: MarketDebug Kotlin compile PASS; AndroidTest Kotlin compile PASS; JVM 1013/1013 PASS; lint PASS (0 errors); loop2_gate and market_release_gate PASS",
-        "02ef848: MarketDebug AndroidTest Kotlin compile PASS after hardening; git diff --check PASS",
-        "PR run 38319420919: latest verify/build and API 26/36/37 instrumentation pending"
+        "e2bd89c: MarketDebug app + AndroidTest compile PASS; JVM 1,013/1,013 PASS (118 suites); lint PASS; source/release gates PASS",
+        "02ef848: MarketDebug AndroidTest compile PASS; git diff --check PASS",
+        "2976238 CI run 38320080882: verify/build PASS; API36 Debug 8 failed, Preview 7 failed; API26 Debug 14 failed; API37 Debug/Preview boot BLOCKED (ADB offline)",
+        "Current worktree: MarketDebug app compile PASS; AndroidTest compile PASS; JVM 1,013/1,013 PASS; lint PASS (0 errors, 108 warnings, 2 hints); loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS"
       ],
-      "lastResult": "App and regression-test code compile locally. Latest API matrix is pending; device behavior is not yet verified.",
-      "lastFailure": "Earlier run 38314776034 had API 26/36 instrumentation failures and API 37 boot failures. Follow-up test/code changes in e2bd89c and 02ef848 address diagnosed issues; latest run 38319420919 is pending.",
-      "fixAttempts": 3,
-      "commitSha": "02ef848",
-      "lastReviewedAt": "2026-10-12T22:54:04+00:00",
+      "lastResult": "Current app and UI-test sources compile; JVM and source/release gates pass. Device behavior for the latest local changes awaits fresh PR CI.",
+      "lastFailure": "Run 38320080882: API26/36 UI instrumentation failures, including terminal tab lookup, host/settings scrolling/semantics and host form/snippet assertions; API37 emulator boot timed out with adb offline. API36 Debug had 8 failures; Preview 7; API26 Debug 14.",
+      "fixAttempts": 1,
+      "commitSha": "2976238 (current changes uncommitted)",
+      "lastReviewedAt": "2026-10-13T10:08:50+00:00",
       "remainingIssues": [
-        "Latest PR run 38319420919 has not completed; inspect its API 26/36/37 artifacts before marking the feature verified.",
-        "No local Android device/emulator is connected.",
-        "Local GPlay Preview assemble was not rerun. Market Preview APK output was emitted and passed apksigner verification, but Gradle assemble did not complete after disk space reached zero; do not count this as a build pass."
+        "Push current accessibility and test harness fixes, then rerun API26/36/37 debug/preview CI.",
+        "Recheck host edit and snippet toolbar runtime failures against fresh logs; prior failures are not yet classified on current sources.",
+        "No local adb or emulator; API37 requires a healthy CI emulator.",
+        "Local GPlay Preview assemble not rerun on latest source; production signing remains unverified."
       ]
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS (e2bd89c)",
+    "marketDebugCompile": "PASS (current worktree; compileMarketDebugKotlin)",
     "marketDebugUnitTests": {
       "passed": 1013,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
-      "suites": 118
+      "suites": 118,
+      "evidence": "current worktree :app:testMarketDebugUnitTest"
     },
     "marketDebugAssemble": "PASS",
     "diffCheck": "PASS (e2bd89c)",
-    "instrumentation": "PENDING PR run 38319420919; local device unavailable",
+    "instrumentation": "PR run 38320080882 completed with failures: API36 Debug 8, Preview 7; API26 Debug 14. API37 debug/preview blocked at emulator boot (adb offline). Current follow-up awaits fresh CI.",
     "apiDeviceMatrix": "BLOCKED: no emulator/device; disk capacity insufficient to install system image",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS (02ef848)",
+    "marketDebugAndroidTestCompile": "PASS (current worktree)",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
       "warnings": 108,
-      "hints": 2
+      "hints": 2,
+      "evidence": "current worktree :app:lintMarketDebug"
     },
     "gplayDebugAssemble": "PASS",
     "marketPreviewAssemble": "INCOMPLETE on latest source: APK output exists and apksigner verifies it, but Gradle assemble stopped before task completion when disk space reached zero",
     "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
     "apkSignature": "All verified APKs are signed with Android Debug certificate; no production signing claim",
-    "sourceGates": "PASS: loop2_gate.py and market_release_gate.py (e2bd89c)",
+    "sourceGates": "PASS (current worktree: loop2_gate.py and market_release_gate.py)",
     "marketPreviewApk": {
       "path": "app/build/outputs/apk/market/preview/app-market-preview.apk",
       "sha256": "b5a1fa1985408c88dadd4efc3eaa9d274df131b7b2d05165ca4d05f427f89c64",
       "signature": "Android Debug certificate; apksigner verification PASS",
       "releaseStatus": "not production-signed"
-    }
+    },
+    "api37": "BLOCKED by emulator infrastructure in run 38320080882; no app tests executed"
   },
   "knownIssues": [
     "Build warns AGP 8.13.2 has not been validated by Google against compileSdk 37.0; build itself succeeds.",
     "All checked APKs use the Android Debug certificate; production signing remains unverified.",
     "Lint passed with 108 warnings and 2 hints (no errors); these warnings have not been triaged as part of this feature task.",
     "No emulator/device is currently attached (adb devices is empty); current UI/instrumentation changes have compile evidence only until fresh PR CI runs.",
-    "PR run 38314776034 failed API 26/36 instrumentation; follow-up fixes are pushed in e2bd89c and CI run 38318395451 is queued. API 37 boot issues are still unclassified for this run."
+    "PR run 38320080882 completed with API26/36 instrumentation failures; latest follow-up has compile/unit evidence only until CI reruns."
   ],
-  "nextStep": "Inspect PR run 38319420919 and its API 26/36/37 instrumentation artifacts. Fix remaining confirmed failures, run the matching CI again, and update the checkpoint with actual results.",
+  "nextStep": "Commit and push the current RootScreen/StudioToolbar accessibility fixes and test harness improvements; inspect the fresh PR run and continue fixing any evidenced failures.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/feature/terminal-control-studio-pro",
   "pullRequest": "https://github.com/ashkansuridr-bit/terminal/pull/4"
 }

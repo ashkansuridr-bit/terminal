@@ -43,10 +43,15 @@ class SettingsAccessibilityTest {
                 // assertion below measure the screen edge instead of the row.
                 // Reach the palette section vertically and confirm the selected preset
                 // before scrolling its horizontal strip to OLED for the touch-target check.
-                device.scrollUntil(maxAttempts = 20) { device.hasObject(By.desc(persianNeon)) }
-                assertTrue(device.wait(Until.hasObject(By.desc(persianNeon)), TIMEOUT_MS))
+                assertTrue(
+                    "Selected palette chip was not fully visible after scrolling",
+                    device.scrollUntilFullyVisible(By.desc(persianNeon), maxAttempts = 20),
+                )
                 assertTrue(device.findObject(By.desc(persianNeon)).isSelected)
-                device.scrollUntilFullyVisible(By.desc(oled), horizontalDirection = LayoutDirection.Ltr)
+                assertTrue(
+                    "OLED palette chip was not fully visible after horizontal scrolling",
+                    device.scrollUntilFullyVisible(By.desc(oled), maxAttempts = 20, horizontalDirection = LayoutDirection.Ltr),
+                )
                 val oledAction = device.findObject(By.desc(oled))
                 val minimumPx = (48 * instrumentation.targetContext.resources.displayMetrics.density).toInt()
                 assertTrue("$oled width was ${oledAction.visibleBounds.width()}px", oledAction.visibleBounds.width() >= minimumPx)
@@ -76,28 +81,35 @@ class SettingsAccessibilityTest {
 
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
                 device.findObject(By.text(settingsTab)).click()
-                device.scrollUntil { device.hasObject(By.desc(fontSizeLabel)) }
-                assertTrue(device.wait(Until.hasObject(By.desc(fontSizeLabel)), TIMEOUT_MS))
-
-                val sliderNode = findAdjustableNodeByDescription(
-                    instrumentation.uiAutomation.rootInActiveWindow,
-                    fontSizeLabel,
+                assertTrue(
+                    "Font-size slider was not fully visible after scrolling",
+                    device.scrollUntilFullyVisible(By.desc(fontSizeLabel), maxAttempts = 20),
                 )
+
+                val sliderNode = findAdjustableNodeByDescription(fontSizeLabel)
                 assertNotNull("font-size slider node carrying both its accessible name and adjustable range was missing", sliderNode)
                 assertEquals(17f, sliderNode?.rangeInfo?.current ?: Float.NaN, 0.01f)
 
                 val progressArguments = Bundle().apply {
                     putFloat(AccessibilityNodeInfo.ACTION_ARGUMENT_PROGRESS_VALUE, 18f)
                 }
-                assertTrue(
-                    sliderNode!!.performAction(
-                        AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_PROGRESS.id,
-                        progressArguments,
-                    ),
-                )
+                try {
+                    assertTrue(
+                        sliderNode!!.performAction(
+                            AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_PROGRESS.id,
+                            progressArguments,
+                        ),
+                    )
+                } finally {
+                    sliderNode?.recycle()
+                }
                 assertTrue("Font-size action was not persisted and exposed", awaitUiState(TIMEOUT_MS) {
-                    val current = findAdjustableNodeByDescription(instrumentation.uiAutomation.rootInActiveWindow, fontSizeLabel)
-                    app.settings.fontSizeSp == 18 && current?.rangeInfo?.current == 18f
+                    val current = findAdjustableNodeByDescription(fontSizeLabel)
+                    try {
+                        app.settings.fontSizeSp == 18 && current?.rangeInfo?.current == 18f
+                    } finally {
+                        current?.recycle()
+                    }
                 })
             }
         } finally {
@@ -110,9 +122,31 @@ class SettingsAccessibilityTest {
         description: String,
     ): AccessibilityNodeInfo? {
         if (node == null) return null
-        if (node.contentDescription?.toString() == description && node.rangeInfo != null) return node
+        if (node.contentDescription?.toString() == description && node.rangeInfo != null) {
+            return AccessibilityNodeInfo.obtain(node)
+        }
         for (index in 0 until node.childCount) {
-            findAdjustableNodeByDescription(node.getChild(index), description)?.let { return it }
+            val child = node.getChild(index) ?: continue
+            try {
+                findAdjustableNodeByDescription(child, description)?.let { return it }
+            } finally {
+                child.recycle()
+            }
+        }
+        return null
+    }
+
+    private fun findAdjustableNodeByDescription(description: String): AccessibilityNodeInfo? {
+        repeat(5) {
+            val root = instrumentation.uiAutomation.rootInActiveWindow ?: return null
+            try {
+                findAdjustableNodeByDescription(root, description)?.let { return it }
+            } catch (_: androidx.test.uiautomator.StaleObjectException) {
+                // Compose can replace the semantics tree while the slider redraws; retry a fresh root.
+            } finally {
+                root.recycle()
+            }
+            android.os.SystemClock.sleep(100)
         }
         return null
     }

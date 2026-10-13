@@ -11,4 +11,4 @@
 | TCS-07 | Localized labels, descriptions and accessible state | `values*/strings.xml`, renderer semantics | IMPLEMENTED_NOT_TESTED | Locale and TalkBack tests |
 | TCS-08 | Android artifact and release distinction | APK verification report | BUILD_VERIFIED | Device install; production signing credentials unavailable |
 | TCS-09 | Snippet access and CI gate repair | `ToolbarPresets.kt`, `ToolbarDispatcher.kt`, `loop2_gate.py`; unit regressions | UNIT_VERIFIED | Fresh PR CI instrumentation matrix |
-| TCS-10 | Accessibility and instrumentation regression hardening | `SettingRow.kt`, keyboard/host/settings instrumentation; CI run 38319706251 | IMPLEMENTED_NOT_TESTED | API 26/36/37 job results and artifacts |
+| TCS-10 | Accessibility and instrumentation regression hardening | `SettingRow.kt`, `StudioToolbar.kt`, keyboard/host/settings instrumentation; local app + AndroidTest compiles and JVM 1,013/1,013; CI run 38320080882 exposed remaining runtime failures | IMPLEMENTED_NOT_TESTED | Fresh API 26/36/37 CI after latest fixes |
