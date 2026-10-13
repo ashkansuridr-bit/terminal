@@ -1,9 +1,13 @@
 # APK verification
 
-The MarketDebug artifact was rebuilt from source commit `108d7d23b7bc71b6eb6810369d510e1bfe2b02ea` on `main` with `:app:assembleMarketDebug`. Android Build Tools 37.0.0 `apksigner verify --verbose` passed; the artifact carries the Android Debug certificate. This is an evaluation build and is not production-signed.
+The root `MarketDebug` test APK was assembled with `:app:assembleMarketDebug` from application source committed as `081d053`.
 
-| Variant | Artifact | Size | SHA-256 |
-|---|---|---:|---|
-| MarketDebug | [`TerminalSSH-0.7.2-MarketDebug-TEST.apk`](../../TerminalSSH-0.7.2-MarketDebug-TEST.apk) | 43,704,018 bytes | `aff97cf78f6e31ab21406c5877ae666a2609f61af5eec212f93cce738c2b5a4b` |
+| Variant | Artifact | Size | SHA-256 | Signature |
+|---|---|---:|---|---|
+| MarketDebug | [`TerminalSSH-0.7.2-MarketDebug-TEST.apk`](../../TerminalSSH-0.7.2-MarketDebug-TEST.apk) | 41,555,788 bytes | `01e0409dae251ccfaf1656c956f86165dbef1040e14dd9261e0ad1d54e404aec` | Android Debug certificate; v2 verified |
 
-The build and signature checks passed. No local ADB/device is available. The project owner reports a successful manual test on a physical Android phone; the latest completed CI run [38448985782](https://github.com/ashkansuridr-bit/terminal/actions/runs/38448985782) for commit `7727c4f` had 14 failed API26/36 instrumentation executions (four per API26 variant and three per API36 variant). API37 Debug and Preview both failed before tests because `adb` reported the emulator offline and boot timed out. A later local source/test follow-up compiles and passes JVM tests but has not run on an emulator. These tests do not certify the APK's runtime behavior. The APK was rebuilt after CI from app source commit `108d7d23b7bc71b6eb6810369d510e1bfe2b02ea`; production signing is unverified, so this is not a production release.
+`apkanalyzer` reports package `app.terminalssh.secure.debug` and version `0.7.2-debug`. Build Tools 37.0.0 `apksigner verify --verbose` passed. Production signing was not attempted; this APK is not a release artifact.
+
+Latest runtime evidence is CI run [38452720047](https://github.com/ashkansuridr-bit/terminal/actions/runs/38452720047) for commit `ab331c7`. The Verify job passed. API26 Debug/Preview each had 3 failures of 114 tests (HostList, SettingsToggle, and the Tab keyboard action); API36 Debug/Preview each had 2 failures of 114 (HostList and SettingsToggle). API37 Debug/Preview did not run tests because the emulator was offline and boot timed out. Local follow-up changes now add explicit switch state semantics, fixture and viewport diagnostics, Activity-localized palette lookup, focused-editor/field alignment checks, and horizontal scrolling before the Tab accessibility assertion. These fixes compile locally but still need a fresh device run.
+
+The project owner reports a successful test on a physical Android phone; no independent device log was captured in this workspace. Local API26 and API36 instrumentation replay is unavailable because no device is attached and the installed emulator images are incomplete. The APK's signature does not certify installation/runtime behavior on those API levels.

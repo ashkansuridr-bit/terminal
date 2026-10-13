@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T19:04:05+00:00",
+  "capturedAt": "2026-10-13T19:41:17+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "c68b95ff033ffd029b586fb2a04b57890e1e8806",
+  "lastVerifiedCommit": "081d0538595bcb82c43a291dc75b3735038cf13d",
   "features": [
     {
       "id": "TCS-01",
@@ -106,15 +106,16 @@
         "MarketDebug AndroidTest Kotlin compile PASS",
         "MarketDebug lint PASS (0 errors, 104 warnings, 2 hints)",
         "MarketDebug APK assemble PASS; apksigner PASS with Android Debug certificate",
-        "loop2_gate.py PASS; market_release_gate.py PASS; diff check PASS"
+        "loop2_gate.py PASS; market_release_gate.py PASS; diff check PASS",
+        "Current local follow-up: decode/preview reports count of omitted unknown action bindings; import callback rechecks dirty draft/pending macro/theme gate; JVM regression tests included in 1,026 PASS."
       ],
-      "lastResult": "SAF UI performs import on IO; repository uses SharedPreferences.commit for confirmed imports and only publishes StateFlow after a successful durable write. Regular toolbar edits retain asynchronous apply behavior. Successful repository commits clear stale recovery notice/raw data. UI/process recreation remains runtime-unverified.",
+      "lastResult": "Bounded strict UTF-8 SAF import with explicit replacement preview; import is blocked while profile, macro, or theme drafts are pending, including a callback-time race. Preview now reports the count of actions a forward-compatibility decode will omit. JVM verified; SAF UI runtime remains pending.",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": "94b7842",
+      "commitSha": "081d053",
       "lastReviewedAt": "2026-10-13T14:40:00+00:00",
       "remainingIssues": [
-        "Android SAF picker interaction, process recreation and cancellation paths require device/CI instrumentation."
+        "SAF picker interaction, cancellation and process recreation need device instrumentation."
       ]
     },
     {
@@ -150,7 +151,7 @@
       "lastResult": "Custom theme create/edit form and localized profile duplication are implemented locally. Pure JVM tests and application/AndroidTest compilation pass; UI runtime is not yet tested.",
       "lastFailure": null,
       "fixAttempts": 1,
-      "commitSha": null,
+      "commitSha": "7727c4f",
       "lastReviewedAt": "2026-10-13T18:26:42+00:00",
       "remainingIssues": [
         "Fresh API26/36/37 CI after push",
@@ -225,14 +226,14 @@
         "CI run 38439434500 on 5048075: Verify PASS; API26 Debug 6/114 failed, API26 Preview 5/114 failed, API36 Debug 6/114 failed, API36 Preview 7/114 failed (24 failed executions); API37 Debug+Preview emulator boot timed out before tests",
         "Run 38444931145 on c68b95f: same four HostEdit/HostList/SettingsToggle/Snippet failures in API26/36 Debug+Preview (16 executions); Palette and font slider tests passed; API37 boot timed out."
       ],
-      "lastResult": "Run 38444931145 reduced API26/36 shared UI failures from six to four per variant; palette/font-slider accessibility tests pass. New locally built harness correction is pending a fresh matrix.",
-      "lastFailure": "Run 38444931145: four shared failures in each API26/36 variant; API37 Debug/Preview boot timeout before tests.",
+      "lastResult": "Run 38452720047: SettingsToggle failed on API26/36; TerminalKeyboard Tab failed on API26. Palette and HostEdit passed on API36 in this run. Current local test and switch semantics follow-up compiles, runtime pending.",
+      "lastFailure": "Run 38452720047: 3/114 failures on each API26 variant and 2/114 on each API36 variant; API37 boot timeout.",
       "fixAttempts": 3,
       "commitSha": "93135b0",
       "lastReviewedAt": "2026-10-13T18:26:42+00:00",
       "remainingIssues": [
-        "Fresh API26/36 Debug/Preview instrumentation after local harness fixes",
-        "API37 runtime instrumentation; adb device offline/boot timeout",
+        "Fresh API26/36 Debug/Preview instrumentation after current switch semantics and viewport fixes",
+        "API37 runtime instrumentation: emulator offline/boot timeout",
         "TalkBack/device accessibility verification"
       ]
     },
@@ -346,15 +347,14 @@
         "CI run 38439434500 on 5048075: Verify PASS; API26 Debug 6/114 failed, API26 Preview 5/114 failed, API36 Debug 6/114 failed, API36 Preview 7/114 failed (24 failed executions); API37 Debug+Preview emulator boot timed out before tests",
         "Run 38444931145 on c68b95f: API26/36 Debug+Preview each had four failures; palette/font slider passed; API37 boot blocked. Follow-up changes locally compile and JVM tests pass, runtime pending."
       ],
-      "lastResult": "Latest c68b95f instrumentation left four shared failures per API26/36 variant. Local follow-up fixes viewport/field/toggle interactions and advances Snippets in the default profile; JVM and compile pass, fresh CI pending.",
-      "lastFailure": "Run 38444931145: HostEdit, HostList, SettingsToggle, Snippet fail in all API26/36 variants; API37 boot timed out.",
+      "lastResult": "Current follow-up makes the named Settings boolean row explicitly expose switch role/state; hardens fixture durability and focused field targeting; resolves palette resources from the Activity; and scrolls the lazy toolbar before the Tab click assertion. App/AndroidTest compile, JVM, lint, and assembly pass locally; fresh runtime CI required.",
+      "lastFailure": "Run 38452720047: HostList and SettingsToggle each failed in API26/36 Debug/Preview; Tab failed in API26 Debug/Preview. API37 boot timeout.",
       "fixAttempts": 3,
-      "commitSha": "cf0ac9d",
+      "commitSha": "081d053",
       "lastReviewedAt": "2026-10-13T18:26:42+00:00",
       "remainingIssues": [
-        "Fresh API26/36 Debug/Preview CI after follow-up",
-        "API37 runtime instrumentation boot stability",
-        "No local device/ADB for independent reproduction"
+        "Fresh API26/36/37 instrumentation after local follow-up",
+        "TalkBack/device accessibility runtime"
       ]
     },
     {
@@ -388,12 +388,13 @@
         "loop2_gate.py PASS",
         "market_release_gate.py PASS",
         "git diff --check PASS",
-        "5bd2475 follow-up: reject imported/persisted line breaks and terminal controls (LF/CR/U+2028/U+2029/NUL/TAB/DEL/NEL/ESC); JVM 1,015/1,015 PASS, 118 suites; app compile PASS; AndroidTest Kotlin compile PASS; lint PASS (0 errors, 104 warnings, 2 hints); source/release gates PASS; diff check PASS."
+        "5bd2475 follow-up: reject imported/persisted line breaks and terminal controls (LF/CR/U+2028/U+2029/NUL/TAB/DEL/NEL/ESC); JVM 1,015/1,015 PASS, 118 suites; app compile PASS; AndroidTest Kotlin compile PASS; lint PASS (0 errors, 104 warnings, 2 hints); source/release gates PASS; diff check PASS.",
+        "1,026 current JVM tests PASS, including callback-time clean-import policy and omitted-action preview coverage."
       ],
-      "lastResult": "Macro editor now warns before discarding dirty profile/macro changes; macro validator rejects all tested line and terminal control characters. Build/unit/lint verified locally; instrumentation remains pending.",
+      "lastResult": "User-created single-line macro editor rejects tested credential-shaped inputs, persists named macros, and inserts text without Enter. Current JVM regression suite passes; device UI remains unverified.",
       "lastFailure": "Credential-shape detection is heuristic and cannot identify arbitrary secrets; API instrumentation run from prior commit has unrelated UI assertion failures.",
       "fixAttempts": 1,
-      "commitSha": "5bd2475",
+      "commitSha": "081d053",
       "lastReviewedAt": "2026-10-13T11:12:38+00:00",
       "remainingIssues": [
         "UI runtime/API instrumentation verification",
@@ -404,30 +405,30 @@
   "testSummary": {
     "marketDebugCompile": "PASS in latest local Gradle invocation.",
     "marketDebugUnitTests": {
-      "passed": 1025,
+      "passed": 1026,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
       "suites": 119,
-      "evidence": "Local current workspace: :app:testMarketDebugUnitTest; 119 XML suites, 1,025 tests, 0 failures/errors/skips; includes ToolbarThemeEditorTest and profile duplication regression coverage."
+      "evidence": "Current workspace XML results from :app:testMarketDebugUnitTest; 1,026 tests, 0 failures/errors/skips."
     },
-    "marketDebugAssemble": "PASS: :app:assembleMarketDebug from commit 108d7d23b7bc71b6eb6810369d510e1bfe2b02ea.",
+    "marketDebugAssemble": "PASS: :app:assembleMarketDebug from the current app source; root test APK reassembled and apksigner v2 verification passed.",
     "diffCheck": "PASS after current local edits",
-    "instrumentation": "Latest completed CI run 38448985782 on 7727c4f: Verify PASS. API26 Debug/Preview each 4/114 failed; API36 Debug/Preview each 3/114 failed. HostEdit, HostList and SettingsToggle failed across API26/36; TerminalKeyboard modifier/Tab failed only API26; Snippet passed. API37 Debug/Preview were blocked before tests by adb device offline/emulator boot timeout. Current local changes compile and unit tests pass but have no runtime device evidence.",
-    "apiDeviceMatrix": "Run 38448985782 exercised API26/36 and attempted API37. API26/36 ran 114 each with 4/3 failures per variant. API37 Debug/Preview failed before test execution due adb device offline and boot timeout. API31/34 are not in workflow. Local API36 AVD lacks kernel-ranchu; no device attached.",
+    "instrumentation": "Latest completed run 38452720047 on ab331c7: Verify PASS. API26 Debug/Preview 3/114 failures each (HostList, SettingsToggle, TerminalKeyboard Tab); API36 Debug/Preview 2/114 each (HostList, SettingsToggle). API36 HostEdit and palette passed. API37 Debug/Preview blocked before testing by offline emulator/boot timeout. Current local harness and switch semantics changes compile but have no runtime CI evidence.",
+    "apiDeviceMatrix": "CI run 38452720047 tested API26/36. API37 Debug/Preview could not boot (adb offline/timeout). API31/34 are absent from this workflow. Local Android SDK has adb/emulator binaries but no usable system image/kernel and no connected physical device.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS in latest local Gradle invocation; runtime not run locally.",
+    "marketDebugAndroidTestCompile": "PASS after latest HostEdit, HostList, SettingsAccessibility, SettingsToggleAccessibility, and TerminalKeyboard harness changes; runtime awaits CI.",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
       "warnings": 106,
       "hints": 2,
-      "evidence": "Latest local Gradle invocation."
+      "evidence": "Successful :app:lintMarketDebug on the current app source before the final instrumentation-only diagnostics edit; app production code was unchanged afterward."
     },
     "gplayDebugAssemble": "PASS",
-    "marketPreviewAssemble": "PASS on cf0ac9d: :app:assembleMarketPreview (R8/minified; debug certificate)",
-    "gplayPreviewAssemble": "PASS (R8/minified; debug certificate)",
+    "marketPreviewAssemble": "PASS on earlier source cf0ac9d (R8/minified, debug certificate); not rebuilt for commit 081d053.",
+    "gplayPreviewAssemble": "PASS on earlier source (R8/minified, debug certificate); not rebuilt for commit 081d053.",
     "apkSignature": "PASS: root MarketDebug APK verified with Android Build Tools 37.0.0 apksigner; Android Debug certificate, not production-signed.",
     "sourceGates": "PASS on current local workspace: loop2_gate.py, market_release_gate.py, git diff --check, and LOOP_STATE JSON parse.",
     "marketPreviewApk": {
@@ -436,20 +437,20 @@
       "signature": "Android Debug certificate; debug/test only",
       "releaseStatus": "not production-signed"
     },
-    "api37": "Pending in run 38384380095; prior run 38320080882 had emulator boot failure.",
+    "api37": "Run 38452720047: API37 Debug and Preview emulator boot failed (adb offline/timeout); no test execution.",
     "currentMarketDebugApk": {
       "path": "TerminalSSH-0.7.2-MarketDebug-TEST.apk",
-      "sizeBytes": 43704018,
-      "sha256": "aff97cf78f6e31ab21406c5877ae666a2609f61af5eec212f93cce738c2b5a4b",
-      "signature": "Android Debug certificate; apksigner verify --verbose PASS",
-      "builtFrom": "108d7d23b7bc71b6eb6810369d510e1bfe2b02ea",
+      "sizeBytes": 41555788,
+      "sha256": "01e0409dae251ccfaf1656c956f86165dbef1040e14dd9261e0ad1d54e404aec",
+      "signature": "Android Debug certificate; apksigner v2 verification PASS",
+      "builtFrom": "Current app source corresponding to this local follow-up; test APK, not production signed",
       "releaseStatus": "not production-signed",
       "rootCopy": "TerminalSSH-0.7.2-MarketDebug-TEST.apk",
-      "rootCopySHA256": "aff97cf78f6e31ab21406c5877ae666a2609f61af5eec212f93cce738c2b5a4b"
+      "rootCopySHA256": "01e0409dae251ccfaf1656c956f86165dbef1040e14dd9261e0ad1d54e404aec"
     },
-    "marketDebugAndroidTestAssemble": "PASS on cf0ac9d: :app:assembleMarketDebugAndroidTest",
+    "marketDebugAndroidTestAssemble": "PASS on earlier source cf0ac9d; current follow-up AndroidTest Kotlin compilation PASS, runtime requires CI.",
     "latestLocalVerification": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m; python3 scripts/loop2_gate.py; python3 scripts/market_release_gate.py; git diff --check; parse JUnit XML and LOOP_STATE JSON",
-    "latestLocalResult": "PASS: 1,025 JVM tests across 119 suites, 0 failures/errors/skips; MarketDebug app and AndroidTest compilation; MarketDebug lint (0 errors, 106 warnings, 2 hints); loop2_gate.py; market_release_gate.py; git diff --check. Instrumentation runtime not run locally (no adb/device; API36 emulator image lacks kernel-ranchu)."
+    "latestLocalResult": "PASS: 1,026 JVM tests across 119 suites (0 failures/errors/skips); MarketDebug app and AndroidTest compilation; lint (0 errors, 106 warnings, 2 hints); APK assembly/v2 debug signature; loop2_gate.py; market_release_gate.py; JSON/XML parse; git diff --check."
   },
   "knownIssues": [
     "Build warns AGP 8.13.2 has not been validated by Google against compileSdk 37.0; build succeeds.",
@@ -467,29 +468,29 @@
     "Current local follow-up has JVM/compile/lint/source-gate evidence only. It adds custom theme create/edit and localized profile duplication, adjusts the default Snippets position, and hardens four UI tests; fresh runtime CI is required.",
     "Run 38448985782 on 7727c4f: Verify passed; API26 Debug/Preview each had 4/114 failures and API36 Debug/Preview each 3/114 (14 failed executions total). HostEdit, HostList and SettingsToggle fail across API26/36; TerminalKeyboard modifier/Tab additionally fails on API26; Snippet passed. API37 boot blocked before tests. Local follow-up remains runtime-unverified."
   ],
-  "nextStep": "Review diff; commit and push local accessibility/test follow-up directly to main as explicitly requested; inspect new API26/36/37 CI reports and continue fixing evidenced failures. Do not mark TCS-05/TCS-07/TCS-10 complete without runtime gates.",
+  "nextStep": "Push source commit 081d053 and this checkpoint directly to main per owner request; inspect the fresh API26/36/37 CI matrix and artifacts; continue fixing confirmed residual runtime failures. Do not claim verified completion or release readiness until gates pass.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
-    "command": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m; python3 scripts/loop2_gate.py; python3 scripts/market_release_gate.py; git diff --check; parse JUnit XML and LOOP_STATE JSON",
-    "result": "PASS: 1,025 JVM tests across 119 suites, 0 failures/errors/skips; MarketDebug app and AndroidTest compilation; MarketDebug lint (0 errors, 106 warnings, 2 hints); loop2_gate.py; market_release_gate.py; git diff --check. Instrumentation runtime not run locally (no adb/device; API36 emulator image lacks kernel-ranchu).",
-    "androidTest": "Kotlin compilation PASS; runtime unavailable locally because adb/device is absent and configured API36 image lacks kernel-ranchu.",
-    "applicationSource": "Local uncommitted follow-up changes host accessibility semantics, SettingsRow toggle semantics, locale-aware assertions and keyboard click synchronization; TCS-05 theme/profile UI is already committed at 7727c4f.",
-    "apk": "MarketDebug assembled and root APK refreshed from commit 108d7d23b7bc71b6eb6810369d510e1bfe2b02ea; apksigner v2 verification passed."
+    "command": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m; ./gradlew :app:assembleMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m; python3 scripts/loop2_gate.py; python3 scripts/market_release_gate.py; git diff --check; parse JUnit XML and resource XML",
+    "result": "PASS: 1,026 JVM tests across 119 suites; 0 failures/errors/skips; MarketDebug app and AndroidTest compilation; lint 0 errors/106 warnings/2 hints; APK assembly and debug signature verification; loop2_gate.py; market_release_gate.py; diff check; 6 string-resource XML documents parsed. One earlier lint-independent compile attempt failed from unsupported sumOf and was fixed with fold; subsequent compile passed.",
+    "androidTest": "Kotlin compilation PASS after field-target alignment, host fixture validation/tree diagnostics, Activity-localized palette labels, strict checkable-switch semantics, and horizontal toolbar scrolling for Tab. Runtime requires fresh CI.",
+    "applicationSource": "Commit 081d053 contains the import omitted-action warning and SAF draft race guard, explicit named Settings switch state semantics, and strict instrumentation diagnostics/scroll corrections. Local compile/test/lint/build gates passed.",
+    "apk": "MarketDebug assembled from current app source; 41,555,788 bytes; SHA-256 01e0409dae251ccfaf1656c956f86165dbef1040e14dd9261e0ad1d54e404aec; Android Debug certificate; v2 signature verified."
   },
   "latestCi": {
-    "runId": "38448985782",
-    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38448985782",
-    "headSha": "7727c4fe60279af4e7ae8d50c5463ffc92bc5c48",
-    "verify": "PASS: source/artifact gates, JVM tests, lint and Debug builds",
+    "runId": "38452720047",
+    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38452720047",
+    "headSha": "ab331c773c3967b78324dbe220d61023bd47ef1d",
+    "verify": "PASS: source/artifact validators, JVM tests, lint and Debug builds",
     "instrumentation": {
-      "api26Debug": "FAIL: 4 failed of 114",
-      "api26Preview": "FAIL: 4 failed of 114",
-      "api36Debug": "FAIL: 3 failed of 114",
-      "api36Preview": "FAIL: 3 failed of 114",
-      "api37Debug": "BLOCKED: adb device offline; emulator boot timeout before test execution",
-      "api37Preview": "BLOCKED: adb device offline; emulator boot timeout before test execution",
-      "totalFailedExecutions": 14
+      "api26Debug": "FAIL: 3 of 114 (HostList, SettingsToggle, TerminalKeyboard Tab)",
+      "api26Preview": "FAIL: 3 of 114 (HostList, SettingsToggle, TerminalKeyboard Tab)",
+      "api36Debug": "FAIL: 2 of 114 (HostList, SettingsToggle)",
+      "api36Preview": "FAIL: 2 of 114 (HostList, SettingsToggle)",
+      "api37Debug": "BLOCKED: emulator stayed offline; boot timed out before test execution",
+      "api37Preview": "BLOCKED: emulator stayed offline; boot timed out before test execution",
+      "totalFailedExecutions": 10
     },
     "releaseCandidates": "SKIPPED because instrumentation matrix did not pass"
   },
@@ -551,7 +552,23 @@
       "fix": "Added a monotonic channel epoch advanced on shell install/loss/disconnect. Macro dispatcher captures the epoch, cancels on state/epoch change, and gates each synchronous dispatch against the captured live channel under a lock.",
       "tests": "Deterministic coroutine unit regression changes epoch during a delay and reconnects to Connected before resume; asserts the later Enter is not dispatched. MarketDebug JVM 1,022/1,022; app and AndroidTest compile, lint, assemble and source gates PASS. GitHub CI run 38402910371 queued.",
       "status": "UNIT_VERIFIED"
+    },
+    {
+      "id": "NEW-008",
+      "title": "Import silently discarded toolbar actions unknown to this app version and could replace drafts raced from SAF picker",
+      "rootCause": "Forward-compatible codec decoding intentionally omitted unsupported action bindings without surfacing loss; SAF import candidate was only gated when picker launched, so editor drafts created while external picker/read was active could be overwritten.",
+      "fix": "Count undecodable actions during decode; carry the count through repository preview and show a localized warning in six supported locales. Reuse a pure clean-draft import gate at launch and after bounded file reading before showing candidate.",
+      "tests": "Codec and repository preview assert omitted action count; ToolbarImportPolicy tests clean/dirty profile/pending macro/pending theme; current JVM suite 1,026/1,026 PASS. Runtime SAF picker/callback still requires device verification.",
+      "status": "UNIT_VERIFIED; SAF UI runtime pending"
+    },
+    {
+      "id": "NEW-009",
+      "title": "Named Settings switch omitted check state from its app accessibility node on API 26",
+      "rootCause": "The labeled outer merged semantics node relied on nested toggleable semantics to publish switch role/state; API 26 accessibility bridge did not expose the named node as checkable.",
+      "fix": "Explicitly publish Role.Switch and ToggleableState.On/Off on the labeled merged node while retaining toggleable as the sole physical/accessibility click action. The test still requires the same named node to be checkable and clickable.",
+      "tests": "Local MarketDebug app and AndroidTest Kotlin compilation pass; API26/36 runtime regression awaits new CI. Latest pre-fix source run 38452720047 showed this failure across API26/36 Debug/Preview.",
+      "status": "IMPLEMENTED_NOT_TESTED"
     }
   ],
-  "deliveryCommit": "108d7d23b7bc71b6eb6810369d510e1bfe2b02ea"
+  "deliveryCommit": "081d0538595bcb82c43a291dc75b3735038cf13d"
 }

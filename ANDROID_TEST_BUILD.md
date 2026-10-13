@@ -3,6 +3,7 @@
 The APK in the repository root is a review artifact built with `:app:assembleMarketDebug`. It is intended for installation and testing only.
 
 - Variant: `MarketDebug`
+- Application source commit: `081d0538595bcb82c43a291dc75b3735038cf13d`
 - Version name/code: `0.7.2` / `12`
 - Application ID: `app.terminalssh.secure.debug`
 - File: [`TerminalSSH-0.7.2-MarketDebug-TEST.apk`](TerminalSSH-0.7.2-MarketDebug-TEST.apk)
