@@ -2,7 +2,7 @@
 
 ## وضعیت فعلی
 
-پیاده‌سازی Terminal Control Studio و اصلاحات پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit پوش‌شده هنگام ثبت این checkpoint `82b2861` است؛ تغییرات TCS-04 درخت کاری فعلی تست شده‌اند اما هنوز Commit نشده‌اند. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون Gateهای UI/دستگاه هنوز برای هیچ Feature کامل نشده‌اند.
+پیاده‌سازی Terminal Control Studio و اصلاحات پایداری مستقیماً روی `main` ثبت شده‌اند، مطابق درخواست صریح کاربر. آخرین Commit پوش‌شده هنگام ثبت این checkpoint `8b8794e` است؛ اصلاح NEW-003 و همگام‌سازی وضعیت درخت کاری‌اند و هنوز Commit نشده‌اند. تعداد Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است، چون Gateهای UI/دستگاه هنوز برای هیچ Feature کامل نشده‌اند.
 
 ## تغییرات و علت‌ها
 
@@ -13,11 +13,12 @@
 - ویرایشگر ژست‌ها فقط اتصال‌های موجود را نشان می‌داد؛ اکنون هر شش حرکت را با گزینه‌های سازگارِ موجود در پروفایل تنظیم یا پاک می‌کند و تغییرها در مسیر Undo/Redo/Save باقی می‌مانند. ژست‌های مبهم، Enter مستقیم، متن چندخطی و ماکروهای دارای Enter از انتخاب‌گر کنار گذاشته شده‌اند.
 - واردکردن/خارج‌کردن تنظیمات از SAF به رابط ویرایشگر متصل شد. Import با سقف ۱ MiB، UTF-8 سخت‌گیرانه، خواندن غیرمسدودکننده، پیش‌نمایش parsed candidate و تأیید صریح جایگزینی کل تنظیمات انجام می‌شود. لغو انتخاب فایل تغییری اعمال نمی‌کند و پس از Import موفق ویرایشگر بسته می‌شود تا draft کهنه دادهٔ واردشده را بازنویسی نکند.
 - حین همین اتصال دو نقص مستقل پیدا و اصلاح شد: مخزن تنظیمات پیش از موفقیت ذخیره‌سازی state را منتشر می‌کرد؛ اکنون اول persist می‌کند و سپس state را منتشر می‌کند (NEW-001). Parser JSON نیز عمق تو‌در‌تویی را محدود نمی‌کرد؛ اکنون بیش از ۶۴ سطح را رد می‌کند تا ورودی بدساخت به StackOverflow منجر نشود (NEW-002).
+- بازبینی شکست‌های instrumentation یک ایراد دسترس‌پذیری دیگر را تأیید کرد: برچسب قابل‌دیدن تب ناوبری دوباره از `contentDescription` والد اعلام می‌شد. توضیح تکراری حذف شد (NEW-003)؛ compile و lint پاس شده‌اند اما تأیید runtime منتظر CI تازه است.
 - CI به‌خاطر وابستگی به وجود متن `R.string.snippets_short` در فایل مشخص شکست می‌خورد؛ Gate حالا اتصال preset، dispatcher و Sheet را بررسی می‌کند. آپلود گزارش‌ها در صورت نبود گزارش هشدار می‌دهد تا شکست ثانویه علت اصلی را نپوشاند.
 
 ## راستی‌آزمایی
 
-در دور جاری، `:app:testMarketDebugUnitTest`, `:app:compileMarketDebugKotlin`, `:app:compileMarketDebugAndroidTestKotlin`, `:app:lintMarketDebug` و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۲۱ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند. Lint بدون خطا بود (۱۰۴ هشدار و ۲ hint). APK خروجی Debug است، SHA-256 آن `2f75277bf2ba97e264566c47175bacbec78306a69067b0bb9b7a0e9339484bd4` است و با `apksigner` گواهی Android Debug تأیید شد؛ بنابراین امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه اجرا نشده است. CI run `38393877043` روی commit `22e8782` Verify را گذراند، ولی instrumentation روی API26 و API36 در Debug و Preview با assertionهای UI شکست خورد. run `38395092348` برای `82b2861` هنگام checkpoint در حال اجرا بود. تغییرات فعلی TCS-04 هنوز باید Commit شوند تا CI همان سورس را اجرا کند.
+در دور جاری، `:app:testMarketDebugUnitTest`, `:app:compileMarketDebugKotlin`, `:app:compileMarketDebugAndroidTestKotlin`, `:app:lintMarketDebug` و `:app:assembleMarketDebug` موفق شدند. Unit Testها ۱٬۰۲۱ مورد در ۱۱۸ suite، بدون شکست/خطا/ردشدن، گزارش کردند. Lint بدون خطا بود (۱۰۴ هشدار و ۲ hint). APK خروجی Debug است، SHA-256 آن `2f75277bf2ba97e264566c47175bacbec78306a69067b0bb9b7a0e9339484bd4` است و با `apksigner` گواهی Android Debug تأیید شد؛ بنابراین امضای Production تأیید نشده است. AndroidTest فقط کامپایل شده و روی دستگاه اجرا نشده است. CI run `38393877043` روی commit `22e8782` Verify را گذراند، ولی instrumentation روی API26 و API36 در Debug و Preview با assertionهای UI شکست خورد؛ API37 در همان run به‌دلیل بوت‌نشدن Emulator تستی اجرا نکرد. runهای `38395092348` و `38396293920` برای `82b2861` و `8b8794e` هنوز در حال اجرا بودند.
 
 ## علت‌های تأییدشده و موارد نامشخص
 
@@ -37,8 +38,8 @@
 
 ## خروجی‌ها و وضعیت انتشار
 
-- شاخهٔ کاری فعلی: `main` (TCS-04 و گزارش‌های همگام‌شده هنوز در درخت کاری‌اند).
-- آخرین Commit پوش‌شده: `82b2861`.
+- شاخهٔ کاری فعلی: `main` (اصلاح NEW-003 و گزارش‌های همگام‌شده هنوز در درخت کاری‌اند).
+- آخرین Commit پوش‌شده: `8b8794e`.
 - PR مرتبط: https://github.com/ashkansuridr-bit/terminal/pull/4 (به‌دلیل پوش مستقیم، وضعیت وب آن را جداگانه بررسی کنید؛ PR معیار وضعیت شاخه نیست).
 - اجرای CI قدیمی‌تر با شکست instrumentation: https://github.com/ashkansuridr-bit/terminal/actions/runs/38393877043
 - اجرای CI برای `82b2861` (نتیجه باید دوباره بررسی شود): https://github.com/ashkansuridr-bit/terminal/actions/runs/38395092348

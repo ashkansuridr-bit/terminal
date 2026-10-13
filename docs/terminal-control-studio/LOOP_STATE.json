@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T12:30:00+00:00",
+  "capturedAt": "2026-10-13T12:45:00+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "82b2861a8ce7fe5b1875109484abefceb0e80f20 (local working tree additionally includes uncommitted TCS-04 changes)",
+  "lastVerifiedCommit": "8b8794e62353bea7a7a97174b95d2f47a1690ba9 (additional uncommitted navigation accessibility fix)",
   "features": [
     {
       "id": "TCS-01",
@@ -380,7 +380,7 @@
     }
   ],
   "testSummary": {
-    "marketDebugCompile": "PASS (current TCS-04 worktree)",
+    "marketDebugCompile": "PASS after RootScreen tab semantics correction",
     "marketDebugUnitTests": {
       "passed": 1021,
       "failed": 0,
@@ -391,17 +391,17 @@
     },
     "marketDebugAssemble": "PASS on current worktree",
     "diffCheck": "PASS on current worktree",
-    "instrumentation": "Run 38393877043 completed with API26/36 Debug/Preview UI assertion failures (old commit 22e8782); API37 status must be checked from run details. Run 38395092348 tests 82b2861 and was in progress at checkpoint. Current uncommitted TCS-04 source has no device execution evidence.",
+    "instrumentation": "Run 38393877043 for 22e8782 completed: API26/36 Debug+Preview UI assertions failed; API37 Debug+Preview emulator boot timed out before tests. Runs 38395092348 (82b2861) and 38396293920 (8b8794e) still running at checkpoint. RootScreen duplicate tab label semantics removed locally, fresh runtime evidence pending.",
     "apiDeviceMatrix": "BLOCKED: no emulator/device; disk capacity insufficient to install system image",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS on current worktree",
+    "marketDebugAndroidTestCompile": "PASS after RootScreen tab semantics correction",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
       "warnings": 104,
       "hints": 2,
-      "evidence": "Current worktree :app:lintMarketDebug"
+      "evidence": "Current worktree :app:lintMarketDebug after navigation accessibility fix"
     },
     "gplayDebugAssemble": "PASS",
     "marketPreviewAssemble": "PASS on earlier exact source; current TCS-04 source MarketDebug assembled; Preview current-source rebuild not repeated",
@@ -430,7 +430,7 @@
     "CI run 38393877043 failed API26/API36 UI assertions on commit 22e8782; these are not established as fixed by later source yet.",
     "Macro secret detection catches common credential-shaped forms but cannot identify arbitrary secret values; editor warns users not to store secrets."
   ],
-  "nextStep": "Commit current verified TCS-04 implementation and checkpoint directly to main; inspect fresh CI and triage API26/36 assertion failures from runs 38393877043 and 38395092348; continue with independent missing Terminal Control Studio features.",
+  "nextStep": "Commit NEW-003 fix and checkpoint to main; inspect CI runs 38396293920 and 38395092348; follow any confirmed API26/API36 failures to root cause and continue remaining features.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
@@ -452,10 +452,10 @@
     "assemble": "MarketDebug assemble passed for current worktree"
   },
   "latestCi": {
-    "commit": "22e878228afbf0fa62b577db73c4e8de777c78bd",
-    "run": "38393877043",
-    "result": "failed",
-    "details": "Verify passed. API26/API36 Debug and Preview instrumentation produced repeatable UI/accessibility assertion failures, including host field update, host list visibility, duplicate navigation label, toggle state, snippets scroll, terminal keyboard navigation and modifier semantics. API37 job state separately query 38395092348 (run for 82b2861 still in progress at checkpoint). Failures are application/test assertions, not classified as infrastructure."
+    "commit": "8b8794e62353bea7a7a97174b95d2f47a1690ba9",
+    "run": "38396293920",
+    "result": "in_progress; verify successful",
+    "details": "API26/36/37 Debug and Preview instrumentation jobs are running. Previous run 38393877043 failed API26/36 UI assertions and API37 emulator boot; source triage found redundant tab label contentDescription and it has been removed in an uncommitted follow-up."
   },
   "remainingFeatureCount": 11,
   "verifiedCompleteCount": 0,
@@ -475,6 +475,14 @@
       "fix": "Reject container nesting beyond 64 levels with JsonException; import is separately limited to 1 MiB.",
       "tests": "JsonTest depth-limit regression in 1,021-test MarketDebug JVM suite PASS.",
       "status": "UNIT_VERIFIED"
+    },
+    {
+      "id": "NEW-003",
+      "title": "Bottom navigation labels announced twice by accessibility services",
+      "rootCause": "RootScreen copied each visible tab label into a parent contentDescription while NavigationBarItem already exposed the same label.",
+      "fix": "Removed redundant parent contentDescription; visible NavigationBarItem label and selection semantics remain.",
+      "tests": "MarketDebug app Kotlin compile PASS; AndroidTest Kotlin compile PASS; lint PASS (0 errors). Runtime assertion is pending fresh API26/API36 CI.",
+      "status": "IMPLEMENTED_NOT_TESTED"
     }
   ]
 }
