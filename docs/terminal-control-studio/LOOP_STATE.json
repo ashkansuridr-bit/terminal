@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T10:44:38+00:00",
-  "branch": "feature/terminal-control-studio-pro",
+  "capturedAt": "2026-10-13T11:12:38+00:00",
+  "branch": "main (push queued after direct fast-forward)",
   "baselineCommit": "67021c1",
-  "lastVerifiedCommit": "2976238",
+  "lastVerifiedCommit": "5bd2475",
   "features": [
     {
       "id": "TCS-01",
@@ -294,16 +294,21 @@
         "Follow-up test hardening: MarketDebug AndroidTest Kotlin compile PASS after dismissing IME before HostEdit validation and trying both horizontal toolbar scroll directions for Snippets",
         "Reviewer-driven follow-up: MarketDebug app Kotlin compile PASS; AndroidTest Kotlin compile PASS; JVM 1,013/1,013 PASS; lint PASS (0 errors, 108 warnings, 2 hints); git diff --check PASS",
         "Window snapshot lifecycle review: AccessibilityWindowInfo recycled in finally for terminal navigation, IME polling, and host-form IME detection",
-        "MarketDebug AndroidTest Kotlin compilation PASS after window recycling; git diff --check PASS"
+        "MarketDebug AndroidTest Kotlin compilation PASS after window recycling; git diff --check PASS",
+        "Run 38385900692 on eac2ed1: verify PASS; API36 debug and preview failed with seven UI interaction assertions each; API26 debug and preview failed; API37 debug/preview emulator boot failed.",
+        "API26 debug report: 8 TerminalKeyboardTest methods could not open the terminal tab, HostEdit immediate setText snapshot assertion failed, HostList recent heading bounds assertion failed, Settings palette selected-state and slider range node assertions failed, Snippet horizontal toolbar reachability failed.",
+        "Local follow-up: Terminal tab lookup no longer assumes window-relative screen Y; HostEdit input verification polls refreshed accessibility state; MarketDebug AndroidTest Kotlin compile PASS."
       ],
-      "lastResult": "Run 38385300900 for c1e174c: verify in progress; localized special-key change is local and compiled, awaiting latest-source CI.",
-      "lastFailure": "Run 38320080882: API26/36 UI instrumentation failures, including terminal tab lookup, host/settings scrolling/semantics and host form/snippet assertions; API37 emulator boot timed out with adb offline. API36 Debug had 8 failures; Preview 7; API26 Debug 14.",
+      "lastResult": "Code/test changes committed as 5bd2475; local compile passes. Prior-source CI shows unresolved API26/36 instrumentation failures; rerun on current commit required.",
+      "lastFailure": "API 26/36 assertions still fail on run 38385900692 (tested eac2ed1). API37 emulator boot timed out; current commit has not yet had instrumentation execution.",
       "fixAttempts": 2,
-      "commitSha": "086a5e4",
-      "lastReviewedAt": "2026-10-13T10:44:38+00:00",
+      "commitSha": "5bd2475",
+      "lastReviewedAt": "2026-10-13T11:12:38+00:00",
       "remainingIssues": [
-        "Push localized key-name and instrumentation assertions, then use latest-source PR CI for API26/36/37 verification.",
-        "No local adb/emulator; production signing remains unverified."
+        "Fresh-source API26/36 debug+preview execution and resolution of remaining UI assertions",
+        "API37 healthy emulator run",
+        "Local device/TalkBack regression unavailable",
+        "Production signing unverified"
       ]
     },
     {
@@ -336,36 +341,37 @@
         "MarketDebug lint PASS",
         "loop2_gate.py PASS",
         "market_release_gate.py PASS",
-        "git diff --check PASS"
+        "git diff --check PASS",
+        "5bd2475 follow-up: reject imported/persisted line breaks and terminal controls (LF/CR/U+2028/U+2029/NUL/TAB/DEL/NEL/ESC); JVM 1,015/1,015 PASS, 118 suites; app compile PASS; AndroidTest Kotlin compile PASS; lint PASS (0 errors, 104 warnings, 2 hints); source/release gates PASS; diff check PASS."
       ],
-      "lastResult": "Committed as 086a5e4 and pushed to PR #4. Run 38385275105 has been queued; local app/AndroidTest compilation, JVM tests, lint and source gates pass.",
-      "lastFailure": null,
+      "lastResult": "Macro editor now warns before discarding dirty profile/macro changes; macro validator rejects all tested line and terminal control characters. Build/unit/lint verified locally; instrumentation remains pending.",
+      "lastFailure": "Credential-shape detection is heuristic and cannot identify arbitrary secrets; API instrumentation run from prior commit has unrelated UI assertion failures.",
       "fixAttempts": 1,
-      "commitSha": "086a5e4",
-      "lastReviewedAt": "2026-10-13T10:39:19+00:00",
+      "commitSha": "5bd2475",
+      "lastReviewedAt": "2026-10-13T11:12:38+00:00",
       "remainingIssues": [
-        "Await current-source API26/36/37 instrumentation verification.",
-        "Heuristic credential filtering cannot detect arbitrary secret strings."
+        "UI runtime/API instrumentation verification",
+        "Heuristic cannot identify arbitrary secret strings"
       ]
     }
   ],
   "testSummary": {
     "marketDebugCompile": "PASS (latest localized special-key accessibility source)",
     "marketDebugUnitTests": {
-      "passed": 1014,
+      "passed": 1015,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
       "suites": 118,
-      "evidence": "current worktree :app:testMarketDebugUnitTest after MacroEngine credential-pattern regression"
+      "evidence": "./gradlew :app:testMarketDebugUnitTest on commit 5bd2475"
     },
     "marketDebugAssemble": "PASS",
     "diffCheck": "PASS (e2bd89c)",
-    "instrumentation": "Run 38385300900 for c1e174c verify in progress; current localized special-key changes are locally compiled but not yet pushed.",
+    "instrumentation": "Run 38385900692 on eac2ed1: verify PASS; API26 and API36 debug+preview instrumentation failed UI assertions; API37 debug+preview emulator boot timed out. These results predate current 5bd2475 source.",
     "apiDeviceMatrix": "BLOCKED: no emulator/device; disk capacity insufficient to install system image",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS (latest TerminalKeyboardTest localized-name assertions)",
+    "marketDebugAndroidTestCompile": "PASS on commit 5bd2475",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
