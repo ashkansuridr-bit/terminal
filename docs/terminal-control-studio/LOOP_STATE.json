@@ -432,7 +432,7 @@
     "Macro secret detection catches common credential-shaped forms but cannot identify arbitrary secret values; editor warns users not to store secrets.",
     "No adb executable/device attached in current workspace; TalkBack and UI runtime checks require CI/device evidence."
   ],
-  "nextStep": "Deliver README and test APK on main, verify remote upload, then pause feature work. Resume with triage of failed run 38403567011 instrumentation reports and continue TCS feature matrix only when user requests.",
+  "nextStep": "Pause feature implementation as requested. On user resumption, start by triaging the six failed instrumentation jobs in run 38403567011; do not repeat the already verified README/APK delivery.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
@@ -458,7 +458,9 @@
     "headSha": "baa4596823325728f0f4762a126f2d852a29e3fc",
     "verify": "PASS",
     "instrumentation": "FAIL: API26/36/37, Debug/Preview six jobs",
-    "releaseCandidates": "SKIPPED"
+    "releaseCandidates": "SKIPPED",
+    "rootDeliveryCommit": "7a76793765c0c4ca2d318e8e23a7e7892c5a4117",
+    "rootFilesVerifiedOnGitHub": true
   },
   "remainingFeatureCount": 11,
   "verifiedCompleteCount": 0,
@@ -519,5 +521,6 @@
       "tests": "Deterministic coroutine unit regression changes epoch during a delay and reconnects to Connected before resume; asserts the later Enter is not dispatched. MarketDebug JVM 1,022/1,022; app and AndroidTest compile, lint, assemble and source gates PASS. GitHub CI run 38402910371 queued.",
       "status": "UNIT_VERIFIED"
     }
-  ]
+  ],
+  "deliveryCommit": "7a76793765c0c4ca2d318e8e23a7e7892c5a4117"
 }

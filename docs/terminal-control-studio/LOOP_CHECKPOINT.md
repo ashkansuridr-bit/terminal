@@ -222,3 +222,6 @@
 - Verification still required before commit: validate Markdown links, `git diff --check`, ensure JSON state is updated, stage/commit to `main`, push, then verify remote head and root files.
 
 - README was rewritten to document the actual code/test/release state and Apache-2.0/dependency-license split; root APK and `ANDROID_TEST_BUILD.md` were added. `LOOP_STATE.json` and the Persian final report now record run `38403567011` accurately (verify passed, six instrumentation jobs failed).
+
+- Delivery commit `7a76793765c0c4ca2d318e8e23a7e7892c5a4117` was pushed directly to `main`. GitHub API verification confirmed `README.md`, `ANDROID_TEST_BUILD.md`, and `TerminalSSH-0.7.2-MarketDebug-TEST.apk` exist at the repository root; remote APK size is 43,636,502 bytes. Root artifact URL: https://raw.githubusercontent.com/ashkansuridr-bit/terminal/main/TerminalSSH-0.7.2-MarketDebug-TEST.apk
+- Feature work is now paused as requested. On resumption, begin by triaging the six failed instrumentation jobs from run `38403567011`; no README/APK delivery work needs repeating.
