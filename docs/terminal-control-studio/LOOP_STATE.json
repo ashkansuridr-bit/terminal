@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-13T19:25:00+03:30",
+  "capturedAt": "2026-10-13T16:04:15+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
   "lastVerifiedCommit": "baa4596823325728f0f4762a126f2d852a29e3fc",
@@ -286,16 +286,13 @@
       "title": "ترمیم شکست‌های Instrumentation و semantics دسترس‌پذیری",
       "phase": "VERIFY",
       "changedFiles": [
-        "HostEditValidationTest.kt",
-        "HostListPresentationTest.kt",
-        "SettingRow.kt",
-        "SettingsAccessibilityTest.kt",
-        "SnippetAccessibilityTest.kt",
-        "StudioToolbar.kt",
-        "TerminalKeyboardTest.kt",
-        "UiScroll.kt",
-        "app/proguard-rules-androidtest.pro",
-        "strings.xml (fa/ar/en/es/fr/ru)"
+        "app/src/main/java/app/terminalssh/secure/ui/SettingRow.kt",
+        "app/src/androidTest/java/app/terminalssh/secure/ui/HostEditValidationTest.kt",
+        "app/src/androidTest/java/app/terminalssh/secure/ui/HostListPresentationTest.kt",
+        "app/src/androidTest/java/app/terminalssh/secure/ui/SettingsAccessibilityTest.kt",
+        "app/src/androidTest/java/app/terminalssh/secure/ui/SettingsToggleAccessibilityTest.kt",
+        "app/src/androidTest/java/app/terminalssh/secure/ui/SnippetAccessibilityTest.kt",
+        "app/src/androidTest/java/app/terminalssh/secure/ui/TerminalKeyboardTest.kt"
       ],
       "dependencies": [],
       "status": "IMPLEMENTED_NOT_TESTED",
@@ -318,16 +315,18 @@
         "MarketDebug AndroidTest Kotlin compilation PASS after window recycling; git diff --check PASS",
         "Run 38385900692 on eac2ed1: verify PASS; API36 debug and preview failed with seven UI interaction assertions each; API26 debug and preview failed; API37 debug/preview emulator boot failed.",
         "API26 debug report: 8 TerminalKeyboardTest methods could not open the terminal tab, HostEdit immediate setText snapshot assertion failed, HostList recent heading bounds assertion failed, Settings palette selected-state and slider range node assertions failed, Snippet horizontal toolbar reachability failed.",
-        "Local follow-up: Terminal tab lookup no longer assumes window-relative screen Y; HostEdit input verification polls refreshed accessibility state; MarketDebug AndroidTest Kotlin compile PASS."
+        "Local follow-up: Terminal tab lookup no longer assumes window-relative screen Y; HostEdit input verification polls refreshed accessibility state; MarketDebug AndroidTest Kotlin compile PASS.",
+        "2026-10-13 local current worktree: MarketDebug app Kotlin compile PASS; AndroidTest Kotlin compile PASS; JVM 1,022 passed/0 failed/errors/skipped (118 suites); lint PASS (0 errors, 106 warnings, 2 hints); loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS. Current-source instrumentation has not run."
       ],
-      "lastResult": "Code/test changes committed as 5bd2475; local compile passes. Prior-source CI shows unresolved API26/36 instrumentation failures; rerun on current commit required.",
-      "lastFailure": "API 26/36 assertions still fail on run 38385900692 (tested eac2ed1). API37 emulator boot timed out; current commit has not yet had instrumentation execution.",
+      "lastResult": "Triage of run 38403567011 identified selector, layout-density and asynchronous semantics test assumptions. Test selectors now use published accessibility labels; wide layout is sized in dp; assertions wait for fresh state and report diagnostics. Boolean settings row now exposes Role.Switch + toggle state with the row click as the sole accessibility action while retaining long-press reset. Runtime behavior pending a new CI run.",
+      "lastFailure": "Run 38426427972 is testing unchanged pre-fix app/test sources from 0bd7198; API26/36 UI assertions failed. The current local changes have not run on emulator.",
       "fixAttempts": 2,
       "commitSha": "5bd2475",
-      "lastReviewedAt": "2026-10-13T11:12:38+00:00",
+      "lastReviewedAt": "2026-10-13T16:04:15+00:00",
       "remainingIssues": [
-        "Fresh-source API26/36 debug+preview execution and resolution of remaining UI assertions",
-        "API37 healthy emulator run",
+        "New API26/36/37 Debug+Preview instrumentation run for the current fixes",
+        "Triage remaining HostList/Settings/paste failures from fresh reports",
+        "API37 healthy emulator evidence",
         "Local device/TalkBack regression unavailable",
         "Production signing unverified"
       ]
@@ -388,8 +387,8 @@
     },
     "marketDebugAssemble": "PASS on baa4596",
     "diffCheck": "PASS before commit 93135b0",
-    "instrumentation": "Run 38403567011: verify PASS; API26/36/37 Debug and Preview instrumentation jobs FAILED. Runtime UI acceptance remains unresolved.",
-    "apiDeviceMatrix": "Latest run 38403567011 completed: all six API26/36/37 Debug/Preview instrumentation jobs failed. No local adb/device.",
+    "instrumentation": "Run 38426427972 tests commit 0bd7198 (same app/test sources as baa4596): API26 Debug/Preview and API36 Debug/Preview failed UI assertions; API37 jobs still in progress at last query. Local test-harness/semantics fixes are not yet in that run.",
+    "apiDeviceMatrix": "Current in-flight run 38426427972 covers API26/36/37 Debug+Preview; API26/36 old-source jobs failed; API37 pending. No local adb/device.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
     "marketDebugAndroidTestCompile": "PASS on baa4596",
@@ -432,7 +431,7 @@
     "Macro secret detection catches common credential-shaped forms but cannot identify arbitrary secret values; editor warns users not to store secrets.",
     "No adb executable/device attached in current workspace; TalkBack and UI runtime checks require CI/device evidence."
   ],
-  "nextStep": "Pause feature implementation as requested. On user resumption, start by triaging the six failed instrumentation jobs in run 38403567011; do not repeat the already verified README/APK delivery.",
+  "nextStep": "Run local compile/unit/lint/source gates for the current TCS-10 UI fixes; commit and push directly to main; inspect the fresh API26/36/37 instrumentation run and continue on demonstrated root causes.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
@@ -453,14 +452,12 @@
     "sourceGates": "loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS; four new host-override strings present in fa/en/ar/es/fr/ru"
   },
   "latestCi": {
-    "runId": "38403567011",
-    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38403567011",
-    "headSha": "baa4596823325728f0f4762a126f2d852a29e3fc",
+    "runId": "38426427972",
+    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38426427972",
+    "headSha": "0bd719865f4eee28c7ca225b0d2d9c90a59d5d93",
     "verify": "PASS",
-    "instrumentation": "FAIL: API26/36/37, Debug/Preview six jobs",
-    "releaseCandidates": "SKIPPED",
-    "rootDeliveryCommit": "7a76793765c0c4ca2d318e8e23a7e7892c5a4117",
-    "rootFilesVerifiedOnGitHub": true
+    "instrumentation": "API26/36 Debug+Preview failed on pre-fix source; API37 in progress at last check",
+    "releaseCandidates": "pending/conditional"
   },
   "remainingFeatureCount": 11,
   "verifiedCompleteCount": 0,

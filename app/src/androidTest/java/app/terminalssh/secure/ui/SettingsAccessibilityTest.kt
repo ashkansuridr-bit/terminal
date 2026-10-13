@@ -46,7 +46,7 @@ class SettingsAccessibilityTest {
                 // Reach the palette section vertically and confirm the selected preset
                 // before scrolling its horizontal strip to OLED for the touch-target check.
                 assertTrue(
-                    "Selected palette chip was not fully visible after scrolling",
+                    "Selected palette chip was not fully visible after scrolling: ${visibilityDiagnostics(persianNeon)}",
                     device.scrollUntilFullyVisible(
                         By.desc(persianNeon),
                         maxAttempts = 20,
@@ -54,9 +54,15 @@ class SettingsAccessibilityTest {
                         appPackage = instrumentation.targetContext.packageName,
                     ),
                 )
-                assertTrue(device.findObject(By.desc(persianNeon)).isSelected)
+                val selectedPalette = device.findObject(By.desc(persianNeon))
                 assertTrue(
-                    "OLED palette chip was not fully visible after horizontal scrolling",
+                    "Selected theme must be stored and exposed as selected/checked " +
+                        "(selected=${selectedPalette.isSelected}, checked=${selectedPalette.isChecked}, " +
+                        "stored=${app.settings.themeName})",
+                    selectedPalette.isSelected || selectedPalette.isChecked,
+                )
+                assertTrue(
+                    "OLED palette chip was not fully visible after horizontal scrolling: ${visibilityDiagnostics(oled)}",
                     device.scrollUntilFullyVisible(
                         By.desc(oled),
                         maxAttempts = 20,
@@ -69,11 +75,12 @@ class SettingsAccessibilityTest {
                 val minimumPx = (48 * instrumentation.targetContext.resources.displayMetrics.density).toInt()
                 assertTrue("$oled width was ${oledAction.visibleBounds.width()}px", oledAction.visibleBounds.width() >= minimumPx)
                 assertTrue("$oled height was ${oledAction.visibleBounds.height()}px", oledAction.visibleBounds.height() >= minimumPx)
-                assertFalse(oledAction.isSelected)
+                assertFalse(oledAction.isSelected || oledAction.isChecked)
 
                 oledAction.click()
                 assertTrue("Palette selection was not persisted and exposed", awaitUiState(TIMEOUT_MS) {
-                    device.findObject(By.desc(oled))?.isSelected == true && app.settings.themeName == "oled"
+                    device.findObject(By.desc(oled))?.let { it.isSelected || it.isChecked } == true &&
+                        app.settings.themeName == "oled"
                 })
             }
         } finally {
@@ -95,7 +102,7 @@ class SettingsAccessibilityTest {
                 assertTrue(device.wait(Until.hasObject(By.text(settingsTab)), TIMEOUT_MS))
                 device.findObject(By.text(settingsTab)).click()
                 assertTrue(
-                    "Font-size slider was not fully visible after scrolling",
+                    "Font-size slider was not fully visible after scrolling: ${visibilityDiagnostics(fontSizeLabel)}",
                     device.scrollUntilFullyVisible(
                         By.desc(fontSizeLabel),
                         maxAttempts = 20,
@@ -180,6 +187,16 @@ class SettingsAccessibilityTest {
             }
         }
         return null
+    }
+
+    private fun visibilityDiagnostics(description: String): String {
+        val visible = runCatching { device.findObject(By.desc(description))?.visibleBounds }.getOrNull()
+        val full = fullBoundsByDescription(description)
+        val scrollables = device.findObjects(By.scrollable(true)).joinToString { node ->
+            runCatching { "${node.visibleBounds}:${node.contentDescription}" }.getOrDefault("<stale>")
+        }
+        return "target=$description visible=$visible full=$full scrollables=[$scrollables] " +
+            "display=${device.displayWidth}x${device.displayHeight}"
     }
 
     private fun findBoundsByDescription(

@@ -49,7 +49,6 @@ class SnippetAccessibilityTest {
     fun deleteActionsNameAndDeleteOnlyTheirSnippet() {
         ActivityScenario.launch(MainActivity::class.java).use {
             val terminalTab = instrumentation.targetContext.getString(R.string.tab_terminal)
-            val snippets = instrumentation.targetContext.getString(R.string.snippets_short)
             val snippetsAction = instrumentation.targetContext.getString(R.string.tcs_snippets_action)
             val firstDelete = instrumentation.targetContext.getString(R.string.snippet_delete, first.name)
             val secondDelete = instrumentation.targetContext.getString(R.string.snippet_delete, second.name)
@@ -61,7 +60,10 @@ class SnippetAccessibilityTest {
             val direction = terminalLayoutDirection(
                 instrumentation.targetContext.resources.configuration.locales[0],
             )
-            val snippetsKey = By.text(snippets)
+            // StudioToolbar clears the visible text from its a11y node on purpose and
+            // publishes the localized action name instead. Scroll and click by that
+            // stable accessible name, not the visual label that is absent from the tree.
+            val snippetsKey = By.desc(snippetsAction)
             val oppositeDirection = if (direction == LayoutDirection.Ltr) {
                 LayoutDirection.Rtl
             } else {
@@ -80,7 +82,7 @@ class SnippetAccessibilityTest {
                 "Snippets toolbar key must expose its localized action name",
                 device.wait(Until.hasObject(By.desc(snippetsAction)), TIMEOUT_MS),
             )
-            device.findObject(By.text(snippets)).click()
+            device.findObject(snippetsKey).click()
 
             assertTrue(device.wait(Until.hasObject(By.desc(firstDelete)), TIMEOUT_MS))
             assertTrue(device.wait(Until.hasObject(By.desc(secondDelete)), TIMEOUT_MS))

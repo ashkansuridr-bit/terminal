@@ -735,9 +735,19 @@ class TerminalKeyboardTest {
             assertTrue(modifierControl(shiftName).isChecked)
 
             clickAppDesc(tabName)
-            assertFalse(modifierControl(controlName).isChecked)
-            assertFalse(modifierControl(altName).isChecked)
-            assertFalse(modifierControl(shiftName).isChecked)
+            // The terminal dispatch clears one-shot modifiers synchronously, but the
+            // merged Compose semantics tree can publish the new checked values a frame
+            // later on API 26. Poll fresh accessibility nodes instead of retaining the
+            // pre-dispatch snapshot.
+            assertTrue("Ctrl modifier did not clear after the Tab action", awaitUiState(UI_TIMEOUT_MS) {
+                modifierIsChecked(controlName) == false
+            })
+            assertTrue("Alt modifier did not clear after the Tab action", awaitUiState(UI_TIMEOUT_MS) {
+                modifierIsChecked(altName) == false
+            })
+            assertTrue("Shift modifier did not clear after the Tab action", awaitUiState(UI_TIMEOUT_MS) {
+                modifierIsChecked(shiftName) == false
+            })
             assertTrue(focusedViewSummary(scenario), waitForFocusedTextEditor(scenario))
         }
     }
@@ -748,6 +758,9 @@ class TerminalKeyboardTest {
             Until.findObject(By.checkable(true).descStartsWith(name)),
             UI_TIMEOUT_MS,
         ) ?: throw AssertionError("Modifier '$name' must expose one checkable accessible control")
+
+    private fun modifierIsChecked(name: String): Boolean? =
+        device.findObject(By.checkable(true).descStartsWith(name))?.isChecked
 
     @Test
     fun symbolicToolbarKeysHaveReadableActionNames() {
@@ -773,19 +786,13 @@ class TerminalKeyboardTest {
             assertTrue("Terminal toolbar must expose scroll semantics", waitForToolbarBand() != null)
 
             fun assertReadableSymbolicNames() {
-                assertTrue(
-                    "Interrupt key must have a readable action name in the toolbar semantics tree",
-                    findAppNode { it.contentDescription == interrupt } != null,
-                )
-                assertTrue(
-                    "End-of-input key must have a readable action name in the toolbar semantics tree",
-                    findAppNode { it.contentDescription == endOfInput } != null,
-                )
-                localizedSpecials.forEach { name ->
+                (listOf(interrupt, endOfInput) + localizedSpecials).forEach { name ->
+                    val node = waitForAppDesc(name, within = UI_TIMEOUT_MS)
                     assertTrue(
-                        "Default special key must expose its localized name '$name'",
-                        findAppNode { it.contentDescription == name } != null,
+                        "Toolbar action '$name' must have a readable name in the accessibility tree",
+                        node != null,
                     )
+                    node?.recycle()
                 }
             }
 
@@ -876,7 +883,12 @@ class TerminalKeyboardTest {
         val imeBefore = readSecureSetting("show_ime_with_hard_keyboard")
         try {
             writeSecureSetting("show_ime_with_hard_keyboard", "0")
-            device.executeShellCommand("wm size 1180x500")
+            // `wm size` takes physical pixels while StudioToolbar switches to two rows
+            // at 600dp. A fixed 1180px width is still compact on dense API 26 emulators.
+            val density = instrumentation.targetContext.resources.displayMetrics.density
+            val widthPx = (700f * density).toInt()
+            val heightPx = (460f * density).toInt()
+            device.executeShellCommand("wm size ${widthPx}x$heightPx")
             device.waitForIdle()
             SystemClock.sleep(3000)
             verify()

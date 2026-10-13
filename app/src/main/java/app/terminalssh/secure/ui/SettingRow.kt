@@ -119,6 +119,7 @@ fun SettingRow(
             // merges child semantics, hiding the Slider range and FilterChip selection.
             .then(if (resetFromHeading) Modifier else Modifier.combinedClickable(
                 enabled = !saving,
+                role = if (spec is BoolSetting) Role.Switch else null,
                 onClick = {
                     if (spec is BoolSetting && booleanValue != null) {
                         persist { store.set(spec, !booleanValue) }
@@ -128,16 +129,10 @@ fun SettingRow(
                 onLongClickLabel = resetLabel,
             ))
             .then(
-                if (spec is BoolSetting && booleanValue != null) Modifier.clearAndSetSemantics {
+                if (spec is BoolSetting && booleanValue != null) Modifier.semantics(mergeDescendants = true) {
                     contentDescription = title
                     role = Role.Switch
                     toggleableState = ToggleableState(booleanValue)
-                    onClick {
-                        if (saving) false else {
-                            persist { store.set(spec, !booleanValue) }
-                            true
-                        }
-                    }
                 } else Modifier,
             )
             .padding(vertical = 8.dp),
@@ -194,6 +189,10 @@ fun SettingRow(
                     checked = value,
                     onCheckedChange = null,
                     enabled = !saving,
+                    // The parent row is the single accessible switch; this child is its
+                    // visual indicator. Keeping child semantics out avoids competing
+                    // disabled/click state from a Switch with no independent callback.
+                    modifier = Modifier.clearAndSetSemantics { },
                 )
             }
         }
@@ -274,6 +273,11 @@ fun SettingRow(
                                 .clearAndSetSemantics {
                                     role = Role.RadioButton
                                     selected = option == value
+                                    // Preserve the selected state across Android versions
+                                    // that expose Compose's Selected property differently
+                                    // to accessibility clients; RadioButton also has a
+                                    // standard checked/on state.
+                                    toggleableState = if (option == value) ToggleableState.On else ToggleableState.Off
                                     contentDescription = optionLabel(option)
                                     if (saving) {
                                         disabled()

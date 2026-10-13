@@ -42,7 +42,7 @@ class HostEditValidationTest {
 
     @Test
     fun validationUsesActiveLocaleAndOnlySavesValidInput() {
-        ActivityScenario.launch(MainActivity::class.java).use {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             val context = instrumentation.targetContext
             val newConnection = context.getString(R.string.home_new_connection)
             val save = context.getString(R.string.save)
@@ -50,7 +50,12 @@ class HostEditValidationTest {
             val portLabel = context.getString(R.string.field_port)
             val usernameLabel = context.getString(R.string.field_username)
             val requiredError = context.getString(R.string.err_host_required)
-            val portRangeError = context.getString(R.string.err_port_range)
+            // Resolve the expected validation text from the actual Activity Resources;
+            // the instrumentation target Context can carry a different Configuration.
+            var portRangeError = ""
+            scenario.onActivity { activity ->
+                portRangeError = activity.getString(R.string.err_port_range)
+            }
 
             // The primary action clears descendant text semantics and exposes one
             // accessible button name, so select the control through its description.
@@ -77,7 +82,8 @@ class HostEditValidationTest {
             dismissImeIfVisible()
             clickWhenAvailable(By.text(save), "Save after invalid port")
             assertTrue(
-                "Expected port validation message '$portRangeError' after entering port 0",
+                "Expected port validation message '$portRangeError' after entering port 0; " +
+                    "visibleAppText=${visibleAppText()}",
                 device.wait(Until.hasObject(By.text(portRangeError)), TIMEOUT_MS),
             )
             assertTrue(app.hosts.hosts().none { host -> host.host == savedHost })
@@ -109,6 +115,28 @@ class HostEditValidationTest {
         val button = device.wait(Until.findObject(selector), TIMEOUT_MS)
         if (button == null) throw AssertionError("$label button was not available")
         button.click()
+    }
+
+    private fun visibleAppText(): String {
+        val root = instrumentation.uiAutomation.rootInActiveWindow ?: return "<no active root>"
+        val values = mutableListOf<String>()
+        fun collect(node: android.view.accessibility.AccessibilityNodeInfo) {
+            node.text?.toString()?.takeIf(String::isNotBlank)?.let(values::add)
+            for (index in 0 until node.childCount) {
+                val child = node.getChild(index) ?: continue
+                try {
+                    collect(child)
+                } finally {
+                    child.recycle()
+                }
+            }
+        }
+        return try {
+            collect(root)
+            values.distinct().joinToString(" | ")
+        } finally {
+            root.recycle()
+        }
     }
 
     @Suppress("DEPRECATION")

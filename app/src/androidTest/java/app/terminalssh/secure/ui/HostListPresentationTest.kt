@@ -112,6 +112,9 @@ class HostListPresentationTest {
      */
     private fun assertReachable(stringRes: Int) {
         val text = context.getString(stringRes)
+        var swipeCount = 0
+        var lastTargetBounds: Rect? = null
+        var lastViewportBounds: Rect? = null
         // UiObject2.scroll reports success without moving this Compose LazyColumn on
         // some emulator images. Swipe inside the freshly resolved vertical list bounds;
         // require the entire row to be visible after every gesture, not merely present
@@ -120,12 +123,15 @@ class HostListPresentationTest {
             val target = device.findObject(By.text(text))
             if (hasFullyVisibleBounds(target)) return
             val listBounds = hostListBounds()
+            lastTargetBounds = runCatching { target?.visibleBounds }.getOrNull()
+            lastViewportBounds = listBounds
             if (listBounds != null) {
                 device.swipe(
                     listBounds.centerX(), listBounds.bottom - (listBounds.height() * 0.15f).toInt(),
                     listBounds.centerX(), listBounds.top + (listBounds.height() * 0.15f).toInt(),
                     12,
                 )
+                swipeCount++
             } else {
                 // Older Android Compose trees do not always export the LazyColumn as an
                 // accessibility scroll container. Swipe the middle of the content viewport
@@ -135,11 +141,17 @@ class HostListPresentationTest {
                     device.displayWidth / 2, (device.displayHeight * 0.30f).toInt(),
                     12,
                 )
+                swipeCount++
             }
             device.waitForIdle()
         }
         val target = device.findObject(By.text(text))
-        assertTrue("\"$text\" was not fully reachable by swiping the host list", hasFullyVisibleBounds(target))
+        assertTrue(
+            "\"$text\" was not fully reachable after $swipeCount swipes; " +
+                "targetBounds=${runCatching { target?.visibleBounds }.getOrNull()}, previousTargetBounds=$lastTargetBounds, " +
+                "viewportBounds=$lastViewportBounds, display=${device.displayWidth}x${device.displayHeight}",
+            hasFullyVisibleBounds(target),
+        )
     }
 
     private fun hasFullyVisibleBounds(node: UiObject2?): Boolean {
