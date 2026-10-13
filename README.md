@@ -10,9 +10,9 @@
 
 [![Android CI](https://github.com/ashkansuridr-bit/terminal/actions/workflows/android-release.yml/badge.svg)](https://github.com/ashkansuridr-bit/terminal/actions/workflows/android-release.yml)
 [![Latest release](https://img.shields.io/github/v/release/ashkansuridr-bit/terminal?include_prereleases&sort=semver)](https://github.com/ashkansuridr-bit/terminal/releases)
-[![Android](https://img.shields.io/badge/Android-8.0%20%E2%80%93%2017%20%28API%2026%E2%80%9337%29-3DDC84?logo=android&logoColor=white)](https://github.com/ashkansuridr-bit/terminal/releases)
+[![Android](https://img.shields.io/badge/min%20Android-8.0%20(API%2026)-3DDC84?logo=android&logoColor=white)](https://github.com/ashkansuridr-bit/terminal/releases)
 [![License](https://img.shields.io/github/license/ashkansuridr-bit/terminal)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-930%20unit%20per%20flavor-brightgreen)](#کیفیت)
+[![Tests](https://img.shields.io/badge/JVM%20unit%20tests-1%2C021-brightgreen)](#کیفیت)
 
 <br>
 
@@ -105,6 +105,8 @@
 ## چرا Terminal SSH؟
 
 <div dir="rtl">
+
+مقایسهٔ زیر فهرست امکانات اعلام‌شده بر پایهٔ بررسی داخلی Terminal SSH است؛ ارزیابی مستقل یا اندازه‌گیری تازهٔ محصولات دیگر نیست. پلن‌ها و قابلیت‌های رقبا ممکن است تغییر کنند.
 
 | ویژگی | Terminal SSH | Termius | JuiceSSH |
 |---|:---:|:---:|:---:|
@@ -284,13 +286,16 @@ AppViewModel ────────── Vault (AndroidKeyStore + AES-GCM)
 <div dir="rtl">
 
 ```
-۹۳۰ تست واحد (JVM) برای flavor بازار  ·  lint بدون خطا  ·  CI روی API 26/36/37
+۱٬۰۲۱ تست واحد JVM برای flavor بازار (آخرین اجرای محلی) · lint: صفر خطا
+minSdk 26 · compileSdk/targetSdk 37
 ```
 
 موتور هر قابلیت جدید **خالص (pure)** و با تست واحد JVM پوشش داده شده است.
-تست‌های روی دستگاه (API 26 و 36 و آزمایشی 37) روی هر PR در GitHub Actions اجرا می‌شوند و همین CI
-**مرجع تأیید** است. ایمولاتور محلی روی این ماشین آزمایشی منابع کافی ندارد؛
-در گزارش‌ها به‌عنوان **INFRA** ثبت می‌شود، نه شکست برنامه.
+تست‌های روی دستگاه برای API 26، 36 و 37 در GitHub Actions پیکربندی شده‌اند. در آخرین اجرای ثبت‌شده،
+API 26 و 36 تست‌های UI ناموفق داشتند؛ شبیه‌ساز API 37 پیش از شروع تست‌ها بوت نشد. بنابراین حداقل SDK
+و targetSdk را با پشتیبانی تأییدشده روی همهٔ نسخه‌ها یکی نگیرید. این محیط دستگاه متصل ندارد؛ جزئیات
+وضعیت واقعی هر تست در [گزارش Terminal Control Studio](docs/terminal-control-studio/FINAL_IMPLEMENTATION_REPORT_FA.md)
+ثبت می‌شود.
 
 </div>
 

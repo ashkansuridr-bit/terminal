@@ -1,9 +1,9 @@
 # APK verification
 
-The current-source artifact listed below was built from the local worktree based on commit `8008eba`; Android source was unchanged after assembly using Android Build Tools 37.0.0 `apksigner`; it carries the `C=US, O=Android, CN=Android Debug` certificate. It is an evaluation build, not a production-signed release. Older variant artifacts from previous checkpoints are not present in this worktree and are not claimed as current-source builds.
+The current-source artifact listed below was built from the local worktree based on commit `94b7842` plus the uncommitted NEW-005 host-profile editor path; Android source was unchanged after assembly using Android Build Tools 37.0.0 `apksigner`; it carries the `C=US, O=Android, CN=Android Debug` certificate. It is an evaluation build, not a production-signed release. Older variant artifacts from previous checkpoints are not present in this worktree and are not claimed as current-source builds.
 
 | Variant | Artifact | Size | SHA-256 |
 |---|---|---:|---|
-| MarketDebug | `app/build/outputs/apk/market/debug/app-market-debug.apk` | 43,631,054 bytes | `b828532f4974f40bed461905578621f54fb69f3298c5c1cd50754ecdb7944631` |
+| MarketDebug | `app/build/outputs/apk/market/debug/app-market-debug.apk` | 43,631,054 bytes | `66b444cc092643aa295bc4bdf5594b6efa7addac06d15b96e0b42a8f47c8a831` |
 
 Current-source MarketDebug assemble and signature verification passed. `adb` is installed but no emulator/device is attached. Production signing is unverified, and no artifact is claimed to be suitable for production release.

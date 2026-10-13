@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-13T14:00:00+00:00",
+  "capturedAt": "2026-10-13T14:25:00+00:00",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "8008ebac58957fd0ede8b47b9ed9278060875850 plus local changes listed in latestLocalVerification",
+  "lastVerifiedCommit": "94b784299fa1750120e79e45317440163a56bdc9 plus uncommitted NEW-005 work",
   "features": [
     {
       "id": "TCS-01",
@@ -111,8 +111,8 @@
       "lastResult": "SAF UI performs import on IO; repository uses SharedPreferences.commit for confirmed imports and only publishes StateFlow after a successful durable write. Regular toolbar edits retain asynchronous apply behavior. Successful repository commits clear stale recovery notice/raw data. UI/process recreation remains runtime-unverified.",
       "lastFailure": null,
       "fixAttempts": 0,
-      "commitSha": "pending commit for durable write and instrumentation corrections",
-      "lastReviewedAt": "2026-10-13T14:00:00+00:00",
+      "commitSha": "94b7842",
+      "lastReviewedAt": "2026-10-13T14:25:00+00:00",
       "remainingIssues": [
         "Android SAF picker interaction, process recreation and cancellation paths require device/CI instrumentation."
       ]
@@ -432,12 +432,12 @@
     "CI run 38393877043 failed API26/API36 UI assertions on commit 22e8782; these are not established as fixed by later source yet.",
     "Macro secret detection catches common credential-shaped forms but cannot identify arbitrary secret values; editor warns users not to store secrets."
   ],
-  "nextStep": "Commit and push durable import/recovery fixes and corrected instrumentation selectors to main; run fresh CI; inspect exact API26/36 failures and continue remaining TCS features.",
+  "nextStep": "Commit and push NEW-005 host-profile editor path; monitor CI 38399699440 and new CI; classify API26/36 assertions individually and finish remaining independent TCS features.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": {
     "command": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug :app:assembleMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m",
-    "result": "BUILD SUCCESSFUL; follow-up test-only edits compiled successfully",
+    "result": "BUILD SUCCESSFUL; source/release gates and diff check PASS",
     "unitTests": {
       "passed": 1021,
       "failed": 0,
@@ -445,18 +445,18 @@
       "skipped": 0,
       "suites": 118
     },
-    "androidTest": "Kotlin compilation passed; instrumentation not available locally (adb devices has no attached device)",
+    "androidTest": "Kotlin compilation passed including host-specific profile assignment/clear scenario; no attached local emulator",
     "lint": "passed; 0 errors, 104 warnings, 2 hints; AGP compileSdk 37 support warning remains",
     "apk": "app/build/outputs/apk/market/debug/app-market-debug.apk",
-    "apkSha256": "b828532f4974f40bed461905578621f54fb69f3298c5c1cd50754ecdb7944631",
+    "apkSha256": "66b444cc092643aa295bc4bdf5594b6efa7addac06d15b96e0b42a8f47c8a831",
     "apkCertificate": "apksigner verified Android Debug certificate; production signing not verified",
-    "sourceGates": "loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS"
+    "sourceGates": "loop2_gate.py PASS; market_release_gate.py PASS; git diff --check PASS; four new host-override strings present in fa/en/ar/es/fr/ru"
   },
   "latestCi": {
-    "commit": "584cc8b7b311b9dd0ea94c2350dc4fd1770822be",
-    "run": "38396679291",
-    "result": "completed: verify success; all API26/36 instrumentation jobs failed UI assertions; API37 debug and preview emulator boot timed out before tests",
-    "details": "API26/36 failures include stale Compose text-field snapshots, list/palette/slider and toolbar scroll reachability, switch state/target assertions, modifier semantics selector NPE, localized tab test expecting a removed duplicate contentDescription, and terminal keyboard/toolbar discovery. These results are app/test assertion failures, not classified wholesale as infrastructure. API37 had repeated adb sys.boot_completed failures and explicit emulator boot timeout, so no API37 tests ran. Current worktree test selector fixes compile but are not runtime-verified."
+    "commit": "94b784299fa1750120e79e45317440163a56bdc9",
+    "run": "38399699440",
+    "result": "verify success; API26/36/37 instrumentation jobs in progress",
+    "details": "GitHub Actions verify job passed source gates, unit tests, lint and debug builds. Instrumentation jobs started for API26 Debug/Preview, API36 Debug/Preview, and API37 Debug/Preview. The run predates NEW-005 host-specific profile UI and README corrections."
   },
   "remainingFeatureCount": 11,
   "verifiedCompleteCount": 0,
@@ -492,6 +492,14 @@
       "fix": "Clear recovery metadata after each successful repository commit; failed writes preserve the recovery evidence.",
       "tests": "Corrupt stored document regression now asserts successful save clears notice/raw; MarketDebug JVM suite 1,021/1,021 PASS.",
       "status": "UNIT_VERIFIED"
+    },
+    {
+      "id": "NEW-005",
+      "title": "Host-specific toolbar profile overrides had no user-facing configuration path",
+      "rootCause": "ToolbarRepository persisted hostOverrides and TerminalScreen honored them, but only import/API callers could create or remove overrides.",
+      "fix": "Added localized apply/clear controls to the editor when launched from an active SSH session. Assignment is host-scoped and does not modify the global active profile; controls are disabled while the profile draft is dirty. Added API26/36/37 instrumentation coverage and expanded editor button touch bounds.",
+      "tests": "Existing repository precedence/clear test strengthened to assert global selection is unchanged; new end-to-end instrumentation scenario compiles but is not runtime-verified yet.",
+      "status": "IMPLEMENTED_NOT_TESTED"
     }
   ]
 }

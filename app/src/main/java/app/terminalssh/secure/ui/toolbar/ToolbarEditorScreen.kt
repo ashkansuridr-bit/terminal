@@ -14,9 +14,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -87,6 +89,7 @@ import java.nio.charset.CodingErrorAction
 fun ToolbarEditorScreen(
     repository: ToolbarRepository,
     onDismiss: () -> Unit,
+    activeHostId: String? = null,
 ) {
     val state by repository.state.collectAsStateWithLifecycle()
     var profileId by rememberSaveable { mutableStateOf(state.activeProfileId) }
@@ -258,6 +261,32 @@ fun ToolbarEditorScreen(
                             repository.saveProfile(session.current.copy(builtIn = false))
                         }
                         profileId = profile.id
+                    }
+                }
+            }
+
+            if (activeHostId != null) {
+                val hostOverride = state.hostOverrides[activeHostId]
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    stringResource(
+                        if (hostOverride == null) R.string.tcs_host_profile_global
+                        else R.string.tcs_host_profile_override,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SmallButton(
+                        stringResource(R.string.tcs_host_profile_apply),
+                        enabled = !session.isDirty && !transferBusy,
+                    ) {
+                        repository.setHostOverride(activeHostId, profileId)
+                    }
+                    if (hostOverride != null) {
+                        SmallButton(stringResource(R.string.tcs_host_profile_clear)) {
+                            repository.setHostOverride(activeHostId, null)
+                        }
                     }
                 }
             }
@@ -746,6 +775,8 @@ private fun KeyChip(key: ToolKeySpec, selected: Boolean, onClick: () -> Unit) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
+            .heightIn(min = 48.dp)
+            .widthIn(min = 48.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(width = 1.5.dp, color = border, shape = RoundedCornerShape(10.dp))

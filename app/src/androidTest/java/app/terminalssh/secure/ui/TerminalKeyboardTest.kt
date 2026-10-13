@@ -24,6 +24,7 @@ import app.terminalssh.secure.model.HostProfile
 import app.terminalssh.secure.ssh.SshSession
 import app.terminalssh.secure.vm.AppViewModel
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -798,6 +799,63 @@ class TerminalKeyboardTest {
             } else {
                 assertReadableSymbolicNames()
             }
+        }
+    }
+
+    @Test
+    fun editorCanAssignAndClearAProfileForOnlyTheActiveHost() {
+        val session = idleSession(id = "host-toolbar-override", title = "Host profile test")
+        app.sessions.add(session)
+        val repository = app.toolbar
+        val globalProfile = repository.state.value.activeProfileId
+        val terminalTab = instrumentation.targetContext.getString(R.string.tab_terminal)
+        val keyboardAction = instrumentation.targetContext.getString(R.string.show_keyboard)
+        val applyLabel = instrumentation.targetContext.getString(R.string.tcs_host_profile_apply)
+        val clearLabel = instrumentation.targetContext.getString(R.string.tcs_host_profile_clear)
+        val targetProfile = repository.profileById("vim") ?: error("Built-in Vim profile is required")
+
+        try {
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                openTerminalTab(terminalTab, keyboardAction)
+                val keyboardKey = device.wait(Until.findObject(By.desc(keyboardAction)), UI_TIMEOUT_MS)
+                    ?: throw AssertionError("Keyboard key is needed to reach the toolbar editor")
+                keyboardKey.longClick()
+                if (waitForIme(scenario, visible = true)) {
+                    device.pressBack()
+                    assertTrue("IME should close without leaving the toolbar editor", waitForIme(scenario, visible = false))
+                }
+
+                val profileChip = device.wait(Until.findObject(By.text(targetProfile.name)), UI_TIMEOUT_MS)
+                    ?: throw AssertionError("Vim profile must be selectable in the editor")
+                profileChip.click()
+                assertTrue(
+                    "Host-profile action must be scroll-reachable in the editor",
+                    device.scrollUntilFullyVisible(
+                        By.text(applyLabel),
+                        maxAttempts = 16,
+                        appPackage = instrumentation.targetContext.packageName,
+                    ),
+                )
+                val apply = device.wait(Until.findObject(By.text(applyLabel)), UI_TIMEOUT_MS)
+                    ?: throw AssertionError("Host profile action must be visible in an active SSH session")
+                apply.click()
+
+                assertTrue(awaitUiState(UI_TIMEOUT_MS) {
+                    repository.state.value.hostOverrides[session.profile.id] == targetProfile.id
+                })
+                assertEquals(globalProfile, repository.state.value.activeProfileId)
+                assertEquals(targetProfile.id, repository.effectiveProfile(session.profile.id).id)
+                assertEquals(globalProfile, repository.effectiveProfile("another-host").id)
+
+                device.wait(Until.findObject(By.text(clearLabel)), UI_TIMEOUT_MS)?.click()
+                    ?: throw AssertionError("An active host override must be clearable")
+                assertTrue(awaitUiState(UI_TIMEOUT_MS) {
+                    session.profile.id !in repository.state.value.hostOverrides
+                })
+                assertEquals(globalProfile, repository.effectiveProfile(session.profile.id).id)
+            }
+        } finally {
+            repository.setHostOverride(session.profile.id, null)
         }
     }
 

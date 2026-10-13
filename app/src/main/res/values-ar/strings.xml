@@ -525,4 +525,8 @@
     <string name="tcs_import_replace_warning">سيستبدل هذا جميع الملفات والسمات ووحدات الماكرو وربط المضيفات المخصصة، ولن يدمجها.</string>
     <string name="tcs_import_warnings_present">يحتوي الملف على تحذيرات تحقق. راجع الإعدادات بعد تطبيقها.</string>
     <string name="tcs_import_replace">استبدال الإعدادات</string>
+    <string name="tcs_host_profile_global">يستخدم هذا الاتصال ملف المفاتيح العام.</string>
+    <string name="tcs_host_profile_override">يستخدم هذا الاتصال ملف مفاتيح مخصصًا.</string>
+    <string name="tcs_host_profile_apply">استخدام الملف المحدد لهذا الاتصال</string>
+    <string name="tcs_host_profile_clear">استخدام الملف العام</string>
 </resources>

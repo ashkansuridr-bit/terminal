@@ -343,6 +343,7 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit, onGoToSetti
                 ToolbarEditorScreen(
                     repository = viewModel.toolbar,
                     onDismiss = { toolbarEditorOpen = false },
+                    activeHostId = active.profile.id,
                 )
             }
         }

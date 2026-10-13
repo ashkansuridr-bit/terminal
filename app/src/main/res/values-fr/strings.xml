@@ -475,4 +475,8 @@
     <string name="tcs_import_replace_warning">Cette action remplace tous les profils, thèmes, macros et hôtes personnalisés ; elle ne les fusionne pas.</string>
     <string name="tcs_import_warnings_present">Le fichier contient des avertissements de validation. Vérifiez la configuration après son application.</string>
     <string name="tcs_import_replace">Remplacer la configuration</string>
+    <string name="tcs_host_profile_global">Cette connexion utilise le profil global de touches.</string>
+    <string name="tcs_host_profile_override">Cette connexion a un profil de touches personnalisé.</string>
+    <string name="tcs_host_profile_apply">Utiliser le profil sélectionné pour cette connexion</string>
+    <string name="tcs_host_profile_clear">Utiliser le profil global</string>
 </resources>

@@ -94,6 +94,7 @@ class ToolbarRepositoryTest {
         repository.setHostOverride("prod-box", "vim")
         assertEquals("vim", repository.effectiveProfile("prod-box").id)
         assertEquals("shell", repository.effectiveProfile("other").id)
+        assertEquals("shell", repository.state.value.activeProfileId)
         repository.setHostOverride("prod-box", null)
         assertEquals("shell", repository.effectiveProfile("prod-box").id)
     }

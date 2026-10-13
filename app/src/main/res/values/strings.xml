@@ -522,4 +522,8 @@
     <string name="tcs_import_replace_warning">این کار همهٔ پروفایل‌ها، پوسته‌ها، ماکروها و اتصال‌های میزبان سفارشی را جایگزین می‌کند و آن‌ها را ادغام نمی‌کند.</string>
     <string name="tcs_import_warnings_present">فایل هشدارهای اعتبارسنجی دارد. پس از اعمال، پیکربندی واردشده را بررسی کنید.</string>
     <string name="tcs_import_replace">جایگزینی پیکربندی</string>
+    <string name="tcs_host_profile_global">این اتصال از نمای کلید پیش‌فرض استفاده می‌کند.</string>
+    <string name="tcs_host_profile_override">برای این اتصال نمای کلید جداگانه تنظیم شده است.</string>
+    <string name="tcs_host_profile_apply">نمای انتخاب‌شده را برای این اتصال به کار ببر</string>
+    <string name="tcs_host_profile_clear">بازگشت به نمای پیش‌فرض</string>
 </resources>

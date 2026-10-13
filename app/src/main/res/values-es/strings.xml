@@ -475,4 +475,8 @@
     <string name="tcs_import_replace_warning">Esto reemplaza todos los perfiles, temas, macros y vínculos de hosts personalizados; no los combina.</string>
     <string name="tcs_import_warnings_present">El archivo contiene avisos de validación. Revisa la configuración después de aplicarla.</string>
     <string name="tcs_import_replace">Reemplazar configuración</string>
+    <string name="tcs_host_profile_global">Esta conexión usa el perfil global de teclas.</string>
+    <string name="tcs_host_profile_override">Esta conexión tiene un perfil de teclas personalizado.</string>
+    <string name="tcs_host_profile_apply">Usar el perfil seleccionado en esta conexión</string>
+    <string name="tcs_host_profile_clear">Usar el perfil global</string>
 </resources>

@@ -477,4 +477,8 @@
     <string name="tcs_import_replace_warning">Будут заменены все пользовательские профили, темы, макросы и привязки хостов; объединения не будет.</string>
     <string name="tcs_import_warnings_present">В файле есть предупреждения проверки. Проверьте импортированную конфигурацию после применения.</string>
     <string name="tcs_import_replace">Заменить конфигурацию</string>
+    <string name="tcs_host_profile_global">Для этого подключения используется общий профиль клавиш.</string>
+    <string name="tcs_host_profile_override">Для этого подключения задан отдельный профиль клавиш.</string>
+    <string name="tcs_host_profile_apply">Использовать выбранный профиль для этого подключения</string>
+    <string name="tcs_host_profile_clear">Использовать общий профиль</string>
 </resources>
