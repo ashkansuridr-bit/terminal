@@ -2,6 +2,7 @@ package app.terminalssh.secure.ui
 
 import android.graphics.Rect
 import android.os.SystemClock
+import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -47,12 +48,8 @@ class SettingsToggleAccessibilityTest {
                     device.wait(Until.hasObject(By.desc(settingsSearch)), TIMEOUT_MS),
                 )
                 assertTrue(
-                    "Toggle row was not fully reachable by vertical scrolling",
-                    device.scrollUntilFullyVisible(
-                        By.desc(label),
-                        maxAttempts = 20,
-                        appPackage = appContext.packageName,
-                    ),
+                    "Toggle row was not fully reachable by accessibility scrolling",
+                    scrollToToggle(label),
                 )
 
                 val density = appContext.resources.displayMetrics.density
@@ -167,7 +164,56 @@ class SettingsToggleAccessibilityTest {
 
     /** Reacquire an accessibility object after Compose recomposition instead of reading stale handles. */
     private fun stableSnapshot(label: String): SwitchSnapshot =
-        stableSnapshotOrNull(label) ?: throw AssertionError("Switch '$label' was not stable in the accessibility tree")
+        stableSnapshotOrNull(label) ?: throw AssertionError(
+            "Switch '$label' was not stable in the accessibility tree: ${switchNodeDiagnostic(label)}",
+        )
+
+    private fun scrollToToggle(label: String): Boolean {
+        repeat(24) {
+            device.waitForIdle()
+            val uiNode = device.findObject(By.desc(label))
+            val appNode = AppWindowAccessibility.find {
+                it.contentDescription?.toString() == label
+            }
+            if (uiNode != null && appNode != null) {
+                val visible = runCatching { uiNode.visibleBounds }.getOrNull()
+                val full = AppWindowAccessibility.bounds(appNode)
+                appNode.recycle()
+                if (visible != null && visible.width() == full.width() && visible.height() == full.height()) return true
+                uiNode.recycle()
+            } else {
+                appNode?.recycle()
+                uiNode?.recycle()
+            }
+
+            val scrollNode = AppWindowAccessibility.find {
+                if (!it.isScrollable) return@find false
+                val bounds = AppWindowAccessibility.bounds(it)
+                bounds.height() > bounds.width()
+            }
+            if (scrollNode != null) {
+                val bounds = AppWindowAccessibility.bounds(scrollNode)
+                val moved = try { scrollNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) }
+                finally { scrollNode.recycle() }
+                if (!moved) {
+                    val x = (bounds.left + bounds.width() / 4).coerceIn(24, device.displayWidth - 24)
+                    device.swipe(x, bounds.bottom - 32, x, bounds.top + 32, 350)
+                }
+            } else {
+                val x = (device.displayWidth * 0.25f).toInt()
+                device.swipe(x, (device.displayHeight * 0.75f).toInt(), x, (device.displayHeight * 0.35f).toInt(), 350)
+            }
+        }
+        return false
+    }
+
+    private fun switchNodeDiagnostic(label: String): String {
+        val node = AppWindowAccessibility.find { it.contentDescription?.toString() == label } ?: return "node absent"
+        return try {
+            "class=${node.className}, checkable=${node.isCheckable}, checked=${node.isChecked}, " +
+                "clickable=${node.isClickable}, bounds=${AppWindowAccessibility.bounds(node)}, actions=${node.actionList}"
+        } finally { node.recycle() }
+    }
 
     private fun stableSnapshotOrNull(label: String): SwitchSnapshot? {
         val deadline = SystemClock.uptimeMillis() + TIMEOUT_MS

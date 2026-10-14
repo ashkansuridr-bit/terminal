@@ -2,6 +2,7 @@ package app.terminalssh.secure.ui
 
 import android.content.res.Configuration
 import android.graphics.Rect
+import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -129,10 +130,13 @@ class HostEditValidationTest {
     }
 
     private fun setFieldText(label: String, value: String) {
-        // Compose exposes the named OutlinedTextField wrapper separately from its
-        // platform editor. Use the wrapper's UiAutomator bounds to focus it.
-        val field = device.wait(Until.findObject(By.desc(label)), TIMEOUT_MS)
-            ?: throw AssertionError("Named field '$label' was not exposed in the app accessibility tree")
+        // Each field focus opens the IME and reduces the sheet viewport. Dismiss it
+        // before looking for the next field, then scroll the actual form viewport if
+        // the named field is below the fold. Compose exposes the named wrapper
+        // separately from its platform EditText child.
+        dismissImeIfVisible()
+        val field = findFormField(label)
+            ?: throw AssertionError("Named field '$label' was not exposed after scrolling the host form")
         val visibleBounds = field.visibleBounds
         assertTrue(
             "Named field '$label' must have a usable visible target: visible=$visibleBounds",
@@ -178,6 +182,44 @@ class HostEditValidationTest {
         // The later validation/save assertions verify the form model, which is the
         // behavior this regression protects. API 26 exposes stale text snapshots for
         // Compose BasicTextField even after ACTION_SET_TEXT has reached its callback.
+    }
+
+    private fun findFormField(label: String): androidx.test.uiautomator.UiObject2? {
+        val deadline = android.os.SystemClock.uptimeMillis() + TIMEOUT_MS
+        while (android.os.SystemClock.uptimeMillis() < deadline) {
+            device.waitForIdle()
+            val field = device.findObject(By.desc(label))
+            if (field != null) {
+                val visible = runCatching { field.visibleBounds }.getOrNull()
+                val appNode = AppWindowAccessibility.find {
+                    it.contentDescription?.toString() == label
+                }
+                val full = appNode?.let { AppWindowAccessibility.bounds(it) }
+                appNode?.recycle()
+                if (visible != null && full != null && visible.width() == full.width() &&
+                    visible.height() == full.height() && visible.height() >= 32) return field
+                field.recycle()
+            }
+
+            val scrollNode = AppWindowAccessibility.find {
+                if (!it.isScrollable) return@find false
+                val bounds = AppWindowAccessibility.bounds(it)
+                bounds.height() > bounds.width()
+            }
+            if (scrollNode != null) {
+                val bounds = AppWindowAccessibility.bounds(scrollNode)
+                val moved = try { scrollNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) }
+                finally { scrollNode.recycle() }
+                if (!moved) {
+                    val x = bounds.centerX().coerceIn(24, device.displayWidth - 24)
+                    device.swipe(x, bounds.bottom - 32, x, bounds.top + 32, 350)
+                }
+            } else {
+                val x = (device.displayWidth * 0.75f).toInt()
+                device.swipe(x, (device.displayHeight * 0.72f).toInt(), x, (device.displayHeight * 0.38f).toInt(), 350)
+            }
+        }
+        return device.findObject(By.desc(label))
     }
 
     private fun visibleAppText(): String {

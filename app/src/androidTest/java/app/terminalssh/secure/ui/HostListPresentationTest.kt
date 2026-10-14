@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import android.graphics.Rect
+import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
@@ -16,6 +17,7 @@ import app.terminalssh.secure.TerminalApp
 import app.terminalssh.secure.model.AuthMethod
 import app.terminalssh.secure.model.HostProfile
 import app.terminalssh.secure.vm.AppViewModel
+import app.terminalssh.secure.vm.HostMetadataState
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -37,6 +39,7 @@ class HostListPresentationTest {
     private val context = instrumentation.targetContext
     private lateinit var activityContext: Context
     private lateinit var app: TerminalApp
+    private lateinit var viewModel: AppViewModel
     private lateinit var seeded: List<HostProfile>
 
     private val now = System.currentTimeMillis()
@@ -69,7 +72,8 @@ class HostListPresentationTest {
                 // The test fixture is written directly to the durable store before
                 // launch. Refresh a retained ViewModel so this checks rendering rather
                 // than a stale initial snapshot left by another UI test.
-                ViewModelProvider(activity)[AppViewModel::class.java].reloadHostMetadata()
+                viewModel = ViewModelProvider(activity)[AppViewModel::class.java]
+                viewModel.reloadHostMetadata()
             }
             assertTrue(
                 "Seeded host fixture properties were not durable: " +
@@ -80,6 +84,17 @@ class HostListPresentationTest {
                         stored.id == wanted.id && stored.favorite == wanted.favorite &&
                             stored.lastConnectedAt == wanted.lastConnectedAt
                     }
+                },
+            )
+            assertTrue(
+                "ViewModel did not publish the durable host fixture before rendering: " +
+                    "state=${viewModel.hostMetadataState.value}, " +
+                    "hosts=${viewModel.hosts.value.map { it.id to (it.favorite to it.lastConnectedAt) }}, " +
+                    "expected=${seeded.map { it.id }}",
+                awaitUiState(TIMEOUT_MS) {
+                    viewModel.hostMetadataState.value == HostMetadataState.Ready &&
+                        seeded.all { expected -> viewModel.hosts.value.any { it.id == expected.id &&
+                            it.favorite == expected.favorite && it.lastConnectedAt == expected.lastConnectedAt } }
                 },
             )
             // Synchronize on an initial visible group before asking the lazy list to
@@ -148,22 +163,33 @@ class HostListPresentationTest {
         // some emulator images. Swipe inside the freshly resolved vertical list bounds;
         // require the entire row to be visible after every gesture, not merely present
         // in the semantics tree or clipped to a few pixels at the viewport edge.
-        repeat(40) {
+        repeat(24) {
             val target = device.findObject(By.text(text))
-            if (hasFullyVisibleBounds(target)) return
-            val listBounds = hostListBounds()
+            if (hasFullyVisibleBounds(target) || hasFullyVisibleAppText(text)) return
+            val listBounds = appHostListBounds() ?: hostListBounds()
             lastTargetBounds = runCatching { target?.visibleBounds }.getOrNull()
             lastViewportBounds = listBounds
             if (listBounds != null) {
-                // The floating New connection button overlaps the viewport center near
-                // its lower edge (CI trace: button x=121..296, swipe began at x=160).
-                // Keep the gesture in a left-side list lane so it cannot activate the FAB.
-                val swipeX = listBounds.left + (listBounds.width() * 0.12f).toInt()
-                device.swipe(
-                    swipeX, listBounds.bottom - (listBounds.height() * 0.15f).toInt(),
-                    swipeX, listBounds.top + (listBounds.height() * 0.15f).toInt(),
-                    12,
-                )
+                val scrollNode = AppWindowAccessibility.find {
+                    if (!it.isScrollable) return@find false
+                    val bounds = AppWindowAccessibility.bounds(it)
+                    bounds.height() > bounds.width() && bounds.contains(listBounds)
+                }
+                val moved = if (scrollNode != null) {
+                    try { scrollNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) }
+                    finally { scrollNode.recycle() }
+                } else false
+                if (!moved) {
+                    // Keep the fallback drag inside the measured list lane so it cannot
+                    // hit the floating action button. A deliberate drag avoids flinging
+                    // over groups on short emulator screens.
+                    val swipeX = listBounds.left + (listBounds.width() * 0.10f).toInt()
+                    device.swipe(
+                        swipeX, listBounds.bottom - (listBounds.height() * 0.18f).toInt(),
+                        swipeX, listBounds.top + (listBounds.height() * 0.18f).toInt(),
+                        350,
+                    )
+                }
                 swipeCount++
             } else {
                 // Older Android Compose trees do not always export the LazyColumn as an
@@ -174,7 +200,7 @@ class HostListPresentationTest {
                 device.swipe(
                     swipeX, (device.displayHeight * 0.68f).toInt(),
                     swipeX, (device.displayHeight * 0.30f).toInt(),
-                    12,
+                    350,
                 )
                 swipeCount++
             }
@@ -190,8 +216,15 @@ class HostListPresentationTest {
                 "viewportBounds=$lastViewportBounds, display=${device.displayWidth}x${device.displayHeight}, " +
                 "storedFixture=$storedFixture, " +
                 "appTree=${accessibilityTreeSnapshot()}",
-            hasFullyVisibleBounds(target),
+            hasFullyVisibleBounds(target) || hasFullyVisibleAppText(text),
         )
+    }
+
+    private fun hasFullyVisibleAppText(text: String): Boolean {
+        val node = AppWindowAccessibility.find { it.text?.toString() == text } ?: return false
+        val bounds = try { AppWindowAccessibility.bounds(node) } finally { node.recycle() }
+        val viewport = appHostListBounds() ?: return false
+        return bounds.width() > 0 && bounds.height() > 0 && viewport.contains(bounds)
     }
 
     /** Captures the composed list's actual accessible contents when an expected group is missing. */
@@ -250,6 +283,15 @@ class HostListPresentationTest {
             }
         }
         .maxByOrNull { it.height() }
+
+    private fun appHostListBounds(): Rect? {
+        val node = AppWindowAccessibility.find {
+            if (!it.isScrollable) return@find false
+            val bounds = AppWindowAccessibility.bounds(it)
+            bounds.height() > bounds.width()
+        } ?: return null
+        return try { AppWindowAccessibility.bounds(node) } finally { node.recycle() }
+    }
 
     private fun profile(
         id: String,

@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-14T03:40:00+03:30",
+  "capturedAt": "2026-10-14T03:59:50+03:30",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "cb40830c4a7a75c8957095e28b5fbe74bbf36410",
+  "lastVerifiedCommit": "621d148416973a41224b68ff27093e7017d5a073",
   "features": [
     {
       "id": "TCS-01",
@@ -477,23 +477,23 @@
     "Latest CI API37 Debug/Preview could not boot; device/runtime acceptance remains blocked in this environment.",
     "Fresh local build after UI harness and SettingRow changes passed: 1,030 JVM tests, app and AndroidTest Kotlin compile, lint, APK assembly/signature; fresh API26/36/37 runtime CI is pending."
   ],
-  "nextStep": "Commit and push current verified code/docs/APK and GitHub motion assets to main as authorized; inspect fresh API26/36/37 CI, then copy, concatenate and validate four 30-second promo chapters into a 120-second master.",
+  "nextStep": "Run diff and local unit/source gates for current accessibility-test helper edits, commit and push to main per explicit owner instruction, then inspect fresh API26/36 instrumentation and API37 boot outcomes. Do not mark UI features verified until runtime assertions pass; production signing and release readiness remain NOT VERIFIED.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug :app:assembleMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m (BUILD SUCCESSFUL); ./gradlew :app:testMarketDebugUnitTest --rerun-tasks --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m (BUILD SUCCESSFUL, 1,030/1,030); source/release gates PASS; locale XML/JUnit XML/LOOP_STATE JSON parse PASS; apksigner verify PASS; git diff --check PASS.",
   "latestCi": {
-    "runId": "38457441726",
-    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38457441726",
-    "headSha": "cb40830c4a7a75c8957095e28b5fbe74bbf36410",
-    "verify": "PASS: validators, both JVM variants (1,026 each), lint and debug builds.",
+    "runId": "38488783559",
+    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38488783559",
+    "headSha": "621d148416973a41224b68ff27093e7017d5a073",
+    "verify": "PASS: source/artifact validators, unit tests, lint and both Debug builds.",
     "instrumentation": {
-      "api26Debug": "FAIL 4/114: HostEdit, HostList, SettingsToggle, TerminalKeyboard Tab",
-      "api26Preview": "FAIL 4/114: HostEdit, HostList, SettingsToggle, TerminalKeyboard Tab",
-      "api36Debug": "FAIL 4/114: HostEdit, HostList, SettingsToggle, TerminalKeyboard Vim profile chip",
-      "api36Preview": "FAIL 2/114: HostList, SettingsToggle",
-      "api37Debug": "BLOCKED before tests: emulator offline/boot timeout",
-      "api37Preview": "BLOCKED before tests: emulator offline/boot timeout",
-      "aggregateCompletedVariants": "442 passed, 14 failed, 0 skipped across 456 executions"
+      "api26Debug": "FAIL 5/114: HostEdit, HostList, SettingsToggle checkability, TerminalKeyboard Vim profile reachability, TerminalKeyboard Tab reachability.",
+      "api26Preview": "FAIL 3/114: SettingsToggle checkability, TerminalKeyboard Vim profile reachability, TerminalKeyboard Tab reachability.",
+      "api36Debug": "FAIL 4/114: HostEdit, HostList, SettingsToggle scroll reachability, TerminalKeyboard Vim profile reachability.",
+      "api36Preview": "FAIL 3/114: HostList, SettingsToggle checkability, TerminalKeyboard Vim profile reachability.",
+      "api37Debug": "BLOCKED before tests: adb device offline; emulator boot timeout; no report artifact.",
+      "api37Preview": "BLOCKED before tests: adb device offline; emulator boot timeout; no report artifact.",
+      "aggregateCompletedVariants": "441 passed, 15 failed, 0 skipped across 456 executions; failures are UI assertions, no test-process crash."
     },
     "releaseCandidates": "SKIPPED because instrumentation matrix failed."
   },
@@ -599,10 +599,10 @@
     {
       "id": "NEW-013",
       "title": "Labeled Settings switch lacked checkable state in the API 26 accessibility tree",
-      "rootCause": "The visual Material Switch used clearAndSetSemantics, which removed its checked/role state before it could merge into the parent labeled toggle row.",
+      "rootCause": "The labeled merged settings row still did not satisfy the test’s Android AccessibilityNodeInfo.isCheckable predicate on API26 and API36 after the prior semantics adjustment. The accessibility bridge/UI tree mapping remains unconfirmed.",
       "fix": "Preserved the visual Switch semantics while leaving the parent toggleable as the sole click/persistence/reset owner.",
-      "tests": "Existing SettingsToggleAccessibilityTest still requires the named node to be checkable, clickable, stateful, full-width and persist after activation; fresh API26/36 CI pending.",
-      "status": "IMPLEMENTED_NOT_TESTED (CI runtime pending)"
+      "tests": "Run 38488783559: SettingsToggleAccessibilityTest still failed on API26 Debug/Preview and API36 Debug/Preview; API36 Debug also failed the separate scroll-to-row precondition. New test diagnostics now report class/checkable/checked/clickable/actions and the scroll helper uses the app accessibility container. Runtime verification of this follow-up is pending.",
+      "status": "IMPLEMENTED_NOT_TESTED (prior fix did not resolve all runtime variants; diagnostic follow-up pending)"
     },
     {
       "id": "NEW-014",
@@ -613,8 +613,8 @@
       "status": "IMPLEMENTED_NOT_TESTED"
     }
   ],
-  "deliveryCommit": "081d0538595bcb82c43a291dc75b3735038cf13d",
-  "latestLocalResult": "PASS after exact current-source rerun: MarketDebug JVM 1,030/1,030 tests across 122 suites (0 failures/errors/skips); app and AndroidTest Kotlin compile; lint 0 errors/108 warnings/2 hints; MarketDebug assembly; APK copied to root and Android Debug v2 signature verified. Both source/release gates, resource/JUnit/JSON parsing, and git diff --check PASS. UI instrumentation runtime still awaits CI.",
+  "deliveryCommit": "6265262693e481a5ee7f9e3c0b26ecd82b87e37c",
+  "latestLocalResult": "PASS: MarketDebug JVM 1,030/1,030 (122 suites); app/AndroidTest Kotlin compilation; lint (0 errors, 108 warnings, 2 hints); MarketDebug assembly; APK debug v2 signature verified; loop2/market release gates and diff checks. 120s promo full decode: 3,600 frames, 120.00 seconds, H.264 1080x1920 at 30fps, no audio. Latest AndroidTest Kotlin compile after instrumentation harness follow-up passes; runtime for those new test helpers remains pending CI.",
   "mediaAssets": {
     "githubBanner": {
       "path": "TerminalSSH-GitHub-Motion-fa.mp4",
@@ -642,6 +642,42 @@
       "durationSeconds": 4.05,
       "sha256": "fcb0a947b8a917eabd41834ec036cb1893b18a95df0ab03a561657516f2f9d75",
       "status": "Rendered and final frame visually reviewed; separate insert, not merged into existing promo."
+    },
+    "longPromo120": {
+      "path": "TerminalSSH-Promo-fa-120s.mp4",
+      "width": 1080,
+      "height": 1920,
+      "fps": 30,
+      "durationSeconds": 120.0,
+      "frameCount": 3600,
+      "sha256": "dba3fae236e74f2812276dafdbb78a69237f817e6ed64d6e3528ac0f31549acc",
+      "chapters": [
+        {
+          "path": "promo/terminalssh-120s/chapters/TerminalSSH-Promo-fa-120s-01.mp4",
+          "durationSeconds": 30.0,
+          "frameCount": 900,
+          "sha256": "92cef52288d47958f131c603204611c2ee96622827669853279e06ffa2ef346f"
+        },
+        {
+          "path": "promo/terminalssh-120s/chapters/TerminalSSH-Promo-fa-120s-02.mp4",
+          "durationSeconds": 30.0,
+          "frameCount": 900,
+          "sha256": "fc3c6f764aa9b8a54e1de36f694352bc5fa625a91519075bc2d3c79c0cbd6110"
+        },
+        {
+          "path": "promo/terminalssh-120s/chapters/TerminalSSH-Promo-fa-120s-03.mp4",
+          "durationSeconds": 30.0,
+          "frameCount": 900,
+          "sha256": "20bbf6d3c7fc2a9f665055a5b7f8e35d642fdd55bbe6fbe25cb5b8dc0741efb6"
+        },
+        {
+          "path": "promo/terminalssh-120s/chapters/TerminalSSH-Promo-fa-120s-04.mp4",
+          "durationSeconds": 30.0,
+          "frameCount": 900,
+          "sha256": "c4e926c6a8ee4dcdc4d58b8a2d0b2f113b96dcfd894c553b61ab079d85c88523"
+        }
+      ],
+      "status": "Full decode passed; stream-copy joined from four normalized silent chapters. Remotion source, storyboard and font license are in promo/terminalssh-120s/."
     }
   }
 }

@@ -832,7 +832,7 @@ class TerminalKeyboardTest {
         for (direction in listOf(preferred, preferred.opposite())) {
             repeat(10) {
                 if (isFullyVisibleClickableAppDesc(targetDescription)) return true
-                swipeAcrossToolbar(anchorBounds, direction)
+                swipeAccessibleHorizontalRow(anchorBounds.centerY(), direction)
                 device.waitForIdle()
             }
         }
@@ -844,11 +844,33 @@ class TerminalKeyboardTest {
         fun opposite() = if (this == LEFT) RIGHT else LEFT
     }
 
-    private fun swipeAcrossToolbar(anchorBounds: Rect, direction: SwipeDirection) {
-        val y = anchorBounds.centerY()
-        val startX = if (direction == SwipeDirection.LEFT) device.displayWidth - 8 else 8
-        val endX = if (direction == SwipeDirection.LEFT) anchorBounds.right + 12 else anchorBounds.left - 12
-        device.swipe(startX, y, endX, y, 12)
+    private fun swipeAccessibleHorizontalRow(referenceY: Int, direction: SwipeDirection): Boolean {
+        val row = findAppNode {
+            if (!it.isScrollable) return@findAppNode false
+            val candidate = bounds(it)
+            candidate.width() > candidate.height() * 2 &&
+                kotlin.math.abs(candidate.centerY() - referenceY) < 180
+        } ?: return false
+        val rowBounds = try { bounds(row) } finally { row.recycle() }
+        val inset = (rowBounds.width() * 0.12f).toInt().coerceAtLeast(16)
+        val startX = if (direction == SwipeDirection.LEFT) rowBounds.right - inset else rowBounds.left + inset
+        val endX = if (direction == SwipeDirection.LEFT) rowBounds.left + inset else rowBounds.right - inset
+        if (startX !in 0 until device.displayWidth || endX !in 0 until device.displayWidth) return false
+
+        val scrollNode = findAppNode {
+            if (!it.isScrollable) return@findAppNode false
+            val candidate = bounds(it)
+            candidate == rowBounds && candidate.width() > candidate.height() * 2
+        }
+        if (scrollNode != null) {
+            val action = if (direction == SwipeDirection.LEFT) AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
+                else AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
+            try { scrollNode.performAction(action) } finally { scrollNode.recycle() }
+        }
+        // Keep the drag endpoints inside the measured LazyRow. Screen-edge swipes
+        // begin outside its hit region on compact devices and do not scroll it.
+        device.swipe(startX, rowBounds.centerY(), endX, rowBounds.centerY(), 350)
+        return true
     }
 
     private fun isFullyVisibleClickableAppDesc(description: String): Boolean {
@@ -971,10 +993,6 @@ class TerminalKeyboardTest {
                 val profileHeader = device.findObject(By.text(profileHeading))
                 val profileHeaderBounds = profileHeader.visibleBounds
                 val profileRowY = profileHeaderBounds.bottom + 32
-                // Keep synthetic gestures within the editor's content area. Swipes
-                // starting at x=8 can land outside the Dialog's horizontal padding,
-                // so the LazyRow never receives them on narrow emulator layouts.
-                val profileSwipeInset = (device.displayWidth * 0.12f).toInt()
                 val isRtl = instrumentation.targetContext.resources.configuration.layoutDirection ==
                     View.LAYOUT_DIRECTION_RTL
                 val profileDirections = if (isRtl) listOf(SwipeDirection.RIGHT, SwipeDirection.LEFT)
@@ -982,11 +1000,7 @@ class TerminalKeyboardTest {
                 for (direction in profileDirections) {
                     for (attempt in 0 until 8) {
                         if (isFullyVisibleAccessibleText(targetProfile.name)) break
-                        val startX = if (direction == SwipeDirection.LEFT) device.displayWidth - profileSwipeInset
-                            else profileSwipeInset
-                        val endX = if (direction == SwipeDirection.LEFT) profileSwipeInset
-                            else device.displayWidth - profileSwipeInset
-                        device.swipe(startX, profileRowY, endX, profileRowY, 12)
+                        swipeAccessibleHorizontalRow(profileRowY, direction)
                         device.waitForIdle()
                     }
                     if (isFullyVisibleAccessibleText(targetProfile.name)) break
