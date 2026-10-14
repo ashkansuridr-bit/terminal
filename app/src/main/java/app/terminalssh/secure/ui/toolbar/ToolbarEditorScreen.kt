@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -268,8 +269,12 @@ fun ToolbarEditorScreen(
             }
 
             SectionLabel(stringResource(R.string.tcs_profile))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(repository.allProfiles, key = { it.id }) { profile ->
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                repository.allProfiles.forEach { profile ->
                     Chip(
                         text = profile.name,
                         selected = profile.id == profileId,

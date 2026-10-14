@@ -175,14 +175,18 @@ class HostListPresentationTest {
                     val bounds = AppWindowAccessibility.bounds(it)
                     bounds.height() > bounds.width() && bounds.contains(listBounds)
                 }
-                val moved = if (scrollNode != null) {
+                val before = AppWindowAccessibility.snapshot()
+                if (scrollNode != null) {
                     try { scrollNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) }
                     finally { scrollNode.recycle() }
-                } else false
-                if (!moved) {
+                }
+                device.waitForIdle()
+                val after = AppWindowAccessibility.snapshot()
+                if (before == null || after == null || after == before) {
                     // Keep the fallback drag inside the measured list lane so it cannot
                     // hit the floating action button. A deliberate drag avoids flinging
-                    // over groups on short emulator screens.
+                    // over groups on short emulator screens. Do this when an accessibility
+                    // action reports success but left the composed viewport unchanged.
                     val swipeX = listBounds.left + (listBounds.width() * 0.10f).toInt()
                     device.swipe(
                         swipeX, listBounds.bottom - (listBounds.height() * 0.18f).toInt(),

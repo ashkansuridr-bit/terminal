@@ -193,9 +193,15 @@ class SettingsToggleAccessibilityTest {
             }
             if (scrollNode != null) {
                 val bounds = AppWindowAccessibility.bounds(scrollNode)
-                val moved = try { scrollNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) }
+                val before = AppWindowAccessibility.snapshot()
+                try { scrollNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) }
                 finally { scrollNode.recycle() }
-                if (!moved) {
+                device.waitForIdle()
+                // Older accessibility bridges may return true for a Compose scroll
+                // action without moving its LazyColumn. Verify the tree changed before
+                // trusting the action; otherwise drag inside the measured list viewport.
+                val after = AppWindowAccessibility.snapshot()
+                if (before == null || after == null || after == before) {
                     val x = (bounds.left + bounds.width() / 4).coerceIn(24, device.displayWidth - 24)
                     device.swipe(x, bounds.bottom - 32, x, bounds.top + 32, 350)
                 }

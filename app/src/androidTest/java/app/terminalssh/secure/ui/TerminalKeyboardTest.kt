@@ -729,6 +729,9 @@ class TerminalKeyboardTest {
     @Test
     fun modifierKeysExposeAndUpdateToggleState() {
         val session = idleSession(id = "modifier-semantics", title = "Modifier test")
+        // User preferences survive instrumentation methods. Pin the preset so this
+        // assertion always exercises the shipped shell layout, including its Tab key.
+        app.toolbar.setActiveProfile("shell")
         app.sessions.add(session)
 
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
@@ -967,6 +970,8 @@ class TerminalKeyboardTest {
         val session = idleSession(id = "host-toolbar-override", title = "Host profile test")
         app.sessions.add(session)
         val repository = app.toolbar
+        // Keep the test independent of a profile choice left by an earlier method.
+        repository.setActiveProfile("shell")
         val globalProfile = repository.state.value.activeProfileId
         val terminalTab = instrumentation.targetContext.getString(R.string.tab_terminal)
         val keyboardAction = instrumentation.targetContext.getString(R.string.show_keyboard)
@@ -978,37 +983,30 @@ class TerminalKeyboardTest {
         try {
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
                 openTerminalTab(terminalTab, keyboardAction)
+                // BACK is intercepted by the editor's BackHandler once its dialog is
+                // open. Dismiss the IME first so that a cleanup BACK can never dismiss
+                // the editor and make the following profile assertion ambiguous.
+                if (waitForIme(scenario, visible = true)) {
+                    device.pressBack()
+                    assertTrue("IME should close before opening the toolbar editor", waitForIme(scenario, visible = false))
+                }
                 val keyboardKey = device.wait(Until.findObject(By.desc(keyboardAction)), UI_TIMEOUT_MS)
                     ?: throw AssertionError("Keyboard key is needed to reach the toolbar editor")
                 keyboardKey.longClick()
-                if (waitForIme(scenario, visible = true)) {
-                    device.pressBack()
-                    assertTrue("IME should close without leaving the toolbar editor", waitForIme(scenario, visible = false))
-                }
 
+                val editorOpened = device.wait(Until.hasObject(By.text(profileHeading)), UI_TIMEOUT_MS)
                 assertTrue(
-                    "Profile chooser must be present after opening the toolbar editor",
-                    device.wait(Until.hasObject(By.text(profileHeading)), UI_TIMEOUT_MS),
-                )
-                val profileHeader = device.findObject(By.text(profileHeading))
-                val profileHeaderBounds = profileHeader.visibleBounds
-                val profileRowY = profileHeaderBounds.bottom + 32
-                val isRtl = instrumentation.targetContext.resources.configuration.layoutDirection ==
-                    View.LAYOUT_DIRECTION_RTL
-                val profileDirections = if (isRtl) listOf(SwipeDirection.RIGHT, SwipeDirection.LEFT)
-                    else listOf(SwipeDirection.LEFT, SwipeDirection.RIGHT)
-                for (direction in profileDirections) {
-                    for (attempt in 0 until 8) {
-                        if (isFullyVisibleAccessibleText(targetProfile.name, profileRowY)) break
-                        swipeAccessibleHorizontalRow(profileRowY, direction)
-                        device.waitForIdle()
-                    }
-                    if (isFullyVisibleAccessibleText(targetProfile.name, profileRowY)) break
-                }
-                assertTrue(
-                    "Vim profile chip did not become fully visible after horizontal scrolling; " +
+                    "Profile chooser must be present after opening the toolbar editor; " +
                         "appTree=${appWindowTree()}",
-                    isFullyVisibleAccessibleText(targetProfile.name, profileRowY),
+                    editorOpened,
+                )
+                assertTrue(
+                    "Vim profile chip must be reachable by accessibility scrolling",
+                    device.scrollUntilFullyVisible(
+                        By.text(targetProfile.name),
+                        maxAttempts = 16,
+                        appPackage = instrumentation.targetContext.packageName,
+                    ),
                 )
                 val profileChip = device.wait(Until.findObject(By.text(targetProfile.name)), UI_TIMEOUT_MS)
                     ?: throw AssertionError("Vim profile must be selectable in the editor")
