@@ -5,7 +5,6 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
-import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import app.terminalssh.secure.R
@@ -130,23 +129,19 @@ class SnippetAccessibilityTest {
                         bounds.height() in (24 * density).toInt()..(160 * density).toInt() && bounds.width() > minTargetPx
                     }
                     .maxByOrNull { it.second.width() } ?: return false
-                val scrollDirection = if (direction == LayoutDirection.Ltr) Direction.LEFT else Direction.RIGHT
-                runCatching { band.first.scroll(scrollDirection, 0.75f) }
-                device.waitForIdle()
-                val afterAccessibilityScroll = runCatching { device.findObject(target)?.visibleBounds }.getOrNull()
-                if (afterAccessibilityScroll != null && afterAccessibilityScroll.width() >= minTargetPx &&
-                    afterAccessibilityScroll.height() >= minTargetPx
-                ) return true
-
                 val viewport = band.second
                 val y = viewport.centerY()
+                val step = (viewport.width() * 0.44f).toInt().coerceAtLeast(48)
                 val (from, to) = if (direction == LayoutDirection.Ltr) {
-                    (viewport.right - (viewport.width() / 10)) to (viewport.left + (viewport.width() / 10))
+                    (viewport.right - step / 2) to (viewport.right - step / 2 - step)
                 } else {
-                    (viewport.left + (viewport.width() / 10)) to (viewport.right - (viewport.width() / 10))
+                    (viewport.left + step / 2) to (viewport.left + step / 2 + step)
                 }
-                if (from == to) return false
-                device.swipe(from, y, to, y, 18)
+                if (from !in viewport.left until viewport.right || to !in viewport.left until viewport.right) return false
+                // A 75%-viewport accessibility page action followed by an 18ms fling
+                // can jump past a short toolbar key on API 26. Use a measured partial
+                // drag and reacquire the key after it has settled.
+                device.swipe(from, y, to, y, 350)
                 device.waitForIdle()
             }
         }

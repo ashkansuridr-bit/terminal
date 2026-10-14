@@ -168,7 +168,7 @@ class SettingsToggleAccessibilityTest {
         )
 
     private fun scrollToToggle(label: String): Boolean {
-        repeat(24) {
+        repeat(36) {
             device.waitForIdle()
             val uiNode = device.findObject(By.desc(label))
             val appNode = AppWindowAccessibility.find {
@@ -196,7 +196,10 @@ class SettingsToggleAccessibilityTest {
                 // Page actions on Compose can skip an entire screenful and overshoot the
                 // setting row. Advance by a small touch step and reacquire it each time.
                 val x = (bounds.left + bounds.width() / 4).coerceIn(24, device.displayWidth - 24)
-                val step = (bounds.height() * 0.20f).toInt().coerceAtLeast(48)
+                // The Security group is several screens below the first settings.
+                // API 36 needs a larger bounded step than API 26; keep it below half
+                // a viewport so a newly composed row cannot jump completely past us.
+                val step = (bounds.height() * 0.40f).toInt().coerceAtLeast(48)
                 val centerY = bounds.centerY()
                 device.swipe(x, centerY + step / 2, x, centerY - step / 2, 350)
             } else {
