@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-14T04:56:37+03:30",
+  "capturedAt": "2026-10-14T05:23:58+03:30",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "5bfbed7d4b1c70066cbebdfbe65ec5944df79451",
+  "lastVerifiedCommit": "1150c68dedf6f2cbe77e1161814a6c12fb03b310",
   "features": [
     {
       "id": "TCS-01",
@@ -419,13 +419,13 @@
       "suites": 122,
       "evidence": "Forced fresh execution with --rerun-tasks on current source; 1,030 tests, 0 failures/errors/skips, across 122 suites."
     },
-    "marketDebugAssemble": "PASS: :app:assembleMarketDebug succeeded after explicit accessible settings switch semantics; 41,556,964-byte APK copied to repository root and Android Debug v2 signature verified.",
-    "diffCheck": "PASS after current local edits",
-    "instrumentation": "Latest completed run 38490916105 on 90467df: API26 Debug/Preview 3/114 failures each; API36 Debug 3/114, Preview 2/114. Aggregate 445/456 passed, 11 failures, 0 skipped. SettingsToggle failed in all variants; HostEdit failed in API36 Debug; TerminalKeyboard profile visibility failed all variants and Tab reachability failed API26 Debug/Preview. API37 Debug/Preview were blocked before tests by adb offline/emulator boot timeout. Current local switch semantics and geometry-based harness corrections await a fresh CI run.",
-    "apiDeviceMatrix": "CI run 38490916105 exercised API26/36. API37 Debug/Preview failed emulator boot (adb device offline, timeout) before app tests. API31/34 are not in this workflow. No local runnable emulator or attached physical device.",
+    "marketDebugAssemble": "PASS: current source assembled; 41,681,527-byte root review APK, SHA-256 bca914ad9d1cd4550b251b08670edb07c02f81d8c9ffc3c378acfb314e346f10, Android Debug v2 signature verified; not production-signed.",
+    "diffCheck": "PASS after current local changes",
+    "instrumentation": "Latest completed run 38496174163 on 1150c68: API26 Debug 1/114 failure (Tab), API26 Preview 3/114 (HostEdit visible-only assertion, SettingsToggle reachability, Tab), API36 Debug and Preview 1/114 each (HostList heading). Aggregate 450/456 passed, 6 failed, 0 skipped. API37 Debug/Preview blocked before tests by adb offline/boot timeout. No app crash evidence. Current follow-up fixes scroll step size, Shell Tab priority and the offscreen-only HostEdit assertion; await fresh CI.",
+    "apiDeviceMatrix": "CI 38496174163 exercised API26 and API36; API37 Debug/Preview failed to boot (`adb: device offline`, timeout) before tests. API31/34 are not in workflow. No local runnable emulator or attached physical device.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS: current instrumentation sources including post-IME HostEdit validation and scroll-viewport based profile/toolbar visibility assertions; runtime pending fresh CI.",
+    "marketDebugAndroidTestCompile": "PASS after current test changes; runtime awaits new CI.",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
@@ -477,25 +477,25 @@
     "Latest CI API37 Debug/Preview could not boot; device/runtime acceptance remains blocked in this environment.",
     "Fresh local build after UI harness and SettingRow changes passed: 1,030 JVM tests, app and AndroidTest Kotlin compile, lint, APK assembly/signature; fresh API26/36/37 runtime CI is pending."
   ],
-  "nextStep": "Finish source_audit.py and diff/JSON checks, update checkpoint to document CI 38492997313 and current fixes, commit and push to main (direct-main upload was explicitly authorized), then inspect fresh API26/36/37 instrumentation results. Keep UI features unverified until runtime assertions pass; production signing/release readiness remain NOT VERIFIED.",
+  "nextStep": "Commit/push the current short-scroll, Shell Tab ordering and HostEdit test corrections to authorized main, then inspect fresh API26/36 reports and API37 boot logs. Keep UI feature completion and release readiness unverified until supported runtime gates pass; production signing remains NOT VERIFIED.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
-  "latestLocalVerification": "Current uncommitted follow-up: :app:testMarketDebugUnitTest PASS (1,030 tests; 122 suites); app and AndroidTest Kotlin compilation PASS; :app:lintMarketDebug PASS (0 errors, 108 warnings, 2 hints); :app:assembleMarketDebug PASS; root debug APK SHA-256 056f67ef0d33c82307c857287768418c03a42c174ab1cb0899e6660a2d2c4680; apksigner PASS. market_release_gate.py and loop2_gate.py PASS; JSON parse PASS. source_audit.py and final git diff --check still running/pending.",
+  "latestLocalVerification": "Current local follow-up: :app:testMarketDebugUnitTest PASS (1,030 tests, 122 suites, 0 failures/errors/skips); :app:compileMarketDebugKotlin and :app:compileMarketDebugAndroidTestKotlin PASS; :app:lintMarketDebug PASS (0 errors, 108 warnings, 2 hints); :app:assembleMarketDebug PASS; root APK 41,681,527 bytes, SHA-256 bca914ad9d1cd4550b251b08670edb07c02f81d8c9ffc3c378acfb314e346f10; Build Tools 37.0.0 apksigner v2 PASS. source_audit.py, market_release_gate.py, loop2_gate.py and git diff --check PASS. No local device for instrumentation.",
   "latestCi": {
-    "runId": "38492997313",
-    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38492997313",
-    "headSha": "5bfbed7d4b1c70066cbebdfbe65ec5944df79451",
-    "verify": "PASS: source/artifact validators, unit tests, lint and Debug builds.",
+    "runId": "38496174163",
+    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38496174163",
+    "headSha": "1150c68dedf6f2cbe77e1161814a6c12fb03b310",
+    "verify": "PASS: source/artifact validators, unit tests, lint and both Debug builds.",
     "instrumentation": {
-      "api26Debug": "FAIL 3/114: SettingsToggle helper stopped before checking state/action; TerminalKeyboard profile editor/Vim chip visibility and Tab reachability.",
-      "api26Preview": "FAIL 3/114: SettingsToggle helper stopped before checking state/action; TerminalKeyboard profile editor/Vim chip visibility and Tab reachability.",
-      "api36Debug": "FAIL 2/114: HostList All-hosts group reachability and TerminalKeyboard profile editor/Vim chip visibility.",
-      "api36Preview": "FAIL 1/114: TerminalKeyboard profile editor/Vim chip visibility.",
-      "api37Debug": "BLOCKED before tests: adb device offline/emulator boot timeout; no report.",
-      "api37Preview": "BLOCKED before tests: adb device offline/emulator boot timeout; no report.",
-      "aggregateCompletedVariants": "447 passed, 9 failed, 0 skipped across 456 executions. Failures are UI assertions; no test-process crash evidence."
+      "api26Debug": "FAIL 1/114: modifierKeysExposeAndUpdateToggleState could not reach Tab after horizontal scrolling; all other 113 passed.",
+      "api26Preview": "FAIL 3/114: HostEditValidationTest asserted offscreen username text; SettingsToggleAccessibilityTest could not reach the toggle row; TerminalKeyboardTest could not reach Tab. 111 passed.",
+      "api36Debug": "FAIL 1/114: HostListPresentationTest could not reach the All-hosts heading after page scrolling; 113 passed.",
+      "api36Preview": "FAIL 1/114: HostListPresentationTest could not reach the All-hosts heading after page scrolling; 113 passed.",
+      "api37Debug": "BLOCKED before tests: repeated adb device offline and emulator boot timeout; no report artifacts.",
+      "api37Preview": "BLOCKED before tests: repeated adb device offline and emulator boot timeout; no report artifacts.",
+      "aggregateCompletedVariants": "450 passed, 6 failed, 0 skipped across 456 executions. No app-process crash reported."
     },
-    "releaseCandidates": "SKIPPED because the instrumentation matrix failed."
+    "releaseCandidates": "SKIPPED because mandatory instrumentation failed."
   },
   "remainingFeatureCount": 11,
   "verifiedCompleteCount": 0,
@@ -614,7 +614,7 @@
     }
   ],
   "deliveryCommit": "6265262693e481a5ee7f9e3c0b26ecd82b87e37c",
-  "latestLocalResult": "PASS: MarketDebug JVM 1,030/1,030 (122 suites); app and AndroidTest Kotlin compilation; lint 0 errors/108 warnings/2 hints; MarketDebug assembly; refreshed root test APK size 41,556,964 bytes, SHA-256 26d66df744045e47537894bbee05507124803cb95ba99498007f806798fb03a0, Android Debug v2 signature verified; loop2/market release gates and diff checks pass. New UI helper/device behavior pending CI.",
+  "latestLocalResult": "PASS: current-source MarketDebug JVM 1,030/1,030; app/AndroidTest Kotlin compilation; lint (0 errors, 108 warnings, 2 hints); APK assembly and Android Debug v2 signature. Root test APK size 41,681,527 bytes; SHA-256 bca914ad9d1cd4550b251b08670edb07c02f81d8c9ffc3c378acfb314e346f10. Source/release gates and diff checks pass. Fresh device runtime awaits CI.",
   "mediaAssets": {
     "githubBanner": {
       "path": "TerminalSSH-GitHub-Motion-fa.mp4",
@@ -681,10 +681,8 @@
     }
   },
   "pendingCi": {
-    "runId": "38492997313",
-    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38492997313",
-    "headSha": "5bfbed7d4b1c70066cbebdfbe65ec5944df79451",
-    "status": "COMPLETED_FAILURE",
-    "next": "Current local harness/UI corrections are compiled; push them and inspect fresh emulator reports."
+    "status": "AWAITING_PUSH",
+    "baseSha": "1150c68dedf6f2cbe77e1161814a6c12fb03b310",
+    "next": "Push the local follow-up, then replace this entry with the triggered run ID and inspect all instrumentation reports."
   }
 }

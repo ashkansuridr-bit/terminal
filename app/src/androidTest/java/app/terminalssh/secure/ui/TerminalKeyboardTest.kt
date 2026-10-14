@@ -849,23 +849,13 @@ class TerminalKeyboardTest {
 
     private fun swipeAccessibleHorizontalRow(referenceY: Int, direction: SwipeDirection): Boolean {
         val rowBounds = horizontalScrollableRowBounds(referenceY) ?: return false
-        val inset = (rowBounds.width() * 0.12f).toInt().coerceAtLeast(16)
+        // Accessibility page actions on older Compose bridges move a full viewport.
+        // Paired with a drag, that can skip the target and make reverse scrolling skip
+        // it again. Move roughly half a viewport per gesture and re-check after each one.
+        val inset = (rowBounds.width() * 0.25f).toInt().coerceAtLeast(16)
         val startX = if (direction == SwipeDirection.LEFT) rowBounds.right - inset else rowBounds.left + inset
         val endX = if (direction == SwipeDirection.LEFT) rowBounds.left + inset else rowBounds.right - inset
         if (startX !in 0 until device.displayWidth || endX !in 0 until device.displayWidth) return false
-
-        val scrollNode = findAppNode {
-            if (!it.isScrollable) return@findAppNode false
-            val candidate = bounds(it)
-            candidate == rowBounds && candidate.width() > candidate.height() * 2
-        }
-        if (scrollNode != null) {
-            val action = if (direction == SwipeDirection.LEFT) AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
-                else AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
-            try { scrollNode.performAction(action) } finally { scrollNode.recycle() }
-        }
-        // Keep the drag endpoints inside the measured LazyRow. Screen-edge swipes
-        // begin outside its hit region on compact devices and do not scroll it.
         device.swipe(startX, rowBounds.centerY(), endX, rowBounds.centerY(), 350)
         return true
     }

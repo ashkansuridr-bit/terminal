@@ -179,7 +179,7 @@ object ToolbarProfiles {
         layout = ToolbarLayout(
             rows = listOf(
                 listOf(
-                    ctrl(), alt(), shift(), snippets, esc, tab,
+                    ctrl(), alt(), shift(), tab, esc, snippets,
                     up, down, left, right,
                     ToolKeySpec("pipe", "|", TextAction("|")),
                     ToolKeySpec("slash", "/", TextAction("/")),

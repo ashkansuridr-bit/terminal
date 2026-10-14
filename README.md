@@ -63,13 +63,13 @@ Terminal SSH یک برنامهٔ اندرویدی برای اتصال SSH، اس
 
 کد نسخهٔ `0.7.2` است (`versionCode` برابر 12). آخرین بررسی محلی 1,030 تست JVM را با موفقیت گذراند؛ کامپایل برنامه و تست‌های Android، ساخت APK و Lint نیز موفق بودند. Lint صفر خطا، 108 هشدار و 2 نکتهٔ راهنما گزارش کرد.
 
-آخرین اجرای GitHub Actions شمارهٔ [38492997313](https://github.com/ashkansuridr-bit/terminal/actions/runs/38492997313) روی `5bfbed7`، Verify را گذراند. چهار اجرای پایدار API26/36 در مجموع ۴۴۷ از ۴۵۶ تست را پاس کردند؛ ۹ شکست به پیمایش فهرست تنظیمات/میزبان و نوار پروفایل و Tab مربوط بود. آزمون Switch در API36 Debug/Preview پاس شد، اما helper پیمایش API26 پیش از رسیدن به بررسی کنترل متوقف شد. API37 Debug/Preview به‌علت `adb: device offline` اصلاً گزارش تست نساختند و Release candidates اجرا نشدند. اصلاح تازهٔ پیمایش، بازشدن ویرایشگر و دسترس‌پذیری انتخاب پروفایل در انتظار CI بعدی است؛ شواهد در [ماتریس تست](docs/terminal-control-studio/TEST_MATRIX.md) آمده است.
+آخرین اجرای GitHub Actions شمارهٔ [38496174163](https://github.com/ashkansuridr-bit/terminal/actions/runs/38496174163) روی `1150c68`، Verify را گذراند. در چهار اجرای API26/36، تعداد ۴۵۰ از ۴۵۶ تست پاس شد و ۶ شکست باقی ماند: Tab در API26 Debug/Preview، پیمایش Switch و اعتبارسنجی Host Edit در API26 Preview، و پیمایش عنوان گروه میزبان در API36 Debug/Preview. API37 Debug/Preview پیش از شروع تست با `adb: device offline` و timeout بوت متوقف شدند؛ Release candidates هم اجرا نشدند. اصلاح تازه گام‌های پیمایش کوتاه‌تر، ترتیب بهتر کلید Tab و حذف شرط دیداری اشتباه از تست فرم میزبان را اضافه می‌کند و منتظر CI تازه است؛ شواهد در [ماتریس تست](docs/terminal-control-studio/TEST_MATRIX.md) ثبت شده است.
 
 ابزار `adb` در محیط نصب است، اما AVD موجود به‌علت نبود فایل کرنل `kernel-ranchu` بوت نمی‌شود و دستگاه فیزیکی هم به این workspace متصل نیست. اتصال به سرور آزمایشی SSH/SFTP، اجرای TalkBack روی دستگاه، ماتریس کامل نسخه‌های اندروید و امضای تولیدی نیز تأیید نشده‌اند. به همین دلیل این پروژه را آمادهٔ انتشار عمومی معرفی نمی‌کنیم.
 
 ## APK آزمایشی
 
-فایل [TerminalSSH-0.7.2-MarketDebug-TEST.apk](TerminalSSH-0.7.2-MarketDebug-TEST.apk) با `:app:assembleMarketDebug` از سورس تازه، شامل چیدمان چندردیفهٔ پروفایل‌ها، ساخته و با گواهی Debug اندروید امضا شده است (SHA-256: `056f67ef0d33c82307c857287768418c03a42c174ab1cb0899e6660a2d2c4680`). این فایل فقط برای ارزیابی است؛ **امضای تولیدی ندارد و نسخهٔ انتشار فروشگاهی نیست**. شناسهٔ بسته و روش بررسی در [ANDROID_TEST_BUILD.md](ANDROID_TEST_BUILD.md) ثبت شده‌اند.
+فایل [TerminalSSH-0.7.2-MarketDebug-TEST.apk](TerminalSSH-0.7.2-MarketDebug-TEST.apk) با `:app:assembleMarketDebug` از سورس تازه، شامل چیدمان چندردیفهٔ پروفایل‌ها، ساخته و با گواهی Debug اندروید امضا شده است (SHA-256: `bca914ad9d1cd4550b251b08670edb07c02f81d8c9ffc3c378acfb314e346f10`). این فایل فقط برای ارزیابی است؛ **امضای تولیدی ندارد و نسخهٔ انتشار فروشگاهی نیست**. شناسهٔ بسته و روش بررسی در [ANDROID_TEST_BUILD.md](ANDROID_TEST_BUILD.md) ثبت شده‌اند.
 
 ## ساخت از سورس
 

@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import android.graphics.Rect
-import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
@@ -170,30 +169,13 @@ class HostListPresentationTest {
             lastTargetBounds = runCatching { target?.visibleBounds }.getOrNull()
             lastViewportBounds = listBounds
             if (listBounds != null) {
-                val scrollNode = AppWindowAccessibility.find {
-                    if (!it.isScrollable) return@find false
-                    val bounds = AppWindowAccessibility.bounds(it)
-                    bounds.height() > bounds.width() && bounds.contains(listBounds)
-                }
-                val before = AppWindowAccessibility.snapshot()
-                if (scrollNode != null) {
-                    try { scrollNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) }
-                    finally { scrollNode.recycle() }
-                }
-                device.waitForIdle()
-                val after = AppWindowAccessibility.snapshot()
-                if (before == null || after == null || after == before) {
-                    // Keep the fallback drag inside the measured list lane so it cannot
-                    // hit the floating action button. A deliberate drag avoids flinging
-                    // over groups on short emulator screens. Do this when an accessibility
-                    // action reports success but left the composed viewport unchanged.
-                    val swipeX = listBounds.left + (listBounds.width() * 0.10f).toInt()
-                    device.swipe(
-                        swipeX, listBounds.bottom - (listBounds.height() * 0.18f).toInt(),
-                        swipeX, listBounds.top + (listBounds.height() * 0.18f).toInt(),
-                        350,
-                    )
-                }
+                // An accessibility page action can jump a short section heading over
+                // the viewport. Use one deliberate, partial touch scroll and check the
+                // target again before moving farther down the list.
+                val swipeX = listBounds.left + (listBounds.width() * 0.10f).toInt()
+                val step = (listBounds.height() * 0.22f).toInt().coerceAtLeast(48)
+                val centerY = listBounds.centerY()
+                device.swipe(swipeX, centerY + step / 2, swipeX, centerY - step / 2, 350)
                 swipeCount++
             } else {
                 // Older Android Compose trees do not always export the LazyColumn as an
@@ -201,11 +183,9 @@ class HostListPresentationTest {
                 // edge for the same reason: a center gesture can hit the floating action
                 // button drawn over the list.
                 val swipeX = (device.displayWidth * 0.12f).toInt()
-                device.swipe(
-                    swipeX, (device.displayHeight * 0.68f).toInt(),
-                    swipeX, (device.displayHeight * 0.30f).toInt(),
-                    350,
-                )
+                val centerY = (device.displayHeight * 0.48f).toInt()
+                val step = (device.displayHeight * 0.12f).toInt().coerceAtLeast(48)
+                device.swipe(swipeX, centerY + step / 2, swipeX, centerY - step / 2, 350)
                 swipeCount++
             }
             device.waitForIdle()

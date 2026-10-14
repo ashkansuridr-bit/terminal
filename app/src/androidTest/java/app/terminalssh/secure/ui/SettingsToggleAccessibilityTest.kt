@@ -2,7 +2,6 @@ package app.terminalssh.secure.ui
 
 import android.graphics.Rect
 import android.os.SystemClock
-import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -193,18 +192,13 @@ class SettingsToggleAccessibilityTest {
             }
             if (scrollNode != null) {
                 val bounds = AppWindowAccessibility.bounds(scrollNode)
-                val before = AppWindowAccessibility.snapshot()
-                try { scrollNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) }
-                finally { scrollNode.recycle() }
-                device.waitForIdle()
-                // Older accessibility bridges may return true for a Compose scroll
-                // action without moving its LazyColumn. Verify the tree changed before
-                // trusting the action; otherwise drag inside the measured list viewport.
-                val after = AppWindowAccessibility.snapshot()
-                if (before == null || after == null || after == before) {
-                    val x = (bounds.left + bounds.width() / 4).coerceIn(24, device.displayWidth - 24)
-                    device.swipe(x, bounds.bottom - 32, x, bounds.top + 32, 350)
-                }
+                scrollNode.recycle()
+                // Page actions on Compose can skip an entire screenful and overshoot the
+                // setting row. Advance by a small touch step and reacquire it each time.
+                val x = (bounds.left + bounds.width() / 4).coerceIn(24, device.displayWidth - 24)
+                val step = (bounds.height() * 0.20f).toInt().coerceAtLeast(48)
+                val centerY = bounds.centerY()
+                device.swipe(x, centerY + step / 2, x, centerY - step / 2, 350)
             } else {
                 val x = (device.displayWidth * 0.25f).toInt()
                 device.swipe(x, (device.displayHeight * 0.75f).toInt(), x, (device.displayHeight * 0.35f).toInt(), 350)
