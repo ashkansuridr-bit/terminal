@@ -119,25 +119,34 @@ fun SettingRow(
             .then(
                 if (spec is BoolSetting && booleanValue != null) {
                     Modifier
-                        .semantics(mergeDescendants = true) {
-                            contentDescription = title
-                            // API 26's Compose accessibility bridge does not always merge
-                            // the state semantics from the nested toggleable modifier into
-                            // this labeled row. Publish the switch role and value on the
-                            // same merged node that carries the accessible name; toggleable
-                            // below remains the sole owner of the actual click action.
-                            role = Role.Switch
-                            toggleableState = if (booleanValue) ToggleableState.On else ToggleableState.Off
-                            if (changed) onLongClick(label = resetLabel) {
-                                resetChangedSetting()
-                                true
-                            }
-                        }
                         .toggleable(
                             value = booleanValue,
                             enabled = !saving,
                             role = Role.Switch,
                         ) { checked -> persist { store.set(spec, checked) } }
+                        // Build one explicit semantic control instead of relying on
+                        // mergeDescendants to combine a parent toggleable with Material3's
+                        // disabled callback Switch child. Older Android accessibility
+                        // bridges have exposed that merged node as a plain, non-clickable
+                        // View. The row remains physically toggleable; this semantic action
+                        // routes through the same persistence path for accessibility users.
+                        .clearAndSetSemantics {
+                            contentDescription = title
+                            role = Role.Switch
+                            toggleableState = if (booleanValue) ToggleableState.On else ToggleableState.Off
+                            if (saving) {
+                                disabled()
+                            } else {
+                                onClick(label = title) {
+                                    persist { store.set(spec, !booleanValue) }
+                                    true
+                                }
+                                if (changed) onLongClick(label = resetLabel) {
+                                    resetChangedSetting()
+                                    true
+                                }
+                            }
+                        }
                 } else if (resetFromHeading) {
                     Modifier
                 } else {

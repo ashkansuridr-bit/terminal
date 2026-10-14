@@ -819,24 +819,24 @@ class TerminalKeyboardTest {
     }
 
     private fun bringToolbarKeyIntoView(targetDescription: String, anchorDescription: String): Boolean {
-        if (isFullyVisibleClickableAppDesc(targetDescription)) return true
         val anchor = waitForAppDesc(anchorDescription) ?: return false
         val anchorBounds = try {
             bounds(anchor)
         } finally {
             anchor.recycle()
         }
+        if (isFullyVisibleClickableAppDesc(targetDescription, anchorBounds.centerY())) return true
         val preferred = if (
             instrumentation.targetContext.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
         ) SwipeDirection.RIGHT else SwipeDirection.LEFT
         for (direction in listOf(preferred, preferred.opposite())) {
             repeat(10) {
-                if (isFullyVisibleClickableAppDesc(targetDescription)) return true
+                if (isFullyVisibleClickableAppDesc(targetDescription, anchorBounds.centerY())) return true
                 swipeAccessibleHorizontalRow(anchorBounds.centerY(), direction)
                 device.waitForIdle()
             }
         }
-        return isFullyVisibleClickableAppDesc(targetDescription)
+        return isFullyVisibleClickableAppDesc(targetDescription, anchorBounds.centerY())
     }
 
     private enum class SwipeDirection {
@@ -845,13 +845,7 @@ class TerminalKeyboardTest {
     }
 
     private fun swipeAccessibleHorizontalRow(referenceY: Int, direction: SwipeDirection): Boolean {
-        val row = findAppNode {
-            if (!it.isScrollable) return@findAppNode false
-            val candidate = bounds(it)
-            candidate.width() > candidate.height() * 2 &&
-                kotlin.math.abs(candidate.centerY() - referenceY) < 180
-        } ?: return false
-        val rowBounds = try { bounds(row) } finally { row.recycle() }
+        val rowBounds = horizontalScrollableRowBounds(referenceY) ?: return false
         val inset = (rowBounds.width() * 0.12f).toInt().coerceAtLeast(16)
         val startX = if (direction == SwipeDirection.LEFT) rowBounds.right - inset else rowBounds.left + inset
         val endX = if (direction == SwipeDirection.LEFT) rowBounds.left + inset else rowBounds.right - inset
@@ -873,16 +867,22 @@ class TerminalKeyboardTest {
         return true
     }
 
-    private fun isFullyVisibleClickableAppDesc(description: String): Boolean {
+    private fun horizontalScrollableRowBounds(referenceY: Int): Rect? {
+        val row = findAppNode {
+            if (!it.isScrollable) return@findAppNode false
+            val candidate = bounds(it)
+            candidate.width() > candidate.height() * 2 &&
+                kotlin.math.abs(candidate.centerY() - referenceY) < 120
+        } ?: return null
+        return try { bounds(row) } finally { row.recycle() }
+    }
+
+    private fun isFullyVisibleClickableAppDesc(description: String, referenceY: Int): Boolean {
+        val viewport = horizontalScrollableRowBounds(referenceY) ?: return false
         val appNode = findAppNode { it.contentDescription == description && it.isClickable } ?: return false
-        val target = device.findObject(By.desc(description)) ?: run {
-            appNode.recycle()
-            return false
-        }
         return try {
-            val fullBounds = bounds(appNode)
-            val visibleBounds = target.visibleBounds
-            visibleBounds.width() == fullBounds.width() && visibleBounds.height() == fullBounds.height()
+            val keyBounds = bounds(appNode)
+            viewport.contains(keyBounds) && appNode.isVisibleToUser && keyBounds.width() > 0 && keyBounds.height() > 0
         } catch (_: androidx.test.uiautomator.StaleObjectException) {
             false
         } finally {
@@ -999,15 +999,16 @@ class TerminalKeyboardTest {
                     else listOf(SwipeDirection.LEFT, SwipeDirection.RIGHT)
                 for (direction in profileDirections) {
                     for (attempt in 0 until 8) {
-                        if (isFullyVisibleAccessibleText(targetProfile.name)) break
+                        if (isFullyVisibleAccessibleText(targetProfile.name, profileRowY)) break
                         swipeAccessibleHorizontalRow(profileRowY, direction)
                         device.waitForIdle()
                     }
-                    if (isFullyVisibleAccessibleText(targetProfile.name)) break
+                    if (isFullyVisibleAccessibleText(targetProfile.name, profileRowY)) break
                 }
                 assertTrue(
-                    "Vim profile chip did not become fully visible after horizontal scrolling",
-                    isFullyVisibleAccessibleText(targetProfile.name),
+                    "Vim profile chip did not become fully visible after horizontal scrolling; " +
+                        "appTree=${appWindowTree()}",
+                    isFullyVisibleAccessibleText(targetProfile.name, profileRowY),
                 )
                 val profileChip = device.wait(Until.findObject(By.text(targetProfile.name)), UI_TIMEOUT_MS)
                     ?: throw AssertionError("Vim profile must be selectable in the editor")
@@ -1043,18 +1044,14 @@ class TerminalKeyboardTest {
         }
     }
 
-    private fun isFullyVisibleAccessibleText(text: String): Boolean {
+    private fun isFullyVisibleAccessibleText(text: String, referenceY: Int): Boolean {
+        val viewport = horizontalScrollableRowBounds(referenceY) ?: return false
         val appNode = AppWindowAccessibility.find {
             it.text?.toString() == text && it.isClickable
         } ?: return false
-        val target = device.findObject(By.text(text)) ?: run {
-            appNode.recycle()
-            return false
-        }
         return try {
-            val fullBounds = AppWindowAccessibility.bounds(appNode)
-            val visibleBounds = target.visibleBounds
-            visibleBounds.width() == fullBounds.width() && visibleBounds.height() == fullBounds.height()
+            val chipBounds = AppWindowAccessibility.bounds(appNode)
+            viewport.contains(chipBounds) && appNode.isVisibleToUser && chipBounds.width() > 0 && chipBounds.height() > 0
         } catch (_: androidx.test.uiautomator.StaleObjectException) {
             false
         } finally {

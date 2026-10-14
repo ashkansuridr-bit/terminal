@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-10-14T03:59:50+03:30",
+  "capturedAt": "2026-10-14T04:22:23+03:30",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
-  "lastVerifiedCommit": "621d148416973a41224b68ff27093e7017d5a073",
+  "lastVerifiedCommit": "90467dfa5edcffc0cd775c80618220b627fa783b",
   "features": [
     {
       "id": "TCS-01",
@@ -419,19 +419,19 @@
       "suites": 122,
       "evidence": "Forced fresh execution with --rerun-tasks on current source; 1,030 tests, 0 failures/errors/skips, across 122 suites."
     },
-    "marketDebugAssemble": "PASS: :app:assembleMarketDebug succeeded after current Compose macro-gate and UI test changes; root test APK refreshed and v2 signature verified.",
+    "marketDebugAssemble": "PASS: :app:assembleMarketDebug succeeded after explicit accessible settings switch semantics; 41,556,964-byte APK copied to repository root and Android Debug v2 signature verified.",
     "diffCheck": "PASS after current local edits",
-    "instrumentation": "Latest completed run 38457441726 on cb40830: API26 Debug/Preview 4/114 failures each; API36 Debug 4/114, Preview 2/114. HostList and SettingsToggle failed in all; HostEdit failed API26 Debug/Preview and API36 Debug; Tab failed API26 Debug; Vim profile-chip reachability failed API36 Debug. API37 Debug/Preview were blocked before test execution by emulator offline/boot timeout. Fresh current source run awaits push.",
-    "apiDeviceMatrix": "CI run 38457441726 exercised API26/36. API37 Debug/Preview failed emulator boot (`adb: device offline`, timeout) before app tests. API31/34 not included in workflow. No local runnable emulator or attached physical device.",
+    "instrumentation": "Latest completed run 38490916105 on 90467df: API26 Debug/Preview 3/114 failures each; API36 Debug 3/114, Preview 2/114. Aggregate 445/456 passed, 11 failures, 0 skipped. SettingsToggle failed in all variants; HostEdit failed in API36 Debug; TerminalKeyboard profile visibility failed all variants and Tab reachability failed API26 Debug/Preview. API37 Debug/Preview were blocked before tests by adb offline/emulator boot timeout. Current local switch semantics and geometry-based harness corrections await a fresh CI run.",
+    "apiDeviceMatrix": "CI run 38490916105 exercised API26/36. API37 Debug/Preview failed emulator boot (adb device offline, timeout) before app tests. API31/34 are not in this workflow. No local runnable emulator or attached physical device.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS: current instrumentation sources, including post-IME field reacquisition, safe profile-row swipes, and fully-visible profile assertion; runtime pending CI.",
+    "marketDebugAndroidTestCompile": "PASS: current instrumentation sources including post-IME HostEdit validation and scroll-viewport based profile/toolbar visibility assertions; runtime pending fresh CI.",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
       "warnings": 108,
       "hints": 2,
-      "evidence": "Successful :app:lintMarketDebug on the current source."
+      "evidence": "Successful :app:lintMarketDebug on current app source."
     },
     "gplayDebugAssemble": "PASS",
     "marketPreviewAssemble": "PASS on earlier source cf0ac9d (R8/minified, debug certificate); not rebuilt for commit 081d053.",
@@ -447,16 +447,16 @@
     "api37": "Run 38452720047: API37 Debug and Preview emulator boot failed (adb offline/timeout); no test execution.",
     "currentMarketDebugApk": {
       "path": "TerminalSSH-0.7.2-MarketDebug-TEST.apk",
-      "sizeBytes": 43749858,
-      "sha256": "bdcb2d74138d09a503d65428bfed1e7a91e18d472cf843de6b3ff844a2ac8aed",
+      "sizeBytes": 41556964,
+      "sha256": "26d66df744045e47537894bbee05507124803cb95ba99498007f806798fb03a0",
       "signature": "Android Debug certificate; APK v2 verified with Build Tools 37.0.0",
-      "builtFrom": "Exact delivery source after stable per-session macro gate, safe profile swipe/assertion, and latest UI test fixes; test APK only.",
+      "builtFrom": "Current local app source including explicit labeled switch accessibility semantics. Instrumentation helper edits are not part of the installed app and remain pending CI.",
       "releaseStatus": "not production-signed",
       "rootCopy": "TerminalSSH-0.7.2-MarketDebug-TEST.apk",
-      "rootCopySHA256": "bdcb2d74138d09a503d65428bfed1e7a91e18d472cf843de6b3ff844a2ac8aed"
+      "rootCopySHA256": "26d66df744045e47537894bbee05507124803cb95ba99498007f806798fb03a0"
     },
     "marketDebugAndroidTestAssemble": "PASS on earlier source cf0ac9d; current follow-up AndroidTest Kotlin compilation PASS, runtime requires CI.",
-    "latestLocalVerification": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug :app:assembleMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m (BUILD SUCCESSFUL); ./gradlew :app:testMarketDebugUnitTest --rerun-tasks --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m (BUILD SUCCESSFUL, 1,030/1,030); source/release gates PASS; locale XML/JUnit XML/LOOP_STATE JSON parse PASS; apksigner verify PASS; git diff --check PASS.",
+    "latestLocalVerification": "./gradlew :app:testMarketDebugUnitTest --rerun-tasks :app:lintMarketDebug :app:assembleMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m (BUILD SUCCESSFUL; 1,030/1,030 JVM tests across 122 suites, lint 0 errors/108 warnings/2 hints, assembly PASS); :app:compileMarketDebugKotlin and :app:compileMarketDebugAndroidTestKotlin PASS; apksigner verify PASS; loop2_gate.py, market_release_gate.py, JSON parse, and git diff --check PASS.",
     "latestLocalResult": "PASS after exact current-source rerun: MarketDebug JVM 1,030/1,030 tests across 122 suites (0 failures/errors/skips); app and AndroidTest Kotlin compile; lint 0 errors/108 warnings/2 hints; MarketDebug assembly; APK copied to root and Android Debug v2 signature verified. Both source/release gates, resource/JUnit/JSON parsing, and git diff --check PASS. UI instrumentation runtime still awaits CI."
   },
   "knownIssues": [
@@ -477,25 +477,25 @@
     "Latest CI API37 Debug/Preview could not boot; device/runtime acceptance remains blocked in this environment.",
     "Fresh local build after UI harness and SettingRow changes passed: 1,030 JVM tests, app and AndroidTest Kotlin compile, lint, APK assembly/signature; fresh API26/36/37 runtime CI is pending."
   ],
-  "nextStep": "Run diff and local unit/source gates for current accessibility-test helper edits, commit and push to main per explicit owner instruction, then inspect fresh API26/36 instrumentation and API37 boot outcomes. Do not mark UI features verified until runtime assertions pass; production signing and release readiness remain NOT VERIFIED.",
+  "nextStep": "Commit and push the locally compiled Settings switch accessibility fix and instrumentation harness corrections to main (authorized direct-main workflow), verify fresh GitHub Actions API26/36 runtime results, then retry/record API37 infrastructure status. Do not mark UI features verified until instrumentation passes; production signing and release readiness remain NOT VERIFIED.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
-  "latestLocalVerification": "./gradlew :app:testMarketDebugUnitTest :app:compileMarketDebugKotlin :app:compileMarketDebugAndroidTestKotlin :app:lintMarketDebug :app:assembleMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m (BUILD SUCCESSFUL); ./gradlew :app:testMarketDebugUnitTest --rerun-tasks --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m (BUILD SUCCESSFUL, 1,030/1,030); source/release gates PASS; locale XML/JUnit XML/LOOP_STATE JSON parse PASS; apksigner verify PASS; git diff --check PASS.",
+  "latestLocalVerification": "./gradlew :app:testMarketDebugUnitTest --rerun-tasks :app:lintMarketDebug :app:assembleMarketDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m (BUILD SUCCESSFUL; 1,030/1,030 JVM tests across 122 suites, lint 0 errors/108 warnings/2 hints, assembly PASS); :app:compileMarketDebugKotlin and :app:compileMarketDebugAndroidTestKotlin PASS; apksigner verify PASS; loop2_gate.py, market_release_gate.py, JSON parse, and git diff --check PASS.",
   "latestCi": {
-    "runId": "38488783559",
-    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38488783559",
-    "headSha": "621d148416973a41224b68ff27093e7017d5a073",
+    "runId": "38490916105",
+    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38490916105",
+    "headSha": "90467dfa5edcffc0cd775c80618220b627fa783b",
     "verify": "PASS: source/artifact validators, unit tests, lint and both Debug builds.",
     "instrumentation": {
-      "api26Debug": "FAIL 5/114: HostEdit, HostList, SettingsToggle checkability, TerminalKeyboard Vim profile reachability, TerminalKeyboard Tab reachability.",
-      "api26Preview": "FAIL 3/114: SettingsToggle checkability, TerminalKeyboard Vim profile reachability, TerminalKeyboard Tab reachability.",
-      "api36Debug": "FAIL 4/114: HostEdit, HostList, SettingsToggle scroll reachability, TerminalKeyboard Vim profile reachability.",
-      "api36Preview": "FAIL 3/114: HostList, SettingsToggle checkability, TerminalKeyboard Vim profile reachability.",
+      "api26Debug": "FAIL 3/114: SettingsToggle scroll-to-row, TerminalKeyboard Vim profile visibility, TerminalKeyboard Tab reachability.",
+      "api26Preview": "FAIL 3/114: SettingsToggle node absent, TerminalKeyboard Vim profile visibility, TerminalKeyboard Tab reachability.",
+      "api36Debug": "FAIL 3/114: SettingsToggle exposed as non-checkable/non-clickable android.view.View, HostEdit post-focus Username query, TerminalKeyboard Vim profile visibility.",
+      "api36Preview": "FAIL 2/114: SettingsToggle node absent, TerminalKeyboard Vim profile visibility.",
       "api37Debug": "BLOCKED before tests: adb device offline; emulator boot timeout; no report artifact.",
       "api37Preview": "BLOCKED before tests: adb device offline; emulator boot timeout; no report artifact.",
-      "aggregateCompletedVariants": "441 passed, 15 failed, 0 skipped across 456 executions; failures are UI assertions, no test-process crash."
+      "aggregateCompletedVariants": "445 passed, 11 failed, 0 skipped across 456 executions. Failures are UI assertions; no test-process crash evidence."
     },
-    "releaseCandidates": "SKIPPED because instrumentation matrix failed."
+    "releaseCandidates": "SKIPPED because the instrumentation matrix failed."
   },
   "remainingFeatureCount": 11,
   "verifiedCompleteCount": 0,
@@ -599,10 +599,10 @@
     {
       "id": "NEW-013",
       "title": "Labeled Settings switch lacked checkable state in the API 26 accessibility tree",
-      "rootCause": "The labeled merged settings row still did not satisfy the test’s Android AccessibilityNodeInfo.isCheckable predicate on API26 and API36 after the prior semantics adjustment. The accessibility bridge/UI tree mapping remains unconfirmed.",
-      "fix": "Preserved the visual Switch semantics while leaving the parent toggleable as the sole click/persistence/reset owner.",
-      "tests": "Run 38488783559: SettingsToggleAccessibilityTest still failed on API26 Debug/Preview and API36 Debug/Preview; API36 Debug also failed the separate scroll-to-row precondition. New test diagnostics now report class/checkable/checked/clickable/actions and the scroll helper uses the app accessibility container. Runtime verification of this follow-up is pending.",
-      "status": "IMPLEMENTED_NOT_TESTED (prior fix did not resolve all runtime variants; diagnostic follow-up pending)"
+      "rootCause": "CI 38490916105 on API36 Debug showed the named row as android.view.View, checkable=false, clickable=false, with only focus/selection actions; API26/36 SettingsToggle failed across all variants. This confirms an accessibility semantics problem rather than only a flaky test.",
+      "fix": "Replace the ambiguous parent-toggleable/child-Switch merge with clearAndSetSemantics on one full-row Role.Switch node, explicitly providing the label, toggle state, ACTION_CLICK persistence behavior, disabled state while saving, and reset long-click. The existing physical toggleable remains on the row and routes taps to the same SettingsStore.",
+      "tests": "Local MarketDebug app/AndroidTest Kotlin compile PASS; 1,030 JVM tests PASS; lint and MarketDebug assembly PASS; root debug APK signature verified. New explicit semantics still need API26/36 instrumentation runtime evidence.",
+      "status": "IMPLEMENTED_NOT_TESTED"
     },
     {
       "id": "NEW-014",
@@ -614,7 +614,7 @@
     }
   ],
   "deliveryCommit": "6265262693e481a5ee7f9e3c0b26ecd82b87e37c",
-  "latestLocalResult": "PASS: MarketDebug JVM 1,030/1,030 (122 suites); app/AndroidTest Kotlin compilation; lint (0 errors, 108 warnings, 2 hints); MarketDebug assembly; APK debug v2 signature verified; loop2/market release gates and diff checks. 120s promo full decode: 3,600 frames, 120.00 seconds, H.264 1080x1920 at 30fps, no audio. Latest AndroidTest Kotlin compile after instrumentation harness follow-up passes; runtime for those new test helpers remains pending CI.",
+  "latestLocalResult": "PASS: MarketDebug JVM 1,030/1,030 (122 suites); app and AndroidTest Kotlin compilation; lint 0 errors/108 warnings/2 hints; MarketDebug assembly; refreshed root test APK size 41,556,964 bytes, SHA-256 26d66df744045e47537894bbee05507124803cb95ba99498007f806798fb03a0, Android Debug v2 signature verified; loop2/market release gates and diff checks pass. New UI helper/device behavior pending CI.",
   "mediaAssets": {
     "githubBanner": {
       "path": "TerminalSSH-GitHub-Motion-fa.mp4",
