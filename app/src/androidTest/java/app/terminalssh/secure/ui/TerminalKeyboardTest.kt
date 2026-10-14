@@ -4,13 +4,13 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Rect
+import android.view.View
 import android.os.SystemClock
 import android.provider.Settings
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.ViewModelProvider
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -737,6 +737,7 @@ class TerminalKeyboardTest {
             val altName = instrumentation.targetContext.getString(R.string.tcs_alt_modifier)
             val shiftName = instrumentation.targetContext.getString(R.string.tcs_shift_modifier)
             val tabName = instrumentation.targetContext.getString(R.string.terminal_key_tab)
+            val keyboardAction = instrumentation.targetContext.getString(R.string.show_keyboard)
             openTerminalTab(terminalTab, controlName)
 
             // Essential terminal modifiers are deliberately first in the phone viewport.
@@ -779,17 +780,11 @@ class TerminalKeyboardTest {
             // emulators Tab is outside the composed viewport until the row is swiped.
             // Keep the accessibility action assertion, but first bring the key into
             // view just as a TalkBack user would by navigating the toolbar.
-            val tabVisible = device.scrollUntilFullyVisible(
-                By.desc(tabName),
-                maxAttempts = 8,
-                horizontalDirection = LayoutDirection.Ltr,
-                appPackage = instrumentation.targetContext.packageName,
-            ) || device.scrollUntilFullyVisible(
-                By.desc(tabName),
-                maxAttempts = 8,
-                horizontalDirection = LayoutDirection.Rtl,
-                appPackage = instrumentation.targetContext.packageName,
-            )
+            // UiAutomator's generic scroll helper failed to move this particular
+            // Compose LazyRow on API 26. Swipe across the toolbar itself, anchored
+            // to its always-present keyboard key, and reacquire the lazy child after
+            // every gesture so an uncomposed Tab is never mistaken for a missing key.
+            val tabVisible = bringToolbarKeyIntoView(tabName, keyboardAction)
             assertTrue("Tab key did not enter the accessible toolbar viewport: ${appWindowTree()}", tabVisible)
             val tabKey = waitForClickableAppDesc(tabName)
             assertTrue("Tab key must expose an accessibility click action", tabKey?.isClickable == true)
@@ -820,6 +815,56 @@ class TerminalKeyboardTest {
             }
             assertTrue("Shift semantics did not clear after Tab; tree=${if (shiftCleared) "" else appWindowTree()}", shiftCleared)
             assertTrue(focusedViewSummary(scenario), waitForFocusedTextEditor(scenario))
+        }
+    }
+
+    private fun bringToolbarKeyIntoView(targetDescription: String, anchorDescription: String): Boolean {
+        if (isFullyVisibleClickableAppDesc(targetDescription)) return true
+        val anchor = waitForAppDesc(anchorDescription) ?: return false
+        val anchorBounds = try {
+            bounds(anchor)
+        } finally {
+            anchor.recycle()
+        }
+        val preferred = if (
+            instrumentation.targetContext.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
+        ) SwipeDirection.RIGHT else SwipeDirection.LEFT
+        for (direction in listOf(preferred, preferred.opposite())) {
+            repeat(10) {
+                if (isFullyVisibleClickableAppDesc(targetDescription)) return true
+                swipeAcrossToolbar(anchorBounds, direction)
+                device.waitForIdle()
+            }
+        }
+        return isFullyVisibleClickableAppDesc(targetDescription)
+    }
+
+    private enum class SwipeDirection {
+        LEFT, RIGHT;
+        fun opposite() = if (this == LEFT) RIGHT else LEFT
+    }
+
+    private fun swipeAcrossToolbar(anchorBounds: Rect, direction: SwipeDirection) {
+        val y = anchorBounds.centerY()
+        val startX = if (direction == SwipeDirection.LEFT) device.displayWidth - 8 else 8
+        val endX = if (direction == SwipeDirection.LEFT) anchorBounds.right + 12 else anchorBounds.left - 12
+        device.swipe(startX, y, endX, y, 12)
+    }
+
+    private fun isFullyVisibleClickableAppDesc(description: String): Boolean {
+        val appNode = findAppNode { it.contentDescription == description && it.isClickable } ?: return false
+        val target = device.findObject(By.desc(description)) ?: run {
+            appNode.recycle()
+            return false
+        }
+        return try {
+            val fullBounds = bounds(appNode)
+            val visibleBounds = target.visibleBounds
+            visibleBounds.width() == fullBounds.width() && visibleBounds.height() == fullBounds.height()
+        } catch (_: androidx.test.uiautomator.StaleObjectException) {
+            false
+        } finally {
+            appNode.recycle()
         }
     }
 
@@ -906,6 +951,7 @@ class TerminalKeyboardTest {
         val applyLabel = instrumentation.targetContext.getString(R.string.tcs_host_profile_apply)
         val clearLabel = instrumentation.targetContext.getString(R.string.tcs_host_profile_clear)
         val targetProfile = repository.profileById("vim") ?: error("Built-in Vim profile is required")
+        val profileHeading = instrumentation.targetContext.getString(R.string.tcs_profile)
 
         try {
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
@@ -918,6 +964,37 @@ class TerminalKeyboardTest {
                     assertTrue("IME should close without leaving the toolbar editor", waitForIme(scenario, visible = false))
                 }
 
+                assertTrue(
+                    "Profile chooser must be present after opening the toolbar editor",
+                    device.wait(Until.hasObject(By.text(profileHeading)), UI_TIMEOUT_MS),
+                )
+                val profileHeader = device.findObject(By.text(profileHeading))
+                val profileHeaderBounds = profileHeader.visibleBounds
+                val profileRowY = profileHeaderBounds.bottom + 32
+                // Keep synthetic gestures within the editor's content area. Swipes
+                // starting at x=8 can land outside the Dialog's horizontal padding,
+                // so the LazyRow never receives them on narrow emulator layouts.
+                val profileSwipeInset = (device.displayWidth * 0.12f).toInt()
+                val isRtl = instrumentation.targetContext.resources.configuration.layoutDirection ==
+                    View.LAYOUT_DIRECTION_RTL
+                val profileDirections = if (isRtl) listOf(SwipeDirection.RIGHT, SwipeDirection.LEFT)
+                    else listOf(SwipeDirection.LEFT, SwipeDirection.RIGHT)
+                for (direction in profileDirections) {
+                    for (attempt in 0 until 8) {
+                        if (isFullyVisibleAccessibleText(targetProfile.name)) break
+                        val startX = if (direction == SwipeDirection.LEFT) device.displayWidth - profileSwipeInset
+                            else profileSwipeInset
+                        val endX = if (direction == SwipeDirection.LEFT) profileSwipeInset
+                            else device.displayWidth - profileSwipeInset
+                        device.swipe(startX, profileRowY, endX, profileRowY, 12)
+                        device.waitForIdle()
+                    }
+                    if (isFullyVisibleAccessibleText(targetProfile.name)) break
+                }
+                assertTrue(
+                    "Vim profile chip did not become fully visible after horizontal scrolling",
+                    isFullyVisibleAccessibleText(targetProfile.name),
+                )
                 val profileChip = device.wait(Until.findObject(By.text(targetProfile.name)), UI_TIMEOUT_MS)
                     ?: throw AssertionError("Vim profile must be selectable in the editor")
                 profileChip.click()
@@ -949,6 +1026,25 @@ class TerminalKeyboardTest {
             }
         } finally {
             repository.setHostOverride(session.profile.id, null)
+        }
+    }
+
+    private fun isFullyVisibleAccessibleText(text: String): Boolean {
+        val appNode = AppWindowAccessibility.find {
+            it.text?.toString() == text && it.isClickable
+        } ?: return false
+        val target = device.findObject(By.text(text)) ?: run {
+            appNode.recycle()
+            return false
+        }
+        return try {
+            val fullBounds = AppWindowAccessibility.bounds(appNode)
+            val visibleBounds = target.visibleBounds
+            visibleBounds.width() == fullBounds.width() && visibleBounds.height() == fullBounds.height()
+        } catch (_: androidx.test.uiautomator.StaleObjectException) {
+            false
+        } finally {
+            appNode.recycle()
         }
     }
 

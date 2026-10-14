@@ -20,6 +20,16 @@
 
 ## کلیپ معرفی برنامه
 
+<div align="center">
+
+![موشن Terminal SSH و آدرس GitHub پروژه](TerminalSSH-GitHub-Motion-Preview-fa.gif)
+
+[تماشای فایل ویدیویی ۱۶:۹](TerminalSSH-GitHub-Motion-fa.mp4) · [دریافت موشن عمودی ۹:۱۶](TerminalSSH-GitHub-Motion-CTA-fa.mp4)
+
+</div>
+
+موشن بالا برای صفحهٔ GitHub ساخته شده و نام برنامه، نشان ترمینال، مجوز Apache 2.0 و نشانی کامل مخزن را نمایش می‌دهد. داخل خود برنامه هم فشردن کلیدهای نوار ترمینال بازخورد حرکتی و لمسی دارد و وضعیت اتصال با تغییر رنگ و ضربان ظریف مشخص می‌شود. سورس قابل‌بازسازی و مجوز فونت در [`promo/github-motion-asset/`](promo/github-motion-asset/) ثبت شده‌اند؛ MP4 و GIF رسانهٔ تبلیغاتی‌اند و تحت مجوز سورس برنامه عرضه نمی‌شوند.
+
 [▶ تماشای کلیپ معرفی فارسی با موسیقی پس‌زمینه](terminal-promo-bgm-release.mp4) · [دریافت مستقیم فایل MP4](https://raw.githubusercontent.com/ashkansuridr-bit/terminal/main/terminal-promo-bgm-release.mp4)
 
 این ویدیوی عمودیِ ۲۸ ثانیه‌ای، نگاهی کوتاه به تجربهٔ Terminal SSH دارد. رابط‌ها بازسازی وفادار به سورس هستند و داده‌های میزبان و ترمینال در ویدیو ساختگی‌اند؛ ویدیو ضبط زنده از APK نیست. فایل و جزئیات تولید در [گزارش تحویل و مجوز رسانه](docs/terminal-control-studio/VIDEO_DELIVERY.md) ثبت شده‌اند. موسیقی و افکت‌های ویدیو مجوزهای جدا از کد برنامه دارند؛ هویت دقیق قطعهٔ موسیقی در منبع موجود به‌طور مستقل مشخص نشده است.
@@ -45,15 +55,15 @@ Terminal SSH یک برنامهٔ اندرویدی برای اتصال SSH، اس
 
 ## وضعیت فعلی و محدودیت راستی‌آزمایی
 
-کد نسخهٔ `0.7.2` است (`versionCode` برابر 12). آخرین بررسی محلی 1,026 تست JVM را با موفقیت گذراند؛ کامپایل برنامه و تست‌های Android، ساخت APK و Lint نیز موفق بودند. Lint صفر خطا، 106 هشدار و 2 نکتهٔ راهنما گزارش کرد.
+کد نسخهٔ `0.7.2` است (`versionCode` برابر 12). آخرین بررسی محلی 1,030 تست JVM را با موفقیت گذراند؛ کامپایل برنامه و تست‌های Android، ساخت APK و Lint نیز موفق بودند. Lint صفر خطا، 108 هشدار و 2 نکتهٔ راهنما گزارش کرد.
 
-آخرین اجرای کامل GitHub Actions شمارهٔ [38452720047](https://github.com/ashkansuridr-bit/terminal/actions/runs/38452720047) روی `ab331c7`، گیت Verify را گذراند. API26 Debug/Preview هرکدام ۳ شکست از ۱۱۴ تست و API36 Debug/Preview هرکدام ۲ شکست از ۱۱۴ داشتند. در API26 شکست‌های HostList و SettingsToggle و کلید Tab باقی ماند؛ در API36 شکست‌های HostList و SettingsToggle باقی ماندند. API37 Debug/Preview پیش از اجرای تست با خطای `adb: device offline` و timeout بوت متوقف شدند. اصلاحات تازهٔ HostList، SettingsToggle و تست دسترسی‌پذیری Tab هنوز به اجرای CI نیاز دارند. جزئیات در [ماتریس تست](docs/terminal-control-studio/TEST_MATRIX.md) آمده است.
+آخرین اجرای کامل GitHub Actions شمارهٔ [38457441726](https://github.com/ashkansuridr-bit/terminal/actions/runs/38457441726) روی `cb40830`، Verify را گذراند. API26 Debug/Preview هرکدام ۴ شکست از ۱۱۴ تست و API36 Debug چهار شکست و Preview دو شکست داشت؛ در مجموع ۴۴۲ تست از ۴۵۶ اجرا موفق شدند. HostList و SettingsToggle در هر چهار اجرا، HostEdit در API26 Debug/Preview و API36 Debug، و آزمون Tab/پروفایل در API26/36 Debug شکست خوردند. API37 پیش از تست به علت timeout بوت Emulator اجرا نشد و Release candidates نیز Skip شدند. این اجرا پیش از اصلاح‌های محلی بعدی بود؛ گزارش ریشه‌یابی در [ماتریس تست](docs/terminal-control-studio/TEST_MATRIX.md) ثبت شده است.
 
 محیط محلی ابزار `adb` یا دستگاه متصل نداشت. اتصال به سرور آزمایشی SSH/SFTP، اجرای TalkBack روی دستگاه، ماتریس کامل نسخه‌های اندروید و امضای تولیدی نیز تأیید نشده‌اند. به همین دلیل این پروژه را آمادهٔ انتشار عمومی معرفی نمی‌کنیم.
 
 ## APK آزمایشی
 
-فایل [TerminalSSH-0.7.2-MarketDebug-TEST.apk](TerminalSSH-0.7.2-MarketDebug-TEST.apk) با `:app:assembleMarketDebug` ساخته و با گواهی Debug اندروید امضا شده است (SHA-256: `01e0409dae251ccfaf1656c956f86165dbef1040e14dd9261e0ad1d54e404aec`). این فایل فقط برای ارزیابی است؛ **امضای تولیدی ندارد و نسخهٔ انتشار فروشگاهی نیست**. شناسهٔ بسته و روش بررسی در [ANDROID_TEST_BUILD.md](ANDROID_TEST_BUILD.md) ثبت شده‌اند.
+فایل [TerminalSSH-0.7.2-MarketDebug-TEST.apk](TerminalSSH-0.7.2-MarketDebug-TEST.apk) با `:app:assembleMarketDebug` ساخته و با گواهی Debug اندروید امضا شده است (SHA-256: `bdcb2d74138d09a503d65428bfed1e7a91e18d472cf843de6b3ff844a2ac8aed`). این فایل فقط برای ارزیابی است؛ **امضای تولیدی ندارد و نسخهٔ انتشار فروشگاهی نیست**. شناسهٔ بسته و روش بررسی در [ANDROID_TEST_BUILD.md](ANDROID_TEST_BUILD.md) ثبت شده‌اند.
 
 ## ساخت از سورس
 

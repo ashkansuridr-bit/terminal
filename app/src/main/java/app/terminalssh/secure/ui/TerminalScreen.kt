@@ -99,6 +99,7 @@ import app.terminalssh.secure.ui.theme.TerminalPalettes
 import app.terminalssh.secure.ui.theme.Turquoise
 import app.terminalssh.secure.ui.toolbar.StudioToolbar
 import app.terminalssh.secure.ui.toolbar.ToolbarDispatcher
+import app.terminalssh.secure.toolbar.MacroExecutionGate
 import app.terminalssh.secure.ui.toolbar.ToolbarEditorScreen
 import app.terminalssh.secure.ui.toolbar.ToolbarHost
 import app.terminalssh.secure.vm.AppViewModel
@@ -319,7 +320,11 @@ fun TerminalScreen(viewModel: AppViewModel, onGoToHosts: () -> Unit, onGoToSetti
             override fun switchProfile(profileId: String) { viewModel.toolbar.setActiveProfile(profileId) }
             override fun returnFocusToTerminal() = focusTerminal()
         }
-        val toolbarDispatcher = ToolbarDispatcher(toolbarHost, viewModel.toolbar, scope)
+        // `ToolbarDispatcher` is recreated when unrelated Compose state changes.
+        // Keep the overlap guard stable for this SSH session so a recomposition
+        // cannot admit a second macro while the previous delayed sequence is active.
+        val macroExecutionGate = remember(active) { MacroExecutionGate() }
+        val toolbarDispatcher = ToolbarDispatcher(toolbarHost, viewModel.toolbar, scope, macroExecutionGate)
 
         StudioToolbar(
             profile = toolbarProfile,

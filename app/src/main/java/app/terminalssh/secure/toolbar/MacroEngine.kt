@@ -1,6 +1,7 @@
 package app.terminalssh.secure.toolbar
 
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
 
 /** A single executable macro instruction, produced by [MacroEngine.expand]. */
 sealed interface MacroOp {
@@ -37,7 +38,7 @@ interface MacroSink {
 object MacroEngine {
 
     private val credentialLikeText = Regex(
-        """(?i)(?:password|passwd|passphrase|secret|token|api[_-]?key|private[_-]?key|credential|authorization)\s*[:=]\s*\S+|(?:sshpass\s+-p\s+\S+)|(?:\b\S+://[^/\s:@]+:[^/\s@]+@)|(?:-----BEGIN [^-]*PRIVATE KEY-----)""",
+        """(?i)(?:password|passwd|passphrase|secret|token|api[_-]?key|private[_-]?key|credential|authorization)\s*[:=]\s*\S+|(?:\bAWS[_-]SECRET[_-]ACCESS[_-]KEY\s*[:=]\s*\S+)|(?:sshpass\s+-p\s+\S+)|(?:\b\S+://[^/\s:@]+:[^/\s@]+@)|(?:-----BEGIN [^-]*PRIVATE KEY-----)""",
     )
 
     const val MAX_STEPS = 64
@@ -163,5 +164,21 @@ class MacroRunner(private val sink: MacroSink) {
             }
         }
         return !cancelled()
+    }
+}
+
+/** Prevents overlapping macro sequences from interleaving terminal input. */
+class MacroExecutionGate {
+    private val mutex = Mutex()
+
+    /** Returns false when another macro is already running; the caller may safely ignore a repeat tap. */
+    suspend fun runIfIdle(block: suspend () -> Unit): Boolean {
+        if (!mutex.tryLock()) return false
+        return try {
+            block()
+            true
+        } finally {
+            mutex.unlock()
+        }
     }
 }

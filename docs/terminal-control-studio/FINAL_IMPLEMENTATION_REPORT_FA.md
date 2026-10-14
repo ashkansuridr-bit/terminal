@@ -1,8 +1,8 @@
 # گزارش پیاده‌سازی Terminal Control Studio Pro
 
-## وضعیت فعلی — آخرین به‌روزرسانی 2026-10-13
+## وضعیت فعلی — آخرین به‌روزرسانی 2026-10-14
 
-تغییرات Terminal Control Studio مستقیماً روی `main` ثبت می‌شوند، مطابق دستور صریح مالک مخزن. آخرین CI کامل [38452720047](https://github.com/ashkansuridr-bit/terminal/actions/runs/38452720047) روی `ab331c7`، Verify را گذراند. API26 Debug/Preview هرکدام ۳ شکست از ۱۱۴ و API36 Debug/Preview هرکدام ۲ شکست از ۱۱۴ داشتند (۱۰ اجرای ناموفق). HostList و SettingsToggle در API26/36 و TerminalKeyboard Tab در API26 شکست خوردند؛ HostEdit و Palette در API36 موفق شدند. API37 پیش از تست به علت offline ماندن Emulator و timeout بوت متوقف شد. اصلاح‌های تازه در workspace محلی کامپایل و JVM-tested شده‌اند، اما هنوز runtime CI ندارند. شمار Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است؛ وضعیت انتشار همچنان NOT VERIFIED.
+تغییرات Terminal Control Studio مستقیماً روی `main` ثبت می‌شوند، مطابق دستور صریح مالک مخزن. آخرین CI کامل [38457441726](https://github.com/ashkansuridr-bit/terminal/actions/runs/38457441726) روی `cb40830`، Verify را گذراند. API26 Debug/Preview هرکدام ۴ شکست از ۱۱۴ و API36 Debug چهار شکست و Preview دو شکست داشتند (۱۴ شکست از ۴۵۶ اجرا؛ ۴۴۲ موفق). HostList و SettingsToggle در هر چهار API26/36 variant شکست خوردند؛ HostEdit در API26 Debug/Preview و API36 Debug، Tab در API26 Debug، و انتخاب پروفایل Vim در API36 Debug شکست خوردند. HostEdit در API36 Preview موفق شد. API37 پیش از تست به علت offline ماندن Emulator و timeout بوت متوقف شد. اصلاح‌های تازه در workspace محلی کامپایل و JVM-tested شده‌اند، اما هنوز runtime CI ندارند. شمار Featureهای `VERIFIED_COMPLETE` برابر ۰ از ۱۱ است؛ وضعیت انتشار همچنان NOT VERIFIED.
 
 ## تغییرات و علت‌ها
 
@@ -18,13 +18,19 @@
 - بازبینی شکست‌های instrumentation یک ایراد دسترس‌پذیری دیگر را تأیید کرد: برچسب قابل‌دیدن تب ناوبری دوباره از `contentDescription` والد اعلام می‌شد. توضیح تکراری حذف شد (NEW-003)؛ compile و lint پاس شده‌اند اما تأیید runtime منتظر CI تازه است.
 - CI به‌خاطر وابستگی به وجود متن `R.string.snippets_short` در فایل مشخص شکست می‌خورد؛ Gate حالا اتصال preset، dispatcher و Sheet را بررسی می‌کند. آپلود گزارش‌ها در صورت نبود گزارش هشدار می‌دهد تا شکست ثانویه علت اصلی را نپوشاند.
 
+## یافته‌های تازه در بازبینی سخت‌گیرانه
+
+- `NEW-010`: اجرای دوبارهٔ یک ماکرو در حین تأخیر ماکروی قبلی می‌توانست متن و Enter را بین دو توالی درهم بیامیزد. Dispatcher اکنون اجرای هم‌زمان را رد می‌کند تا توالی فعال پایان یابد؛ تست coroutine ترتیب کامل و رد اجرای موازی را بررسی می‌کند.
+- `NEW-011`: الگوی تشخیص اطلاعات حساس `AWS_SECRET_ACCESS_KEY=...` را تشخیص نمی‌داد. تشخیص `AWS_SECRET_ACCESS_KEY` و شکل خط‌تیره‌دار با `=` یا `:` اضافه و تست شده است؛ این همچنان یک heuristic محدود است و همهٔ Secretها را کشف نمی‌کند.
+- `NEW-012`: پیش‌نمایش Import تعداد ماکروهای دارای Enter را پنهان می‌کرد، درحالی‌که اجرای آن‌ها می‌تواند فرمان را ارسال کند. پیش‌نمایش اکنون تعداد را با هشدار محلی‌سازی‌شده در شش زبان نشان می‌دهد؛ تست‌های repository شمارش مثبت و صفر را پوشش می‌دهند.
+
 ## راستی‌آزمایی
 
-در workspace فعلی، JVM tests برابر ۱٬۰۲۶/۱٬۰۲۶ در ۱۱۹ suite، کامپایل MarketDebug برنامه و AndroidTest، Lint با صفر خطا (۱۰۶ هشدار، ۲ hint)، و APK assembly موفق شدند. APK ریشه ۴۱٬۵۵۵٬۷۸۸ بایت است و با Android Debug v2 امضا شده؛ SHA-256: `01e0409dae251ccfaf1656c956f86165dbef1040e14dd9261e0ad1d54e404aec`. امضای Production تأیید نشده است.
+در اجرای تازهٔ محلی روی سورس فعلی، JVM tests برابر ۱٬۰۳۰/۱٬۰۳۰ در ۱۲۲ suite، کامپایل MarketDebug و AndroidTest، Lint با صفر خطا (۱۰۸ هشدار، ۲ hint)، و APK assembly موفق شدند. APK ریشه با همین سورس ساخته شده است؛ SHA-256 و امضای Debug در APK_VERIFICATION ثبت شده‌اند. امضای Production تأیید نشده است.
 
-آخرین CI یعنی `38452720047` روی `ab331c7`، Verify را با موفقیت گذراند. API26 Debug/Preview هرکدام ۳/۱۱۴ شکست (HostList، SettingsToggle، TerminalKeyboard Tab) و API36 Debug/Preview هرکدام ۲/۱۱۴ شکست (HostList و SettingsToggle) داشتند. HostEdit و Palette در API36 موفق شدند. API37 Debug/Preview هر دو با `adb: device offline` و boot timeout پیش از تست متوقف شدند. تغییرهای تازه هنوز در CI اجرا نشده‌اند. هیچ Crash واقعی در این دور بازتولید نشده است؛ نبود Crash تأیید نشده.
+آخرین CI یعنی `38457441726` روی `cb40830`، Verify را با موفقیت گذراند. API26 Debug/Preview هرکدام ۴/۱۱۴ شکست و API36 Debug چهار و Preview دو شکست داشتند؛ HostList و SettingsToggle در هر چهار مورد، HostEdit در API26 و API36 Debug، Tab در API26 Debug و انتخاب پروفایل Vim در API36 Debug شکست خوردند. HostEdit در API36 Preview موفق شد. API37 Debug/Preview هر دو با `adb: device offline` و boot timeout پیش از تست متوقف شدند؛ Release candidates نیز Skip شدند. CI همان ۱۴ شکست instrumentation را ثبت کرد؛ اصلاحات تازه هنوز CI نشده‌اند. هیچ Crash واقعی در این دور بازتولید نشده است؛ نبود Crash تأیید نشده.
 
-در workspace فعلی ۱٬۰۲۶ تست JVM، کامپایل برنامه و AndroidTest، Lint، `loop2_gate.py`, `market_release_gate.py` و `git diff --check` موفق‌اند. تغییرهای تازه هنوز uncommitted هستند و runtime CI تازه ندارند. ابزار adb/emulator نصب است، اما تصویرهای موجود ناقص‌اند و دستگاه فیزیکی وصل نیست؛ در نتیجه UI و TalkBack را محلی اجرا نکردیم.
+در آخرین اجرای محلی ۱٬۰۳۰ تست JVM، کامپایل برنامه و AndroidTest، Lint، `loop2_gate.py`, `market_release_gate.py`، `git diff --check`، بررسی XML/JSON و امضای APK موفق‌اند. تغییرهای تازه هنوز runtime CI ندارند. ابزار adb/emulator نصب است، اما تصویرهای موجود ناقص‌اند و دستگاه فیزیکی وصل نیست؛ در نتیجه UI و TalkBack را محلی اجرا نکردیم.
 
 ## علت‌های تأییدشده و موارد نامشخص
 
@@ -32,7 +38,7 @@
 
 ## دستگاه و انتشار
 
-در محیط فعلی `adb` موجود نیست و هیچ Emulator یا دستگاهی برای اجرای محلی وصل نیست. نصب تصویر Android 36 به‌دلیل کمتر از ۱ گیگابایت فضای آزاد متوقف شد؛ فضای موقت دانلود پاک شد. Compose UI، TalkBack، نصب روی دستگاه، ماتریس API و SSH/SFTP واقعی همچنان بررسی نشده‌اند. AGP 8.13.2 دربارهٔ compileSdk 37 هشدار سازگاری می‌دهد، هرچند Build موفق است.
+در محیط فعلی دستگاه Android متصل یا Emulator قابل‌اجرا نیست و هیچ Emulator یا دستگاهی برای اجرای محلی وصل نیست. نصب تصویر Android 36 به‌دلیل کمتر از ۱ گیگابایت فضای آزاد متوقف شد؛ فضای موقت دانلود پاک شد. Compose UI، TalkBack، نصب روی دستگاه، ماتریس API و SSH/SFTP واقعی همچنان بررسی نشده‌اند. AGP 8.13.2 دربارهٔ compileSdk 37 هشدار سازگاری می‌دهد، هرچند Build موفق است.
 
 وضعیت انتشار: **NOT VERIFIED**. APK موجود Debug و غیر Production است.
 
@@ -60,8 +66,8 @@ README ریشه با حذف ادعاهای تأییدنشده و درج وضعی
 
 ## Checkpoint تازه — 2026-10-13
 
-از زمان اجرای بالا، CI جدید [38452720047](https://github.com/ashkansuridr-bit/terminal/actions/runs/38452720047) روی `ab331c7` با Verify موفق و ۱۰ شکست Instrumentation تمام شد: API26 Debug/Preview هرکدام سه شکست از ۱۱۴ مورد (HostList، SettingsToggle و TerminalKeyboard Tab)، API36 Debug/Preview هرکدام دو شکست (HostList و SettingsToggle). HostEdit و Palette در API36 موفق شدند. API37 به‌علت emulator offline و timeout پیش از تست متوقف شد.
+از زمان اجرای بالا، CI جدید [38457441726](https://github.com/ashkansuridr-bit/terminal/actions/runs/38457441726) روی `cb40830` با Verify موفق و ۱۴ شکست Instrumentation تمام شد: API26 Debug/Preview هرکدام چهار شکست؛ API36 Debug چهار و Preview دو شکست. API37 به‌علت emulator offline و timeout پیش از تست متوقف شد.
 
-در workspace فعلی 1,026 تست JVM، کامپایل MarketDebug و AndroidTest، lint، APK assembly، امضای Debug، Gateهای منبع/Release و بررسی diff موفق‌اند. پیش‌نمایش Import اکنون تعداد actionهای حذف‌شوندهٔ ناشناخته را اعلام می‌کند؛ callback فایل SAF هم پیش از نمایش candidate تغییرات ویرایشگر را دوباره بررسی می‌کند. semantics سوییچ نام‌دار صریحاً state را اعلام می‌کند و تست سخت‌گیرانه باقی مانده است. تست‌های میدان HostEdit/HostList/Palette/Tab نیز تقویت شده‌اند. هیچ‌کدام از این تغییرهای محلی هنوز در اجرای runtime تازه‌ای بررسی نشده‌اند.
+در workspace فعلی 1,030 تست JVM، کامپایل MarketDebug و AndroidTest، lint، APK assembly، امضای Debug، Gateهای منبع/Release و بررسی diff موفق‌اند. پیش‌نمایش Import اکنون تعداد actionهای حذف‌شوندهٔ ناشناخته و ماکروهای دارای Enter را اعلام می‌کند؛ callback فایل SAF هم پیش از نمایش candidate تغییرات ویرایشگر را دوباره بررسی می‌کند. تست تنظیم سوییچ و میدان‌های HostEdit/HostList/Tab/پروفایل با همان assertionهای سخت‌گیرانهٔ قبلی اجرا می‌شوند. runtime CI تازه هنوز در انتظار Push است.
 
-APK آزمایشی ریشه 41,555,788 بایت است؛ SHA-256 برابر `01e0409dae251ccfaf1656c956f86165dbef1040e14dd9261e0ad1d54e404aec` و امضای Android Debug v2 تأیید شده است. APK از سورس commit `081d053` ساخته شده و نسخهٔ Production نیست. تغییرهای کد، تست، README و APK در commit `081d053` ثبت شده‌اند؛ checkpoint و گزارش تازه پس از بررسی نهایی به `main` پوش می‌شوند. سپس artifactهای API26/36/37 باید دوباره بررسی شوند. وضعیت کامل‌بودن ۰/۱۱ است و انتشار عمومی تأیید نشده است.
+APK آزمایشی ریشه در آخرین Build محلی 43,749,858 بایت است؛ SHA-256 برابر `bdcb2d74138d09a503d65428bfed1e7a91e18d472cf843de6b3ff844a2ac8aed` و امضای Android Debug v2 تأیید شده است. این خروجی Production نیست. تغییرهای کنونی شامل اصلاح‌های قبلی، تست و مستندات checkpoint بعد از ثبت نهایی به `main` پوش می‌شوند. سپس artifactهای API26/36/37 دوباره بررسی خواهند شد. وضعیت کامل‌بودن ۰/۱۱ است و انتشار عمومی تأیید نشده است.

@@ -204,10 +204,9 @@ fun SettingRow(
                     checked = value,
                     onCheckedChange = null,
                     enabled = !saving,
-                    // The parent row is the single accessible switch; this child is its
-                    // visual indicator. Keeping child semantics out avoids competing
-                    // disabled/click state from a Switch with no independent callback.
-                    modifier = Modifier.clearAndSetSemantics { },
+                    // Keep the Switch's checked/role semantics so the merged row is
+                    // exposed as a real checkable switch on older Android accessibility
+                    // bridges. The parent toggleable remains the sole click action.
                 )
             }
         }

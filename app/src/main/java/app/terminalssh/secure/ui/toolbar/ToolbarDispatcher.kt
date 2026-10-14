@@ -8,6 +8,7 @@ import app.terminalssh.secure.toolbar.ControlAction
 import app.terminalssh.secure.toolbar.HideKeyboardAction
 import app.terminalssh.secure.toolbar.MacroAction
 import app.terminalssh.secure.toolbar.MacroEngine
+import app.terminalssh.secure.toolbar.MacroExecutionGate
 import app.terminalssh.secure.toolbar.MacroRunner
 import app.terminalssh.secure.toolbar.MacroSink
 import app.terminalssh.secure.toolbar.ModifierAction
@@ -66,8 +67,8 @@ class ToolbarDispatcher(
     private val host: ToolbarHost,
     private val repository: ToolbarRepository,
     private val scope: CoroutineScope,
+    private val macroExecutionGate: MacroExecutionGate,
 ) {
-
     fun dispatch(action: ToolbarAction) {
         when (action) {
             is SpecialKeyAction -> dispatchSpecial(action.key)
@@ -154,9 +155,13 @@ class ToolbarDispatcher(
             // Do not let delayed operations migrate onto a replacement shell after
             // automatic reconnect. Epoch comparison catches even a fast reconnect
             // whose transient state was not observed by this coroutine.
-            MacroRunner(sink).execute(ops, cancelled = {
-                !host.session.isConnectedAtEpoch(channelEpoch)
-            })
+            // Ignore repeat taps while one macro is active. Serializing terminal writes is
+            // essential: text from two delayed macros must never be combined before Enter.
+            macroExecutionGate.runIfIdle {
+                MacroRunner(sink).execute(ops, cancelled = {
+                    !host.session.isConnectedAtEpoch(channelEpoch)
+                })
+            }
         }
     }
 }

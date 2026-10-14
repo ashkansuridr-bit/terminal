@@ -665,6 +665,13 @@ fun ToolbarEditorScreen(
                             color = MaterialTheme.colorScheme.error,
                         )
                     }
+                    if (preview.enterMacros > 0) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            stringResource(R.string.tcs_import_enter_macros, preview.enterMacros),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                     if (transferBusy) {
                         Spacer(Modifier.height(8.dp))
                         Text(stringResource(R.string.tcs_transfer_busy))

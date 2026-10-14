@@ -155,19 +155,25 @@ class HostListPresentationTest {
             lastTargetBounds = runCatching { target?.visibleBounds }.getOrNull()
             lastViewportBounds = listBounds
             if (listBounds != null) {
+                // The floating New connection button overlaps the viewport center near
+                // its lower edge (CI trace: button x=121..296, swipe began at x=160).
+                // Keep the gesture in a left-side list lane so it cannot activate the FAB.
+                val swipeX = listBounds.left + (listBounds.width() * 0.12f).toInt()
                 device.swipe(
-                    listBounds.centerX(), listBounds.bottom - (listBounds.height() * 0.15f).toInt(),
-                    listBounds.centerX(), listBounds.top + (listBounds.height() * 0.15f).toInt(),
+                    swipeX, listBounds.bottom - (listBounds.height() * 0.15f).toInt(),
+                    swipeX, listBounds.top + (listBounds.height() * 0.15f).toInt(),
                     12,
                 )
                 swipeCount++
             } else {
                 // Older Android Compose trees do not always export the LazyColumn as an
-                // accessibility scroll container. Swipe the middle of the content viewport
-                // instead of starting over the bottom navigation bar.
+                // accessibility scroll container. Keep the fallback lane near the left
+                // edge for the same reason: a center gesture can hit the floating action
+                // button drawn over the list.
+                val swipeX = (device.displayWidth * 0.12f).toInt()
                 device.swipe(
-                    device.displayWidth / 2, (device.displayHeight * 0.68f).toInt(),
-                    device.displayWidth / 2, (device.displayHeight * 0.30f).toInt(),
+                    swipeX, (device.displayHeight * 0.68f).toInt(),
+                    swipeX, (device.displayHeight * 0.30f).toInt(),
                     12,
                 )
                 swipeCount++

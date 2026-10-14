@@ -12,6 +12,8 @@ data class ToolbarImportPreview(
     val activeProfile: String,
     val warnings: List<String>,
     val omittedActions: Int = 0,
+    /** Imported macro definitions that contain an Enter step and can submit a command. */
+    val enterMacros: Int = 0,
 )
 
 /** Parsed, immutable configuration the user can review before an import replaces the current one. */
@@ -204,6 +206,11 @@ class ToolbarRepository(
                 activeProfile = state.activeProfileId,
                 warnings = ToolbarValidator.validate(state),
                 omittedActions = decoded.omittedActions,
+                enterMacros = state.customMacros.count { macro ->
+                    macro.steps.any { step ->
+                        step is MacroStep.Special && step.key == ToolbarSpecialKey.ENTER
+                    }
+                },
             ),
         )
     }

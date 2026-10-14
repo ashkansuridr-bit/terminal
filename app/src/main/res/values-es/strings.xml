@@ -489,6 +489,7 @@
     <string name="tcs_import_replace_warning">Esto reemplaza todos los perfiles, temas, macros y vínculos de hosts personalizados; no los combina.</string>
     <string name="tcs_import_warnings_present">El archivo contiene avisos de validación. Revisa la configuración después de aplicarla.</string>
     <string name="tcs_import_omitted_actions">La aplicación omitirá %1$d acción de tecla no compatible.</string>
+    <string name="tcs_import_enter_macros">%1$d macro importada contiene Enter y puede enviar su comando al ejecutarse.</string>
     <string name="tcs_import_replace">Reemplazar configuración</string>
     <string name="tcs_host_profile_global">Esta conexión usa el perfil global de teclas.</string>
     <string name="tcs_host_profile_override">Esta conexión tiene un perfil de teclas personalizado.</string>

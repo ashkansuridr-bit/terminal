@@ -29,3 +29,7 @@ Apache License 2.0, The Android Open Source Project.
 > and attribution notices from the exact artifacts you ship. AndroidX libraries use the
 > Apache License 2.0; their full attribution inventory may include additional
 > transitive components beyond the short list above.
+
+## Promotional motion assets
+
+The repository includes a Persian animated GitHub banner/outro, a README GIF preview, and separate promotional films. These audiovisual files are project media, not software artifacts distributed under the application's Apache-2.0 code license. The new banner/outro are silent and contain no stock audio. Their Remotion sources and the font attribution are in `promo/github-motion-asset/`; Vazirmatn is licensed under SIL Open Font License 1.1 (`licenses/Vazirmatn-OFL.txt`). Existing promotional film audio has separate licensing/identification limits documented in `docs/terminal-control-studio/VIDEO_DELIVERY.md`.

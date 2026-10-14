@@ -151,12 +151,27 @@ class HostEditValidationTest {
             "Tapping named field '$label' should focus exactly one editable node; " +
                 "focusedEditables=${focusedEditors.map { it.contentDescription to it.text }}",
         )
-        val editor = focusedEditors.single()
+        // Focusing the editor opens the IME and can move the sheet. The wrapper
+        // bounds captured before the tap describe the old layout, so wait for that
+        // relayout and reacquire both nodes before comparing their screen geometry.
+        device.waitForIdle()
+        val focusedField = device.wait(Until.findObject(By.desc(label)), TIMEOUT_MS)
+            ?: throw AssertionError("Named field '$label' disappeared after gaining focus")
+        val settledEditors = device.wait(
+            Until.findObjects(By.clazz("android.widget.EditText").focused(true)),
+            TIMEOUT_MS,
+        )
+        if (settledEditors.size != 1) throw AssertionError(
+            "Exactly one editable node must remain focused after the field layout settles; " +
+                "focusedEditables=${settledEditors.map { it.contentDescription to it.text }}",
+        )
+        val editor = settledEditors.single()
+        val focusedFieldBounds = Rect(focusedField.visibleBounds)
         val editorBounds = editor.visibleBounds
         assertTrue(
             "Focused editor for '$label' was outside its tapped field; " +
-                "fieldBounds=$visibleBounds editorBounds=$editorBounds",
-            Rect.intersects(Rect(visibleBounds), editorBounds),
+                "fieldBounds=$focusedFieldBounds editorBounds=$editorBounds",
+            Rect.intersects(focusedFieldBounds, editorBounds),
         )
         editor.setText(value)
         device.waitForIdle()
