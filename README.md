@@ -34,6 +34,12 @@
 
 این ویدیوی عمودیِ ۲۸ ثانیه‌ای، نگاهی کوتاه به تجربهٔ Terminal SSH دارد. رابط‌ها بازسازی وفادار به سورس هستند و داده‌های میزبان و ترمینال در ویدیو ساختگی‌اند؛ ویدیو ضبط زنده از APK نیست. فایل و جزئیات تولید در [گزارش تحویل و مجوز رسانه](docs/terminal-control-studio/VIDEO_DELIVERY.md) ثبت شده‌اند. موسیقی و افکت‌های ویدیو مجوزهای جدا از کد برنامه دارند؛ هویت دقیق قطعهٔ موسیقی در منبع موجود به‌طور مستقل مشخص نشده است.
 
+### نسخهٔ بلند ۱۲۰ثانیه‌ای
+
+[▶ تماشای معرفی کامل ۱۲۰ثانیه‌ای (عمودی ۹:۱۶، بی‌صدا)](TerminalSSH-Promo-fa-120s.mp4) · [دریافت مستقیم نسخهٔ ۱۲۰ثانیه‌ای](https://raw.githubusercontent.com/ashkansuridr-bit/terminal/main/TerminalSSH-Promo-fa-120s.mp4)
+
+این نسخه چهار فصل دقیقاً ۳۰ثانیه‌ای دارد که به‌ترتیب اتصال SSH، میزبان‌ها، ترمینال و فایل‌های SFTP/متن‌باز را معرفی می‌کنند. [فصل ۱](promo/terminalssh-120s/chapters/TerminalSSH-Promo-fa-120s-01.mp4) · [فصل ۲](promo/terminalssh-120s/chapters/TerminalSSH-Promo-fa-120s-02.mp4) · [فصل ۳](promo/terminalssh-120s/chapters/TerminalSSH-Promo-fa-120s-03.mp4) · [فصل ۴](promo/terminalssh-120s/chapters/TerminalSSH-Promo-fa-120s-04.mp4). فیلم از قاب‌های بازسازی‌شده بر پایهٔ UI برنامه و داده‌های نمونهٔ ساختگی استفاده می‌کند؛ ضبط زنده از APK یا نشست SSH نیست. خروجی عمداً بی‌صداست. سورس قابل‌بازسازی، طرح نماها، فریم‌های بازبینی و مجوز فونت در [`promo/terminalssh-120s/`](promo/terminalssh-120s/) آمده‌اند. جزئیات فنی و مجوزها در [گزارش تحویل ویدیو](docs/terminal-control-studio/VIDEO_DELIVERY.md) است.
+
 ---
 
 ## معرفی
