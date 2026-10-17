@@ -263,6 +263,20 @@ class SettingsAccessibilityTest {
                     if (horizontal) bounds.width() > bounds.height() else bounds.height() > bounds.width()
                 }.getOrDefault(false)
             }
+            // UiAutomator and the Compose accessibility window can use different
+            // inset origins on API 36. Translate fallback touch coordinates using
+            // the target's raw accessibility bounds when both nodes are present.
+            val gestureOffsetY = if (horizontal) {
+                val visibleTarget = runCatching { device.findObject(By.desc(description))?.visibleBounds }.getOrNull()
+                val fullTarget = AppWindowAccessibility.find { it.contentDescription?.toString() == description }
+                try {
+                    if (visibleTarget != null && fullTarget != null) {
+                        AppWindowAccessibility.bounds(fullTarget).centerY() - visibleTarget.centerY()
+                    } else 0
+                } finally {
+                    fullTarget?.recycle()
+                }
+            } else 0
             if (scrollable != null) {
                 val direction = if (horizontal) {
                     if (activityContext.resources.configuration.layoutDirection.toComposeLayoutDirection() == LayoutDirection.Ltr) {
@@ -291,10 +305,11 @@ class SettingsAccessibilityTest {
             }
             val (startX, startY, endX, endY) = if (horizontal) {
                 val inset = (24 * density).toInt().coerceAtMost(viewport.width() / 4)
+                val y = (viewport.centerY() + gestureOffsetY).coerceIn(1, device.displayHeight - 2)
                 if (LayoutDirection.Ltr == instrumentation.targetContext.resources.configuration.layoutDirection.toComposeLayoutDirection()) {
-                    intArrayOf(viewport.right - inset, viewport.centerY(), viewport.left + inset, viewport.centerY())
+                    intArrayOf(viewport.right - inset, y, viewport.left + inset, y)
                 } else {
-                    intArrayOf(viewport.left + inset, viewport.centerY(), viewport.right - inset, viewport.centerY())
+                    intArrayOf(viewport.left + inset, y, viewport.right - inset, y)
                 }
             } else {
                 intArrayOf(viewport.centerX(), viewport.bottom - viewport.height() / 5,

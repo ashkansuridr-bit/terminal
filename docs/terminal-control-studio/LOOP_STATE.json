@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-14T05:42:12+03:30",
+  "capturedAt": "2026-10-17T00:00:00+03:30",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
   "lastVerifiedCommit": "f7e8ab998bf9270f4a0bc670b9fbd70078a29228",
@@ -421,8 +421,8 @@
     },
     "marketDebugAssemble": "PASS: current source assembled; 41,681,527-byte root review APK, SHA-256 bca914ad9d1cd4550b251b08670edb07c02f81d8c9ffc3c378acfb314e346f10, Android Debug v2 signature verified; not production-signed.",
     "diffCheck": "PASS after current local changes",
-    "instrumentation": "Latest completed run 38498546350 on f7e8ab9: API26 Debug/Preview each 1/114 failure (Snippets reachability), API36 Debug/Preview each 2/114 failures (Snippets reachability and Settings toggle scrolling). Aggregate 450/456 passed, 6 failed, 0 skipped. Tab, HostEdit and HostList regressions passed. API37 Debug/Preview blocked before tests by adb offline/boot timeout. No app crash evidence. The current local Snippet partial-drag helper and deeper Settings scroll are compiled and await fresh runtime.",
-    "apiDeviceMatrix": "CI 38498546350 exercised API26 and API36; API37 Debug/Preview failed to boot (`adb: device offline`, timeout) before tests. API31/34 are not in workflow. No local runnable emulator or attached physical device.",
+    "instrumentation": "Latest completed run 38500330075 on 674ecc4: API26 Debug/Preview each 1/114 failure (Snippets reachability), API36 Debug/Preview each 2/114 failures (Snippets reachability and OLED palette visibility). Aggregate 451/456 passed, 5 failed, 0 skipped. Settings toggle, Tab, HostEdit and HostList regressions passed. API37 Debug/Preview blocked before tests by adb offline/boot timeout. No app crash evidence. The current local follow-up adds bounded toolbar traces and translates horizontal palette gestures across API36 inset coordinates; runtime verification is pending.",
+    "apiDeviceMatrix": "CI 38500330075 exercised API26 and API36; API37 Debug/Preview failed to boot (`adb: device offline`, timeout) before tests. API31/34 are not in workflow. No local runnable emulator or attached physical device.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
     "marketDebugAndroidTestCompile": "PASS for current local Snippet and Settings scroll changes; runtime awaits new CI.",
@@ -482,8 +482,8 @@
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": "Current local follow-up: :app:compileMarketDebugAndroidTestKotlin PASS after Snippets partial drag and Settings scroll changes; diff and JSON checks pass. App source is unchanged from f7e8ab9, whose :app:testMarketDebugUnitTest passed 1,030/1,030 across 122 suites; compile, lint (0 errors, 108 warnings, 2 hints), APK assembly, source/release gates and Android Debug v2 signature also passed. Root APK hash remains bca914ad9d1cd4550b251b08670edb07c02f81d8c9ffc3c378acfb314e346f10. No local emulator for instrumentation.",
   "latestCi": {
-    "runId": "38498546350",
-    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38498546350",
+    "runId": "38500330075",
+    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/38500330075",
     "headSha": "f7e8ab998bf9270f4a0bc670b9fbd70078a29228",
     "verify": "PASS: source/artifact validators, unit tests, lint and both Debug builds.",
     "instrumentation": {
@@ -493,7 +493,7 @@
       "api36Preview": "FAIL 2/114: SettingsToggleAccessibilityTest could not reach the security switch row; SnippetAccessibilityTest could not reach the snippets toolbar key; 112 passed.",
       "api37Debug": "BLOCKED before tests: adb device offline and emulator boot timeout; no report artifacts.",
       "api37Preview": "BLOCKED before tests: adb device offline and emulator boot timeout; no report artifacts.",
-      "aggregateCompletedVariants": "450 passed, 6 failed, 0 skipped across 456 executions. No app-process crash reported."
+      "aggregateCompletedVariants": "451 passed, 5 failed, 0 skipped across 456 executions. No app-process crash reported."
     },
     "releaseCandidates": "SKIPPED because mandatory instrumentation failed."
   },
@@ -682,7 +682,7 @@
   },
   "pendingCi": {
     "status": "AWAITING_PUSH",
-    "baseSha": "f7e8ab998bf9270f4a0bc670b9fbd70078a29228",
-    "next": "Push the local Snippet and Settings helper corrections; record and inspect the resulting workflow run."
+    "baseSha": "674ecc4688422bad2368de2d083cd28849910e4b",
+    "next": "Push the bounded Snippets diagnostic trace and API36 palette gesture-coordinate correction; inspect the resulting workflow run."
   }
 }
