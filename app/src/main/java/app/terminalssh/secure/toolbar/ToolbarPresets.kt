@@ -137,24 +137,25 @@ object ToolbarProfiles {
 
     private fun ctrl(g: Map<ToolbarGesture, ToolbarAction> = emptyMap()) = ToolKeySpec(
         id = "ctrl", label = "Ctrl", contentDescription = "Control",
-        action = ModifierAction(ToolbarModifier.CTRL), style = KeyStyle.ACCENT, gestures = g,
+        action = ModifierAction(ToolbarModifier.CTRL), style = KeyStyle.ACCENT,
+        width = KeyWidth.NARROW, gestures = g,
     )
 
     private fun alt() = ToolKeySpec(
         id = "alt", label = "Alt", contentDescription = "Alt",
-        action = ModifierAction(ToolbarModifier.ALT), style = KeyStyle.ACCENT,
+        action = ModifierAction(ToolbarModifier.ALT), style = KeyStyle.ACCENT, width = KeyWidth.NARROW,
     )
 
     private fun shift() = ToolKeySpec(
         id = "shift", label = "Shift", contentDescription = "Shift",
-        action = ModifierAction(ToolbarModifier.SHIFT), style = KeyStyle.ACCENT,
+        action = ModifierAction(ToolbarModifier.SHIFT), style = KeyStyle.ACCENT, width = KeyWidth.NARROW,
     )
 
     private fun special(key: ToolbarSpecialKey, label: String, width: KeyWidth = KeyWidth.NORMAL) =
         ToolKeySpec(id = key.name.lowercase(), label = label, action = SpecialKeyAction(key), width = width)
 
     private val esc = special(ToolbarSpecialKey.ESCAPE, "Esc")
-    private val tab = special(ToolbarSpecialKey.TAB, "Tab")
+    private val tab = special(ToolbarSpecialKey.TAB, "Tab", KeyWidth.NARROW)
     private val up = special(ToolbarSpecialKey.UP, "↑", KeyWidth.NARROW)
     private val down = special(ToolbarSpecialKey.DOWN, "↓", KeyWidth.NARROW)
     private val left = special(ToolbarSpecialKey.LEFT, "←", KeyWidth.NARROW)
@@ -167,6 +168,7 @@ object ToolbarProfiles {
         contentDescription = "Open command snippets",
         action = OpenSnippetsAction,
         style = KeyStyle.ACCENT,
+        width = KeyWidth.NARROW,
     )
 
     // --- profiles ---
