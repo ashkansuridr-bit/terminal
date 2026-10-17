@@ -179,7 +179,11 @@ object ToolbarProfiles {
         layout = ToolbarLayout(
             rows = listOf(
                 listOf(
-                    ctrl(), alt(), shift(), tab, esc, snippets,
+                    // Keep the command-snippet launcher in the compact first viewport.
+                    // The CI API26/36 Compose bridge exposes the LazyRow as scrollable,
+                    // but injected swipes report success without changing its offset;
+                    // a core action must remain reachable without relying on that path.
+                    ctrl(), alt(), shift(), snippets, tab, esc,
                     up, down, left, right,
                     ToolKeySpec("pipe", "|", TextAction("|")),
                     ToolKeySpec("slash", "/", TextAction("/")),
