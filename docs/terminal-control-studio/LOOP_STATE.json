@@ -682,7 +682,7 @@
   },
   "pendingCi": {
     "status": "AWAITING_PUSH",
-    "baseSha": "674ecc4688422bad2368de2d083cd28849910e4b",
-    "next": "Push the bounded Snippets diagnostic trace and API36 palette gesture-coordinate correction; inspect the resulting workflow run."
+    "baseSha": "0a39496f18271f8a9a04d97936eade3406df0fe7",
+    "next": "Push the compact Shell Snippets placement, HostEdit null-safe helper and API36 palette bounds correction; inspect the resulting workflow run."
   }
 }

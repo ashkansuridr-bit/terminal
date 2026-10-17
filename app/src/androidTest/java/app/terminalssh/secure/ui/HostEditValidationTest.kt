@@ -146,7 +146,7 @@ class HostEditValidationTest {
         val focusedEditors = device.wait(
             Until.findObjects(By.clazz("android.widget.EditText").focused(true)),
             TIMEOUT_MS,
-        )
+        ) ?: emptyList()
         if (focusedEditors.size != 1) throw AssertionError(
             "Tapping named field '$label' should focus exactly one editable node; " +
                 "focusedEditables=${focusedEditors.map { it.contentDescription to it.text }}",
@@ -160,7 +160,7 @@ class HostEditValidationTest {
         val settledEditors = device.wait(
             Until.findObjects(By.clazz("android.widget.EditText").focused(true)),
             TIMEOUT_MS,
-        )
+        ) ?: emptyList()
         if (settledEditors.size != 1) throw AssertionError(
             "Exactly one editable node must remain focused after the field layout settles; " +
                 "focusedEditables=${settledEditors.map { it.contentDescription to it.text }}",
