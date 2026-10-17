@@ -682,7 +682,7 @@
   },
   "pendingCi": {
     "status": "AWAITING_PUSH",
-    "baseSha": "0a39496f18271f8a9a04d97936eade3406df0fe7",
-    "next": "Push the compact Shell Snippets placement, HostEdit null-safe helper and API36 palette bounds correction; inspect the resulting workflow run."
+    "baseSha": "c622263d3e57a92257ebb3aedab308178c031f37",
+    "next": "Inspect the CI run for c622263 after the raw accessibility-bounds palette click correction."
   }
 }
