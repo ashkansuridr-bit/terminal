@@ -89,7 +89,10 @@ class SettingsAccessibilityTest {
                 assertTrue("$oled had no visible click intersection: visible=$oledVisible full=$oledFull", oledVisible.width() > 0 && oledVisible.height() > 0)
                 assertFalse(oledAction.isSelected || oledAction.isChecked)
 
-                oledAction.click()
+                assertTrue(
+                    "Palette click at raw accessibility bounds was rejected: visible=$oledVisible full=$oledFull",
+                    device.click(oledFull.centerX(), oledFull.centerY()),
+                )
                 assertTrue("Palette selection was not persisted and exposed", awaitUiState(TIMEOUT_MS) {
                     device.findObject(By.desc(oled))?.let { it.isSelected || it.isChecked } == true &&
                         app.settings.themeName == "oled"
