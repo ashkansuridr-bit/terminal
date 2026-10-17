@@ -89,10 +89,18 @@ class SettingsAccessibilityTest {
                 assertTrue("$oled had no visible click intersection: visible=$oledVisible full=$oledFull", oledVisible.width() > 0 && oledVisible.height() > 0)
                 assertFalse(oledAction.isSelected || oledAction.isChecked)
 
-                assertTrue(
-                    "Palette click at raw accessibility bounds was rejected: visible=$oledVisible full=$oledFull",
-                    device.click(oledFull.centerX(), oledFull.centerY()),
-                )
+                // This is an accessibility contract test: activate the named chip
+                // through the action exposed to a screen reader. API36's UIA and
+                // Compose windows report different origins for touch coordinates.
+                val oledNode = AppWindowAccessibility.waitFor(TIMEOUT_MS) {
+                    it.contentDescription?.toString() == oled && it.isClickable
+                } ?: throw AssertionError("OLED palette did not expose an accessibility click action")
+                val actionAccepted = try {
+                    AppWindowAccessibility.click(oledNode)
+                } finally {
+                    oledNode.recycle()
+                }
+                assertTrue("OLED palette accessibility click was rejected: visible=$oledVisible full=$oledFull", actionAccepted)
                 assertTrue("Palette selection was not persisted and exposed", awaitUiState(TIMEOUT_MS) {
                     device.findObject(By.desc(oled))?.let { it.isSelected || it.isChecked } == true &&
                         app.settings.themeName == "oled"

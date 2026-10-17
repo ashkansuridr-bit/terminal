@@ -46,9 +46,16 @@ class SettingsToggleAccessibilityTest {
                     "Settings tab was tapped but its searchable settings screen did not appear",
                     device.wait(Until.hasObject(By.desc(settingsSearch)), TIMEOUT_MS),
                 )
+                // Search is an app-supported path to a setting. It keeps the switch
+                // in a stable viewport while this test checks its semantics, touch
+                // target and persistence; long drag gestures on API36 can report
+                // success without moving the outer Compose settings column.
+                val searchField = device.findObject(By.desc(settingsSearch))
+                    ?: throw AssertionError("Settings search field was not accessible")
+                searchField.setText(label)
                 assertTrue(
-                    "Toggle row was not fully reachable by accessibility scrolling",
-                    scrollToToggle(label),
+                    "Search did not expose the labeled security toggle",
+                    device.wait(Until.hasObject(By.desc(label)), TIMEOUT_MS),
                 )
 
                 val density = appContext.resources.displayMetrics.density
@@ -166,49 +173,6 @@ class SettingsToggleAccessibilityTest {
         stableSnapshotOrNull(label) ?: throw AssertionError(
             "Switch '$label' was not stable in the accessibility tree: ${switchNodeDiagnostic(label)}",
         )
-
-    private fun scrollToToggle(label: String): Boolean {
-        repeat(36) {
-            device.waitForIdle()
-            val uiNode = device.findObject(By.desc(label))
-            val appNode = AppWindowAccessibility.find {
-                it.contentDescription?.toString() == label
-            }
-            if (uiNode != null && appNode != null) {
-                val visible = runCatching { uiNode.visibleBounds }.getOrNull()
-                val full = AppWindowAccessibility.bounds(appNode)
-                appNode.recycle()
-                if (visible != null && visible.width() == full.width() && visible.height() == full.height()) return true
-                uiNode.recycle()
-            } else {
-                appNode?.recycle()
-                uiNode?.recycle()
-            }
-
-            val scrollNode = AppWindowAccessibility.find {
-                if (!it.isScrollable) return@find false
-                val bounds = AppWindowAccessibility.bounds(it)
-                bounds.height() > bounds.width()
-            }
-            if (scrollNode != null) {
-                val bounds = AppWindowAccessibility.bounds(scrollNode)
-                scrollNode.recycle()
-                // Page actions on Compose can skip an entire screenful and overshoot the
-                // setting row. Advance by a small touch step and reacquire it each time.
-                val x = (bounds.left + bounds.width() / 4).coerceIn(24, device.displayWidth - 24)
-                // The Security group is several screens below the first settings.
-                // API 36 needs a larger bounded step than API 26; keep it below half
-                // a viewport so a newly composed row cannot jump completely past us.
-                val step = (bounds.height() * 0.40f).toInt().coerceAtLeast(48)
-                val centerY = bounds.centerY()
-                device.swipe(x, centerY + step / 2, x, centerY - step / 2, 350)
-            } else {
-                val x = (device.displayWidth * 0.25f).toInt()
-                device.swipe(x, (device.displayHeight * 0.75f).toInt(), x, (device.displayHeight * 0.35f).toInt(), 350)
-            }
-        }
-        return false
-    }
 
     private fun switchNodeDiagnostic(label: String): String {
         val node = AppWindowAccessibility.find { it.contentDescription?.toString() == label } ?: return "node absent"

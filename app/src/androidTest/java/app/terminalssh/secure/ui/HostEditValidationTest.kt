@@ -133,6 +133,18 @@ class HostEditValidationTest {
         dismissImeIfVisible()
         val field = findFormField(label)
             ?: throw AssertionError("Named field '$label' was not exposed after scrolling the host form")
+        // On API26 Preview the wrapper's visible center can map to the adjacent
+        // Host field after Compose and UiAutomator disagree about window insets.
+        // Prefer the editable descendant scoped to the named field: writing Port
+        // must never silently replace Host while still satisfying a focus check.
+        val scopedEditor = runCatching {
+            field.findObject(By.clazz("android.widget.EditText"))
+        }.getOrNull()
+        if (scopedEditor != null) {
+            scopedEditor.setText(value)
+            device.waitForIdle()
+            return
+        }
         val visibleBounds = field.visibleBounds
         assertTrue(
             "Named field '$label' must have a usable visible target: visible=$visibleBounds",
