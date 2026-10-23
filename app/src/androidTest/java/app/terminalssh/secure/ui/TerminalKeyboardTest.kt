@@ -23,6 +23,7 @@ import app.terminalssh.secure.TerminalApp
 import app.terminalssh.secure.model.AuthMethod
 import app.terminalssh.secure.model.HostProfile
 import app.terminalssh.secure.ssh.SshSession
+import app.terminalssh.secure.toolbar.MacroStep
 import app.terminalssh.secure.vm.AppViewModel
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -974,6 +975,81 @@ class TerminalKeyboardTest {
             }
         } finally {
             repository.setHostOverride(session.profile.id, null)
+        }
+    }
+
+    @Test
+    fun userMacroRejectsCredentialsAndPersistsSafeSingleLineText() {
+        val repository = app.toolbar
+        val previousShell = repository.profileById("shell") ?: error("Shell profile is required")
+        val previousActive = repository.state.value.activeProfileId
+        val macroName = "tcsui${SystemClock.uptimeMillis().toString(36)}"
+        val macroId = "macro.user.$macroName"
+        val terminalTab = instrumentation.targetContext.getString(R.string.tab_terminal)
+        val keyboardAction = instrumentation.targetContext.getString(R.string.show_keyboard)
+        val createLabel = instrumentation.targetContext.getString(R.string.tcs_create_macro)
+        val nameLabel = instrumentation.targetContext.getString(R.string.tcs_macro_name)
+        val textLabel = instrumentation.targetContext.getString(R.string.tcs_macro_text)
+        val secretWarning = instrumentation.targetContext.getString(R.string.tcs_macro_secret_rejected)
+        val saveLabel = instrumentation.targetContext.getString(R.string.tcs_save)
+
+        fun editNamedField(label: String, value: String) {
+            val node = AppWindowAccessibility.waitFor(UI_TIMEOUT_MS) {
+                it.contentDescription?.toString() == label
+            } ?: throw AssertionError("Macro editor field '$label' is not accessible")
+            val accepted = try {
+                AppWindowAccessibility.setText(node, value)
+            } finally { node.recycle() }
+            assertTrue("Macro editor field '$label' rejected text edit", accepted)
+        }
+
+        try {
+            repository.setActiveProfile("shell")
+            app.sessions.add(idleSession(id = "macro-ui-regression", title = "Macro UI test"))
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                openTerminalTab(terminalTab, keyboardAction)
+                if (waitForIme(scenario, visible = true)) dismissImeIfVisible()
+                val keyboardKey = device.wait(Until.findObject(By.desc(keyboardAction)), UI_TIMEOUT_MS)
+                    ?: throw AssertionError("Keyboard key is needed to open the toolbar editor")
+                keyboardKey.longClick()
+                assertTrue(
+                    "Create macro must be reachable in the editor",
+                    device.scrollUntilFullyVisible(By.text(createLabel), maxAttempts = 20,
+                        appPackage = instrumentation.targetContext.packageName),
+                )
+                device.findObject(By.text(createLabel)).click()
+                assertTrue(device.wait(Until.hasObject(By.desc(nameLabel)), UI_TIMEOUT_MS))
+
+                editNamedField(nameLabel, macroName)
+                editNamedField(textLabel, "password=example")
+                assertTrue("Credential warning is missing", device.wait(Until.hasObject(By.text(secretWarning)), UI_TIMEOUT_MS))
+                assertTrue("Credential-shaped macro must disable Create", device.hasObject(By.text(createLabel).enabled(false)))
+                assertTrue(repository.macroById(macroId) == null)
+
+                editNamedField(textLabel, "git status")
+                assertTrue("Safe text should clear the credential warning", device.wait(Until.gone(By.text(secretWarning)), UI_TIMEOUT_MS))
+                val confirm = device.wait(Until.findObject(By.text(createLabel).enabled(true)), UI_TIMEOUT_MS)
+                    ?: throw AssertionError("Safe macro must enable Create")
+                confirm.click()
+                assertTrue("A new macro is pending until Save and apply", repository.macroById(macroId) == null)
+                dismissImeIfVisible()
+                assertTrue(
+                    "Save and apply must be reachable after creating a macro",
+                    device.scrollUntilFullyVisible(By.text(saveLabel), maxAttempts = 20,
+                        appPackage = instrumentation.targetContext.packageName),
+                )
+                device.findObject(By.text(saveLabel)).click()
+                assertTrue("Safe macro was not persisted", awaitUiState(UI_TIMEOUT_MS) {
+                    repository.macroById(macroId)?.steps ==
+                        listOf(MacroStep.Text("git status")) &&
+                        repository.profileById("shell")?.macroIds?.contains(macroId) == true
+                })
+            }
+        } finally {
+            repository.deleteMacro(macroId)
+            if (previousShell.builtIn) repository.resetProfileToBuiltIn("shell")
+            else repository.saveProfile(previousShell)
+            repository.setActiveProfile(previousActive)
         }
     }
 

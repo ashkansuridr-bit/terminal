@@ -227,6 +227,18 @@ class ToolbarRepositoryTest {
         assertEquals(ToolbarMacros.listFiles, reloaded.macroById("macro.ls"))
     }
 
+    @Test fun invalidMacroCannotReplaceAWorkingPersistedMacro() {
+        val (repository, prefs) = repo()
+        val safe = MacroDef("custom.safe", "Safe", steps = listOf(MacroStep.Text("echo ok")))
+        repository.saveMacro(safe)
+
+        listOf("password=example", "echo ok\nwhoami", "echo\u0000ok").forEach { unsafeText ->
+            val unsafe = safe.copy(steps = listOf(MacroStep.Text(unsafeText)))
+            assertFailsWith<IllegalArgumentException> { repository.saveMacro(unsafe) }
+            assertEquals(safe, ToolbarRepository(prefs).macroById(safe.id))
+        }
+    }
+
     @Test fun deletingAMacroAlsoUnreferencesItFromProfiles() {
         val (repository, _) = repo()
         repository.saveMacro(MacroDef("m1", "M1", steps = listOf(MacroStep.Text("x"))))

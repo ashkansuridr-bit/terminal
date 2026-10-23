@@ -503,6 +503,7 @@
     <string name="tcs_macro_text">متن یک‌خطی</string>
     <string name="tcs_macro_insert_description">این ماکرو فقط یک خط متن را در ترمینال وارد می‌کند و کلید Enter را نمی‌فرستد.</string>
     <string name="tcs_macro_secret_rejected">متن شبیه اطلاعات ورود است؛ گذرواژه یا راز را در ماکرو ذخیره نکنید.</string>
+    <string name="tcs_macro_control_rejected">ماکرو باید یک‌خطی باشد و کاراکتر کنترلی نداشته باشد.</string>
 
     <!-- Confirm before discarding an edited toolbar -->
     <string name="tcs_discard_title">تغییرات ذخیره‌نشده</string>

@@ -1,10 +1,10 @@
 # APK verification
 
-The root `MarketDebug` test APK was assembled with `:app:assembleMarketDebug` from the current local source, including the accessible Settings switch and the Shell preset with Snippets prioritized in the compact toolbar.
+The root `MarketDebug` test APK was assembled with `:app:assembleMarketDebug` from the current local source, including the accessible Settings switch, compact Snippets placement, and the new macro editor input guard.
 
 | Variant | Artifact | Size | SHA-256 | Signature |
 |---|---|---:|---|---|
-| MarketDebug | [`TerminalSSH-0.7.2-MarketDebug-TEST.apk`](../../TerminalSSH-0.7.2-MarketDebug-TEST.apk) | 41,681,533 bytes | `09457c88f01e6ab5a667ffb64c7774f879ae74c4279aa4251a9d897ea9b91149` | Android Debug certificate; v2 verified |
+| MarketDebug | [`TerminalSSH-0.7.2-MarketDebug-TEST.apk`](../../TerminalSSH-0.7.2-MarketDebug-TEST.apk) | 43,752,062 bytes | `007afbb8b9146401c747cf7d79aa8bfe9fb063a54572ca75636f35789153519b` | Android Debug certificate; v2 verified |
 
 `apkanalyzer` reports package `app.terminalssh.secure.debug` and version `0.7.2-debug`. Build Tools 37.0.0 `apksigner verify --verbose` passed. Production signing was not attempted; this APK is not a release artifact.
 

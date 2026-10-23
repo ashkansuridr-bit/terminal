@@ -63,7 +63,7 @@ object MacroEngine {
                     if (containsCredentialLikeText(step.text)) {
                         errors.add("step ${index + 1}: text resembles embedded credentials; do not store secrets in macros")
                     }
-                    if (step.text.any { it == '\n' || it == '\r' || it == '\u2028' || it == '\u2029' || it.isISOControl() }) {
+                    if (containsUnsafeControlText(step.text)) {
                         errors.add("step ${index + 1}: text must not contain line breaks or control characters")
                     }
                 }
@@ -104,6 +104,10 @@ object MacroEngine {
 
     /** Conservative guard for common embedded-secret forms; it cannot identify arbitrary secrets. */
     fun containsCredentialLikeText(text: String): Boolean = credentialLikeText.containsMatchIn(text)
+
+    /** Match the execution gate while editing, so a saved key never becomes a no-op. */
+    fun containsUnsafeControlText(text: String): Boolean =
+        text.any { it == '\n' || it == '\r' || it == '\u2028' || it == '\u2029' || it.isISOControl() }
 
     /** A short human description of what a macro will do, for confirmations and previews. */
     fun describe(def: MacroDef): String {

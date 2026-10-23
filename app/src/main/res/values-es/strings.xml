@@ -456,6 +456,7 @@
     <string name="tcs_macro_text">Texto de una línea</string>
     <string name="tcs_macro_insert_description">Este macro inserta una línea en la terminal y no pulsa Intro.</string>
     <string name="tcs_macro_secret_rejected">Este texto parece contener credenciales. No guardes contraseñas ni secretos en macros.</string>
+    <string name="tcs_macro_control_rejected">La macro debe tener una sola línea y no contener caracteres de control.</string>
 
     <!-- Confirm before discarding an edited toolbar -->
     <string name="tcs_discard_title">Cambios sin guardar</string>

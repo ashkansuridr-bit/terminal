@@ -156,8 +156,11 @@ class ToolbarRepository(
         state.copy(customThemes = state.customThemes.filterNot { it.id == theme.id } + theme)
     }
 
-    fun saveMacro(macro: MacroDef) = update { state ->
-        state.copy(customMacros = state.customMacros.filterNot { it.id == macro.id } + macro)
+    fun saveMacro(macro: MacroDef) {
+        require(MacroEngine.validate(macro).isValid) { "Cannot save an invalid toolbar macro" }
+        update { state ->
+            state.copy(customMacros = state.customMacros.filterNot { it.id == macro.id } + macro)
+        }
     }
 
     fun deleteMacro(id: String) = update { state ->

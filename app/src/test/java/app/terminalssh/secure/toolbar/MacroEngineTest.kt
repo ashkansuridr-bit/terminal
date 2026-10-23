@@ -73,8 +73,10 @@ class MacroEngineTest {
             "text\u001b[2J",
         )
             .forEach { text ->
+                assertTrue(MacroEngine.containsUnsafeControlText(text), "editor accepted unsafe text")
                 assertFalse(MacroEngine.validate(macro(MacroStep.Text(text))).isValid, "unsafe text was accepted")
             }
+        assertFalse(MacroEngine.containsUnsafeControlText("git status"))
     }
 
     @Test fun delayRangeAndTotalEnforced() {

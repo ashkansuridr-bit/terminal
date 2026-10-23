@@ -506,6 +506,7 @@
     <string name="tcs_macro_text">نص من سطر واحد</string>
     <string name="tcs_macro_insert_description">يُدرج هذا الماكرو سطراً واحداً في الطرفية ولا يضغط على Enter.</string>
     <string name="tcs_macro_secret_rejected">يشبه هذا النص بيانات اعتماد مضمّنة. لا تحفظ كلمات المرور أو الأسرار في وحدات الماكرو.</string>
+    <string name="tcs_macro_control_rejected">يجب أن يكون الماكرو في سطر واحد من دون أحرف تحكم.</string>
 
     <!-- Confirm before discarding an edited toolbar -->
     <string name="tcs_discard_title">تغييرات غير محفوظة</string>

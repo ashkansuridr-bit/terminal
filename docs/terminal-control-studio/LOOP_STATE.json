@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-23T17:35:29+03:30",
+  "capturedAt": "2026-10-23T17:42:43+03:30",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
   "lastVerifiedCommit": "f7e8ab998bf9270f4a0bc670b9fbd70078a29228",
@@ -372,7 +372,10 @@
         "ToolbarEditorScreen.kt",
         "MacroEngine.kt",
         "MacroEngineTest.kt",
-        "strings.xml (fa/ar/en/es/fr/ru)"
+        "strings.xml (fa/ar/en/es/fr/ru)",
+        "ToolbarRepository.kt",
+        "ToolbarRepositoryTest.kt",
+        "TerminalKeyboardTest.kt"
       ],
       "dependencies": [
         "TCS-01",
@@ -396,15 +399,17 @@
         "market_release_gate.py PASS",
         "git diff --check PASS",
         "5bd2475 follow-up: reject imported/persisted line breaks and terminal controls (LF/CR/U+2028/U+2029/NUL/TAB/DEL/NEL/ESC); JVM 1,015/1,015 PASS, 118 suites; app compile PASS; AndroidTest Kotlin compile PASS; lint PASS (0 errors, 104 warnings, 2 hints); source/release gates PASS; diff check PASS.",
-        "1,026 current JVM tests PASS, including callback-time clean-import policy and omitted-action preview coverage."
+        "1,026 current JVM tests PASS, including callback-time clean-import policy and omitted-action preview coverage.",
+        "2026-10-23 follow-up: 1,031/1,031 JVM tests PASS across 122 suites; invalid macro replacement regression PASS; MarketDebug app compile, lint (0 errors, 108 warnings, 2 hints), APK assembly and Android Debug v2 signature PASS. New UI macro test awaits CI runtime.",
+        "2026-10-23 final local source: MarketDebug and MarketPreview AndroidTest Kotlin compile PASS including macro editor UI test; GPlayDebug APK assembly and Android Debug v2 signature PASS; source_audit.py, loop2_gate.py, market_release_gate.py, 9 release-artifact tests, JSON parse and diff check PASS."
       ],
-      "lastResult": "User-created single-line macro editor rejects tested credential-shaped inputs, persists named macros, and inserts text without Enter. Current JVM regression suite passes; device UI remains unverified.",
-      "lastFailure": "Credential-shape detection is heuristic and cannot identify arbitrary secrets; API instrumentation run from prior commit has unrelated UI assertion failures.",
-      "fixAttempts": 1,
+      "lastResult": "Editor rejects credential-shaped text and control characters, and repository refuses invalid macro replacement before persistence. JVM and build gates pass; new UI creation test has not run on a device.",
+      "lastFailure": "UI runtime/API instrumentation remains unverified; heuristic cannot recognize arbitrary secrets.",
+      "fixAttempts": 2,
       "commitSha": "081d053",
-      "lastReviewedAt": "2026-10-13T11:12:38+00:00",
+      "lastReviewedAt": "2026-10-23T17:42:43+03:30",
       "remainingIssues": [
-        "UI runtime/API instrumentation verification",
+        "UI runtime/API instrumentation verification for new macro creation test",
         "Heuristic cannot identify arbitrary secret strings"
       ]
     }
@@ -412,32 +417,32 @@
   "testSummary": {
     "marketDebugCompile": "PASS: current implementation including remembered per-session macro gate compiled.",
     "marketDebugUnitTests": {
-      "passed": 1030,
+      "passed": 1031,
       "failed": 0,
       "errors": 0,
       "skipped": 0,
       "suites": 122,
-      "evidence": "Forced fresh execution with --rerun-tasks on current source; 1,030 tests, 0 failures/errors/skips, across 122 suites."
+      "evidence": "Current local run after TCS-11 repository guard and editor control-character validation: 1,031/1,031 tests passed across 122 suites."
     },
-    "marketDebugAssemble": "PASS: current source assembled; 41,681,533-byte root review APK, SHA-256 09457c88f01e6ab5a667ffb64c7774f879ae74c4279aa4251a9d897ea9b91149, Android Debug v2 signature verified; not production-signed.",
+    "marketDebugAssemble": "PASS: current TCS-11 source assembled; 43,752,062-byte root review APK, SHA-256 007afbb8b9146401c747cf7d79aa8bfe9fb063a54572ca75636f35789153519b, Android Debug v2 signature verified; not production-signed.",
     "diffCheck": "PASS after current local changes",
     "instrumentation": "Latest completed run 39059627211 on 377c644: API26 Debug 1/114 failure (Settings search), API26 Preview 2/114 (Settings search and stale HostEdit field), API36 Debug 3/114 (Settings search, stale HostEdit field, wide-layout geometry), API36 Preview 2/114 (Settings search, wide-layout geometry). Aggregate 448/456 passed, 8 failed, 0 skipped. API37 Debug/Preview blocked before tests by adb offline/boot timeout. Current targeted UI-test corrections await runtime CI.",
     "apiDeviceMatrix": "CI 39059627211 exercised API26 and API36; API37 Debug/Preview failed to boot (`adb: device offline`, timeout) before tests. API31/34 are not in workflow. No local runnable emulator or attached physical device.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS for final targeted Settings search, HostEdit stale-field and wide-toolbar geometry corrections; runtime awaits new CI.",
+    "marketDebugAndroidTestCompile": "PASS for current TCS-11 UI macro creation regression and prior CI test corrections; device runtime pending.",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
       "warnings": 108,
       "hints": 2,
-      "evidence": "Successful :app:lintMarketDebug on current app source."
+      "evidence": "Successful :app:lintMarketDebug on current TCS-11 source."
     },
-    "gplayDebugAssemble": "PASS",
+    "gplayDebugAssemble": "PASS on current TCS-11 source: 44,863,164-byte APK, Android Debug v2 signature verified.",
     "marketPreviewAssemble": "PASS on earlier source cf0ac9d (R8/minified, debug certificate); not rebuilt for commit 081d053.",
     "gplayPreviewAssemble": "PASS on earlier source (R8/minified, debug certificate); not rebuilt for commit 081d053.",
     "apkSignature": "PASS: root MarketDebug APK verified with Android Build Tools 37.0.0 apksigner; Android Debug certificate, not production-signed.",
-    "sourceGates": "PASS on current local workspace: loop2_gate.py, market_release_gate.py, git diff --check, and LOOP_STATE JSON parse.",
+    "sourceGates": "PASS on current local source: source_audit.py, loop2_gate.py, market_release_gate.py, 9 test_release_artifacts.py tests, LOOP_STATE JSON parse and git diff --check.",
     "marketPreviewApk": {
       "path": "app/build/outputs/apk/market/preview/app-market-preview.apk",
       "sha256": "ef40d93344bb653e5b9472e706c5a1f06d63ef5b574cb0904c27da22b11379c4",
@@ -447,18 +452,18 @@
     "api37": "Run 39059627211: API37 Debug and Preview emulator boot failed (adb offline/timeout); no test execution.",
     "currentMarketDebugApk": {
       "path": "TerminalSSH-0.7.2-MarketDebug-TEST.apk",
-      "sizeBytes": 41681533,
-      "sha256": "09457c88f01e6ab5a667ffb64c7774f879ae74c4279aa4251a9d897ea9b91149",
+      "sizeBytes": 43752062,
+      "sha256": "007afbb8b9146401c747cf7d79aa8bfe9fb063a54572ca75636f35789153519b",
       "signature": "Android Debug certificate; APK v2 verified with Build Tools 37.0.0",
-      "builtFrom": "Current local app source with Snippets prioritized in the compact Shell preset. UI test-harness corrections are not part of the installed APK and remain pending CI.",
+      "builtFrom": "Current local TCS-11 source; macro editor rejects terminal controls and repository validates before persistence. Device UI test is pending.",
       "releaseStatus": "not production-signed",
       "rootCopy": "TerminalSSH-0.7.2-MarketDebug-TEST.apk",
-      "rootCopySHA256": "09457c88f01e6ab5a667ffb64c7774f879ae74c4279aa4251a9d897ea9b91149"
+      "rootCopySHA256": "007afbb8b9146401c747cf7d79aa8bfe9fb063a54572ca75636f35789153519b"
     },
     "marketDebugAndroidTestAssemble": "PASS on earlier source cf0ac9d; current follow-up AndroidTest Kotlin compilation PASS, runtime requires CI.",
-    "latestLocalVerification": "Current targeted follow-up: MarketDebug and MarketPreview AndroidTest Kotlin compilation PASS. Production code unchanged from 377c644, whose 1,030/1,030 JVM tests, app compile, lint and MarketDebug APK assembly passed. loop2_gate.py, market_release_gate.py, JSON parse and diff check PASS. Current UI-test corrections await CI.",
+    "latestLocalVerification": "Current TCS-11 follow-up: 1,031/1,031 MarketDebug JVM tests PASS; app compile, lint (0 errors, 108 warnings, 2 hints), MarketDebug and GPlayDebug APK assembly, Android Debug v2 signatures, MarketDebug and MarketPreview AndroidTest Kotlin compilation PASS. Source/release gates and 9 release-artifact tests PASS. New UI macro test awaits device CI; CI 39967249501 on preceding test-only commit is still running.",
     "latestLocalResult": "PASS on current local tree: 1,030/1,030 JVM tests, app and AndroidTest Kotlin compile, lint, MarketDebug APK assembly and Android Debug v2 signature. Device UI-test corrections still await CI.",
-    "marketPreviewAndroidTestCompile": "PASS for final targeted UI-test corrections with -Pterminal.testBuildType=preview; runtime awaits new CI."
+    "marketPreviewAndroidTestCompile": "PASS with -Pterminal.testBuildType=preview on current TCS-11 UI macro creation regression; device runtime pending."
   },
   "knownIssues": [
     "Build warns AGP 8.13.2 has not been validated by Google against compileSdk 37.0; build succeeds.",
@@ -478,7 +483,7 @@
     "Latest CI API37 Debug/Preview could not boot; device/runtime acceptance remains blocked in this environment.",
     "Fresh local build after UI harness and SettingRow changes passed: 1,030 JVM tests, app and AndroidTest Kotlin compile, lint, APK assembly/signature; fresh API26/36/37 runtime CI is pending."
   ],
-  "nextStep": "Finish current Preview AndroidTest Kotlin compilation and source gates; commit/push the targeted CI test corrections to authorized main; inspect fresh API26/36 runtime reports. Do not mark any TCS feature VERIFIED_COMPLETE or release-ready until required gates pass.",
+  "nextStep": "Commit/push current TCS-11 code, tests, localized strings, root review APK and evidence to authorized main; monitor API26/36 instrumentation for both the pending 1a630ec run and the resulting new run. Do not mark TCS-11 VERIFIED_COMPLETE until its device UI test passes.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": "Current local follow-up: MarketDebug JVM 1,030/1,030 across 122 suites (0 failures/errors/skips); app/AndroidTest Kotlin compilation, lint and APK assembly PASS. Root APK 41,681,533 bytes, SHA-256 09457c88f01e6ab5a667ffb64c7774f879ae74c4279aa4251a9d897ea9b91149, Android Debug v2 signature verified. loop2_gate.py, market_release_gate.py, JSON parse and git diff --check PASS. No local emulator for instrumentation; current UI-test corrections await CI.",
@@ -612,10 +617,18 @@
       "fix": "Remember the MacroExecutionGate keyed by the active SshSession and inject the stable gate into every newly-created dispatcher for that session.",
       "tests": "MacroExecutionGateTest remains in the 1,030-test passing JVM suite; current app compile passes once final Gradle completes. Device/runtime recomposition coverage remains pending.",
       "status": "IMPLEMENTED_NOT_TESTED"
+    },
+    {
+      "id": "NEW-015",
+      "title": "Invalid custom macro could persist as an inert toolbar key",
+      "rootCause": "The editor rejected only CR/LF and credential patterns, while execution validation rejects additional terminal controls; ToolbarRepository.saveMacro did not validate at persistence. A pasted control character could be saved and later refused by MacroEngine, leaving a visible key with no action.",
+      "fix": "Macro editor uses the same control-character predicate as MacroEngine and shows a localized error; macro fields have accessible names. ToolbarRepository validates before replacing a persisted macro.",
+      "tests": "MarketDebug JVM 1,031/1,031 PASS; app build/lint, MarketDebug/GPlayDebug APK assembly and v2 signatures PASS; Debug/Preview AndroidTest Kotlin compile PASS including new macro creation test. Device UI execution pending.",
+      "status": "IMPLEMENTED_NOT_TESTED (unit/build verified; UI runtime pending)"
     }
   ],
   "deliveryCommit": "6265262693e481a5ee7f9e3c0b26ecd82b87e37c",
-  "latestLocalResult": "PASS: final Debug and Preview AndroidTest Kotlin compile, source/release gates, JSON parse and diff check. Production code unchanged from 377c644; its 1,030 JVM tests, lint and MarketDebug APK assembly passed. Device UI runtime pending fresh CI.",
+  "latestLocalResult": "PASS: 1,031/1,031 JVM tests, Debug and Preview AndroidTest Kotlin compilation, MarketDebug and GPlayDebug build, lint, Debug APK signatures, source/release gates and 9 release-artifact tests. New macro UI test runtime pending.",
   "mediaAssets": {
     "githubBanner": {
       "path": "TerminalSSH-GitHub-Motion-fa.mp4",
@@ -682,8 +695,10 @@
     }
   },
   "pendingCi": {
-    "status": "AWAITING_PUSH",
-    "baseSha": "377c6441d3770ff3430b87afe4dedd2ac7b6093c",
-    "next": "Push targeted Settings search/HostEdit/wide-layout test corrections, then inspect fresh API26/36 reports. API37 boot remains blocked; TCS-11 UI gate is not complete."
+    "status": "IN_PROGRESS",
+    "runId": "39967249501",
+    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/39967249501",
+    "headSha": "1a630ec62218e29aed0a949e25bcc610c6fe8d10",
+    "next": "Inspect API26/36 and API37 results. New TCS-11 product/UI follow-up is local and must be committed/pushed separately after compile and source gates."
   }
 }

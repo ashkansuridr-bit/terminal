@@ -44,6 +44,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -783,16 +785,24 @@ private fun GestureBindingDialog(
 private fun CreateMacroDialog(onDismiss: () -> Unit, onCreate: (String, String) -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
     var text by rememberSaveable { mutableStateOf("") }
+    val nameLabel = stringResource(R.string.tcs_macro_name)
+    val textLabel = stringResource(R.string.tcs_macro_text)
     val credentialLike = MacroEngine.containsCredentialLikeText(text)
-    val valid = name.isNotBlank() && text.isNotBlank() && text.length <= MacroEngine.MAX_TEXT_LENGTH && '\n' !in text && '\r' !in text && !credentialLike
+    val controlLike = MacroEngine.containsUnsafeControlText(text)
+    val valid = name.isNotBlank() && text.isNotBlank() && text.length <= MacroEngine.MAX_TEXT_LENGTH && !controlLike && !credentialLike
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.tcs_create_macro_title)) },
         text = {
             Column {
                 Text(stringResource(R.string.tcs_macro_insert_description), style = MaterialTheme.typography.bodySmall)
-                OutlinedTextField(value = name, onValueChange = { name = it.take(40) }, label = { Text(stringResource(R.string.tcs_macro_name)) }, singleLine = true)
-                OutlinedTextField(value = text, onValueChange = { text = it.take(MacroEngine.MAX_TEXT_LENGTH).filterNot { ch -> ch == '\n' || ch == '\r' } }, label = { Text(stringResource(R.string.tcs_macro_text)) }, singleLine = true)
+                OutlinedTextField(value = name, onValueChange = { name = it.take(40) }, label = { Text(nameLabel) }, singleLine = true,
+                    modifier = Modifier.semantics { contentDescription = nameLabel })
+                OutlinedTextField(value = text, onValueChange = { text = it.take(MacroEngine.MAX_TEXT_LENGTH) }, label = { Text(textLabel) }, singleLine = true,
+                    modifier = Modifier.semantics { contentDescription = textLabel })
+                if (controlLike) {
+                    Text(stringResource(R.string.tcs_macro_control_rejected), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                }
                 if (credentialLike) {
                     Text(stringResource(R.string.tcs_macro_secret_rejected), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                 }

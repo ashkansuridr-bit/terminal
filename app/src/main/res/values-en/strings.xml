@@ -503,6 +503,7 @@
     <string name="tcs_macro_text">Single-line text</string>
     <string name="tcs_macro_insert_description">This macro inserts one line into the terminal and does not press Enter.</string>
     <string name="tcs_macro_secret_rejected">This text resembles embedded credentials. Do not store passwords or secrets in macros.</string>
+    <string name="tcs_macro_control_rejected">A macro must be one line and contain no control characters.</string>
 
     <!-- Confirm before discarding an edited toolbar -->
     <string name="tcs_discard_title">Unsaved changes</string>

@@ -69,7 +69,7 @@ Terminal SSH یک برنامهٔ اندرویدی برای اتصال SSH، اس
 
 ## APK آزمایشی
 
-فایل [TerminalSSH-0.7.2-MarketDebug-TEST.apk](TerminalSSH-0.7.2-MarketDebug-TEST.apk) با `:app:assembleMarketDebug` از سورس تازه، شامل چیدمان چندردیفهٔ پروفایل‌ها، ساخته و با گواهی Debug اندروید امضا شده است (SHA-256: `09457c88f01e6ab5a667ffb64c7774f879ae74c4279aa4251a9d897ea9b91149`). این فایل فقط برای ارزیابی است؛ **امضای تولیدی ندارد و نسخهٔ انتشار فروشگاهی نیست**. شناسهٔ بسته و روش بررسی در [ANDROID_TEST_BUILD.md](ANDROID_TEST_BUILD.md) ثبت شده‌اند.
+فایل [TerminalSSH-0.7.2-MarketDebug-TEST.apk](TerminalSSH-0.7.2-MarketDebug-TEST.apk) با `:app:assembleMarketDebug` از سورس تازه، شامل اعتبارسنجی جدید ورودی ماکرو و چیدمان چندردیفهٔ پروفایل‌ها، ساخته و با گواهی Debug اندروید امضا شده است (SHA-256: `007afbb8b9146401c747cf7d79aa8bfe9fb063a54572ca75636f35789153519b`). این فایل فقط برای ارزیابی است؛ **امضای تولیدی ندارد و نسخهٔ انتشار فروشگاهی نیست**. شناسهٔ بسته و روش بررسی در [ANDROID_TEST_BUILD.md](ANDROID_TEST_BUILD.md) ثبت شده‌اند.
 
 ## ساخت از سورس
 

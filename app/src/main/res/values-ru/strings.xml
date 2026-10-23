@@ -458,6 +458,7 @@
     <string name="tcs_macro_text">Текст в одну строку</string>
     <string name="tcs_macro_insert_description">Макрос вставляет одну строку в терминал и не нажимает Enter.</string>
     <string name="tcs_macro_secret_rejected">Этот текст похож на встроенные учётные данные. Не сохраняйте пароли и секреты в макросах.</string>
+    <string name="tcs_macro_control_rejected">Макрос должен содержать одну строку без управляющих символов.</string>
 
     <!-- Confirm before discarding an edited toolbar -->
     <string name="tcs_discard_title">Несохранённые изменения</string>
