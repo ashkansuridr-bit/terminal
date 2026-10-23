@@ -50,12 +50,45 @@ class SettingsToggleAccessibilityTest {
                 // in a stable viewport while this test checks its semantics, touch
                 // target and persistence; long drag gestures on API36 can report
                 // success without moving the outer Compose settings column.
-                val searchField = device.findObject(By.desc(settingsSearch))
-                    ?: throw AssertionError("Settings search field was not accessible")
-                searchField.setText(label)
+                val searchField = AppWindowAccessibility.waitFor(TIMEOUT_MS) {
+                    it.contentDescription?.toString() == settingsSearch
+                } ?: throw AssertionError("Settings search field was not accessible")
+                var searchAccepted = try {
+                    runCatching { AppWindowAccessibility.setText(searchField, label) }.getOrDefault(false)
+                } finally { searchField.recycle() }
+                var resultVisible = searchAccepted &&
+                    device.wait(Until.hasObject(By.desc(label)), 3_000)
+                if (!resultVisible) {
+                    // ACTION_SET_TEXT may be accepted by a Compose wrapper without
+                    // changing its value. Focus the named Search field and edit its
+                    // single platform editor; never target an arbitrary input.
+                    val namedSearch = device.wait(Until.findObject(By.desc(settingsSearch)), TIMEOUT_MS)
+                        ?: throw AssertionError("Named Search field disappeared during text entry")
+                    val searchNode = AppWindowAccessibility.find {
+                        it.contentDescription?.toString() == settingsSearch
+                    }
+                    val accessibilityClick = try {
+                        searchNode != null && runCatching { AppWindowAccessibility.click(searchNode) }.getOrDefault(false)
+                    } finally { searchNode?.recycle() }
+                    val focusedSelector = By.clazz("android.widget.EditText").focused(true)
+                    var focused = if (accessibilityClick) {
+                        device.wait(Until.findObjects(focusedSelector), 3_000) ?: emptyList()
+                    } else emptyList()
+                    if (focused.size != 1) {
+                        namedSearch.click()
+                        focused = device.wait(Until.findObjects(focusedSelector), TIMEOUT_MS) ?: emptyList()
+                    }
+                    assertTrue(
+                        "Search must focus exactly one editor; focused=${focused.map { it.contentDescription to it.text }}",
+                        focused.size == 1,
+                    )
+                    searchAccepted = runCatching { focused.single().setText(label); true }.getOrDefault(false)
+                    resultVisible = searchAccepted && device.wait(Until.hasObject(By.desc(label)), TIMEOUT_MS)
+                }
                 assertTrue(
-                    "Search did not expose the labeled security toggle",
-                    device.wait(Until.hasObject(By.desc(label)), TIMEOUT_MS),
+                    if (resultVisible) "" else "Search did not expose the labeled security toggle; " +
+                        "editActionAccepted=$searchAccepted; appTree=${AppWindowAccessibility.snapshot()}",
+                    resultVisible,
                 )
 
                 val density = appContext.resources.displayMetrics.density

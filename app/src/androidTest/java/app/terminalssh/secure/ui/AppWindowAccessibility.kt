@@ -1,6 +1,7 @@
 package app.terminalssh.secure.ui
 
 import android.graphics.Rect
+import android.os.Bundle
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
@@ -76,6 +77,23 @@ internal object AppWindowAccessibility {
 
     fun click(node: AccessibilityNodeInfo): Boolean =
         node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+
+    /** Send text through the named field's accessibility action, never a screen coordinate. */
+    fun setText(node: AccessibilityNodeInfo, value: String): Boolean {
+        // Prefer the editable child when Compose separates a label wrapper from
+        // its BasicTextField. A wrapper can accept an action without editing text.
+        for (index in 0 until node.childCount) {
+            val child = node.getChild(index) ?: continue
+            try {
+                if (setText(child, value)) return true
+            } finally { child.recycle() }
+        }
+        if (node.actionList.none { it.id == AccessibilityNodeInfo.ACTION_SET_TEXT }) return false
+        val arguments = Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value)
+        }
+        return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
+    }
 
     private fun findDescendant(
         node: AccessibilityNodeInfo,

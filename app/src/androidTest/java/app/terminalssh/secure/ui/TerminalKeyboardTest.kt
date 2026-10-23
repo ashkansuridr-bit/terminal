@@ -1009,7 +1009,9 @@ class TerminalKeyboardTest {
             // at 600dp. A fixed 1180px width is still compact on dense API 26 emulators.
             val density = instrumentation.targetContext.resources.displayMetrics.density
             val widthPx = (700f * density).toInt()
-            val heightPx = (460f * density).toInt()
+            // Android reports the shorter side as screenWidthDp in portrait. Keep
+            // the emulated height longer than the requested 700dp wide viewport.
+            val heightPx = (900f * density).toInt()
             device.executeShellCommand("wm size ${widthPx}x$heightPx")
             device.waitForIdle()
             SystemClock.sleep(3000)

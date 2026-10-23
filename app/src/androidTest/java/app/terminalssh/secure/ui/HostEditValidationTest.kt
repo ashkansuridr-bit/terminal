@@ -131,21 +131,43 @@ class HostEditValidationTest {
         // the named field is below the fold. Compose exposes the named wrapper
         // separately from its platform EditText child.
         dismissImeIfVisible()
-        val field = findFormField(label)
-            ?: throw AssertionError("Named field '$label' was not exposed after scrolling the host form")
+        val visibleField = findFormField(label)
+        if (visibleField == null) {
+            throw AssertionError("Named field '$label' was not exposed after scrolling the host form")
+        }
+        visibleField.recycle()
+        // The accessibility edit action belongs to the named field even when
+        // Compose moves its visual bounds during an IME or sheet relayout.
+        val namedNode = AppWindowAccessibility.find {
+            it.contentDescription?.toString() == label
+        }
+        if (namedNode != null) {
+            val accepted = try {
+                runCatching { AppWindowAccessibility.setText(namedNode, value) }.getOrDefault(false)
+            } finally { namedNode.recycle() }
+            if (accepted) {
+                device.waitForIdle()
+                return
+            }
+        }
         // On API26 Preview the wrapper's visible center can map to the adjacent
         // Host field after Compose and UiAutomator disagree about window insets.
         // Prefer the editable descendant scoped to the named field: writing Port
         // must never silently replace Host while still satisfying a focus check.
         val scopedEditor = runCatching {
-            field.findObject(By.clazz("android.widget.EditText"))
+            device.findObject(By.desc(label))?.findObject(By.clazz("android.widget.EditText"))
         }.getOrNull()
         if (scopedEditor != null) {
-            scopedEditor.setText(value)
-            device.waitForIdle()
-            return
+            if (runCatching { scopedEditor.setText(value); true }.getOrDefault(false)) {
+                device.waitForIdle()
+                return
+            }
         }
-        val visibleBounds = field.visibleBounds
+        val visibleBounds = runCatching {
+            device.findObject(By.desc(label))?.visibleBounds
+        }.getOrNull() ?: throw AssertionError(
+            "Named field '$label' became stale before it could be edited; appTree=${AppWindowAccessibility.snapshot()}",
+        )
         assertTrue(
             "Named field '$label' must have a usable visible target: visible=$visibleBounds",
             visibleBounds.width() >= 48 * instrumentation.targetContext.resources.displayMetrics.density &&

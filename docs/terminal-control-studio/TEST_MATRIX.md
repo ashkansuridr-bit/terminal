@@ -1,6 +1,6 @@
 # Test matrix
 
-Evidence captured on 2026-10-17; latest completed CI tests `c85441c`. Current local UI-test corrections are newer and await CI.
+Evidence updated on 2026-10-23; latest completed CI tests `377c644`. Current local UI-test corrections are newer and await CI.
 
 | Gate | Result | Evidence / limitation |
 |---|---|---|
@@ -12,6 +12,6 @@ Evidence captured on 2026-10-17; latest completed CI tests `c85441c`. Current lo
 | Android test Kotlin compile | PASS | `:app:compileMarketDebugAndroidTestKotlin` passed with the current progress-checked scrolling and editor/profile tests. |
 | MarketDebug lint | PASS | `:app:lintMarketDebug`: 0 errors, 108 warnings, 2 hints. |
 | `git diff --check` | PASS | Current local follow-up passes whitespace validation. |
-| Instrumentation / Compose UI | FAIL; targeted follow-up pending CI | Run [39057888031](https://github.com/ashkansuridr-bit/terminal/actions/runs/39057888031) on `c85441c`: Verify PASS; API26/36 Debug/Preview 449 passed, 7 failed, 0 skipped across 456 tests. Failures: API26 Debug Tab; API26 Preview Tab, Palette, HostEdit Port; API36 Debug security-toggle scroll; API36 Preview Palette and physical toggle tap. API37 Debug/Preview failed before tests (`adb: device offline`, boot timeout); release candidates skipped. Current local corrections compile; compact Tab scrolling and API36 physical coordinate mapping remain unverified. |
+| Instrumentation / Compose UI | FAIL; targeted follow-up pending CI | Run [39059627211](https://github.com/ashkansuridr-bit/terminal/actions/runs/39059627211) on `377c644`: Verify PASS; API26/36 Debug/Preview 448 passed, 8 failed, 0 skipped across 456 tests. API26 Debug: Settings search (1); API26 Preview: Settings search and stale HostEdit field (2); API36 Debug: Settings search, stale HostEdit field and wide-layout test geometry (3); API36 Preview: Settings search and wide-layout test geometry (2). Palette selection and compact Snippets passed in all four variants. API37 Debug/Preview failed before tests (`adb: device offline`, boot timeout); release candidates skipped. Current targeted test corrections compile locally; device runtime remains unverified. |
 | SSH/SFTP integration | NOT RUN | No isolated SSH server was provisioned for this toolbar-only feature. |
 | Production signing | NOT VERIFIED | MarketDebug is debug-signed; production signing was not attempted. |

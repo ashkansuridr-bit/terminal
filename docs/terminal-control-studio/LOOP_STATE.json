@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-17T22:12:50+03:30",
+  "capturedAt": "2026-10-23T17:35:29+03:30",
   "branch": "main",
   "baselineCommit": "25215085307c417ef607ea503b920e6e0f6c5ac5",
   "lastVerifiedCommit": "f7e8ab998bf9270f4a0bc670b9fbd70078a29228",
@@ -421,11 +421,11 @@
     },
     "marketDebugAssemble": "PASS: current source assembled; 41,681,533-byte root review APK, SHA-256 09457c88f01e6ab5a667ffb64c7774f879ae74c4279aa4251a9d897ea9b91149, Android Debug v2 signature verified; not production-signed.",
     "diffCheck": "PASS after current local changes",
-    "instrumentation": "Latest completed run 39057888031 on c85441c: API26 Debug 1/114 failure (Tab), API26 Preview 3/114 (Tab, Palette, HostEdit Port), API36 Debug 1/114 (security-toggle scroll), API36 Preview 2/114 (Palette, physical switch tap). Aggregate 449/456 passed, 7 failed, 0 skipped. API37 Debug/Preview blocked before tests by adb offline/boot timeout. No app crash evidence. Current UI-test follow-up awaits runtime CI.",
-    "apiDeviceMatrix": "CI 39057888031 exercised API26 and API36; API37 Debug/Preview failed to boot (`adb: device offline`, timeout) before tests. API31/34 are not in workflow. No local runnable emulator or attached physical device.",
+    "instrumentation": "Latest completed run 39059627211 on 377c644: API26 Debug 1/114 failure (Settings search), API26 Preview 2/114 (Settings search and stale HostEdit field), API36 Debug 3/114 (Settings search, stale HostEdit field, wide-layout geometry), API36 Preview 2/114 (Settings search, wide-layout geometry). Aggregate 448/456 passed, 8 failed, 0 skipped. API37 Debug/Preview blocked before tests by adb offline/boot timeout. Current targeted UI-test corrections await runtime CI.",
+    "apiDeviceMatrix": "CI 39059627211 exercised API26 and API36; API37 Debug/Preview failed to boot (`adb: device offline`, timeout) before tests. API31/34 are not in workflow. No local runnable emulator or attached physical device.",
     "sshSftpIntegration": "NOT_RUN",
     "productionSigning": "NOT_VERIFIED",
-    "marketDebugAndroidTestCompile": "PASS for current local HostEdit, Palette, Settings toggle and Terminal keyboard test corrections; runtime awaits new CI.",
+    "marketDebugAndroidTestCompile": "PASS for final targeted Settings search, HostEdit stale-field and wide-toolbar geometry corrections; runtime awaits new CI.",
     "marketDebugLint": {
       "status": "PASS",
       "errors": 0,
@@ -444,7 +444,7 @@
       "signature": "Android Debug certificate; debug/test only",
       "releaseStatus": "not production-signed"
     },
-    "api37": "Run 39057888031: API37 Debug and Preview emulator boot failed (adb offline/timeout); no test execution.",
+    "api37": "Run 39059627211: API37 Debug and Preview emulator boot failed (adb offline/timeout); no test execution.",
     "currentMarketDebugApk": {
       "path": "TerminalSSH-0.7.2-MarketDebug-TEST.apk",
       "sizeBytes": 41681533,
@@ -456,8 +456,9 @@
       "rootCopySHA256": "09457c88f01e6ab5a667ffb64c7774f879ae74c4279aa4251a9d897ea9b91149"
     },
     "marketDebugAndroidTestAssemble": "PASS on earlier source cf0ac9d; current follow-up AndroidTest Kotlin compilation PASS, runtime requires CI.",
-    "latestLocalVerification": "Current local follow-up: MarketDebug JVM 1,030/1,030 across 122 suites (0 failures/errors/skips); app/AndroidTest Kotlin compilation, lint and APK assembly PASS. Root APK 41,681,533 bytes, SHA-256 09457c88f01e6ab5a667ffb64c7774f879ae74c4279aa4251a9d897ea9b91149, Android Debug v2 signature verified. loop2_gate.py, market_release_gate.py, JSON parse and git diff --check PASS. No local emulator for instrumentation; current UI-test corrections await CI.",
-    "latestLocalResult": "PASS on current local tree: 1,030/1,030 JVM tests, app and AndroidTest Kotlin compile, lint, MarketDebug APK assembly and Android Debug v2 signature. Device UI-test corrections still await CI."
+    "latestLocalVerification": "Current targeted follow-up: MarketDebug and MarketPreview AndroidTest Kotlin compilation PASS. Production code unchanged from 377c644, whose 1,030/1,030 JVM tests, app compile, lint and MarketDebug APK assembly passed. loop2_gate.py, market_release_gate.py, JSON parse and diff check PASS. Current UI-test corrections await CI.",
+    "latestLocalResult": "PASS on current local tree: 1,030/1,030 JVM tests, app and AndroidTest Kotlin compile, lint, MarketDebug APK assembly and Android Debug v2 signature. Device UI-test corrections still await CI.",
+    "marketPreviewAndroidTestCompile": "PASS for final targeted UI-test corrections with -Pterminal.testBuildType=preview; runtime awaits new CI."
   },
   "knownIssues": [
     "Build warns AGP 8.13.2 has not been validated by Google against compileSdk 37.0; build succeeds.",
@@ -477,23 +478,23 @@
     "Latest CI API37 Debug/Preview could not boot; device/runtime acceptance remains blocked in this environment.",
     "Fresh local build after UI harness and SettingRow changes passed: 1,030 JVM tests, app and AndroidTest Kotlin compile, lint, APK assembly/signature; fresh API26/36/37 runtime CI is pending."
   ],
-  "nextStep": "Commit/push the Snippet partial-drag and deeper Settings scroll corrections to authorized main, then inspect fresh API26/36 reports and API37 boot logs. Keep UI feature completion and release readiness unverified; production signing remains NOT VERIFIED.",
+  "nextStep": "Finish current Preview AndroidTest Kotlin compilation and source gates; commit/push the targeted CI test corrections to authorized main; inspect fresh API26/36 runtime reports. Do not mark any TCS feature VERIFIED_COMPLETE or release-ready until required gates pass.",
   "branchUrl": "https://github.com/ashkansuridr-bit/terminal/tree/main",
   "pullRequest": "No PR created for direct-main commits; legacy PR #4 is not the delivery branch",
   "latestLocalVerification": "Current local follow-up: MarketDebug JVM 1,030/1,030 across 122 suites (0 failures/errors/skips); app/AndroidTest Kotlin compilation, lint and APK assembly PASS. Root APK 41,681,533 bytes, SHA-256 09457c88f01e6ab5a667ffb64c7774f879ae74c4279aa4251a9d897ea9b91149, Android Debug v2 signature verified. loop2_gate.py, market_release_gate.py, JSON parse and git diff --check PASS. No local emulator for instrumentation; current UI-test corrections await CI.",
   "latestCi": {
-    "runId": "39057888031",
-    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/39057888031",
-    "headSha": "c85441ce12ae4c1deeb5155951181d5387e261bb",
+    "runId": "39059627211",
+    "url": "https://github.com/ashkansuridr-bit/terminal/actions/runs/39059627211",
+    "headSha": "377c6441d3770ff3430b87afe4dedd2ac7b6093c",
     "verify": "PASS: source/artifact validators, unit tests, lint and both Debug builds.",
     "instrumentation": {
-      "api26Debug": "FAIL 1/114: TerminalKeyboardTest Tab key outside compact toolbar viewport; 113 passed.",
-      "api26Preview": "FAIL 3/114: Tab reachability, Palette selection, HostEdit Port field input; 111 passed.",
-      "api36Debug": "FAIL 1/114: security-toggle scroll reachability; 113 passed.",
-      "api36Preview": "FAIL 2/114: Palette selection and physical security-toggle tap; 112 passed.",
+      "api26Debug": "FAIL 1/114: SettingsToggleAccessibilityTest search did not expose the labeled security toggle; 113 passed.",
+      "api26Preview": "FAIL 2/114: Settings search and stale HostEdit field bounds; 112 passed.",
+      "api36Debug": "FAIL 3/114: Settings search, stale HostEdit field bounds and wide toolbar test geometry; 111 passed.",
+      "api36Preview": "FAIL 2/114: Settings search and wide toolbar test geometry; 112 passed.",
       "api37Debug": "BLOCKED before tests: adb device offline and emulator boot timeout; no report artifact.",
       "api37Preview": "BLOCKED before tests: adb device offline and emulator boot timeout; no report artifact.",
-      "aggregateCompletedVariants": "449 passed, 7 failed, 0 skipped across 456 executions. No app-process crash reported."
+      "aggregateCompletedVariants": "448 passed, 8 failed, 0 skipped across 456 executions. Palette and compact Snippets passed in all four API26/36 variants; no app-process crash reported."
     },
     "releaseCandidates": "SKIPPED because mandatory instrumentation failed."
   },
@@ -614,7 +615,7 @@
     }
   ],
   "deliveryCommit": "6265262693e481a5ee7f9e3c0b26ecd82b87e37c",
-  "latestLocalResult": "PASS: MarketDebug JVM task, AndroidTest Kotlin compile, lint and APK assembly on current local source; root APK 41,681,533 bytes, SHA-256 09457c88f01e6ab5a667ffb64c7774f879ae74c4279aa4251a9d897ea9b91149, Android Debug v2 signature verified. Device runtime pending next CI.",
+  "latestLocalResult": "PASS: final Debug and Preview AndroidTest Kotlin compile, source/release gates, JSON parse and diff check. Production code unchanged from 377c644; its 1,030 JVM tests, lint and MarketDebug APK assembly passed. Device UI runtime pending fresh CI.",
   "mediaAssets": {
     "githubBanner": {
       "path": "TerminalSSH-GitHub-Motion-fa.mp4",
@@ -682,7 +683,7 @@
   },
   "pendingCi": {
     "status": "AWAITING_PUSH",
-    "baseSha": "c85441ce12ae4c1deeb5155951181d5387e261bb",
-    "next": "Push current UI-test corrections and refreshed root debug APK, then inspect fresh API26/36 reports. Compact Tab scrolling and API36 physical coordinate mapping remain unverified."
+    "baseSha": "377c6441d3770ff3430b87afe4dedd2ac7b6093c",
+    "next": "Push targeted Settings search/HostEdit/wide-layout test corrections, then inspect fresh API26/36 reports. API37 boot remains blocked; TCS-11 UI gate is not complete."
   }
 }
